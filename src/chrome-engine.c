@@ -1,4 +1,8 @@
-#include <raylib.h>
+/*
+ * chroma-engine.c 
+ */
+
+#include "chroma-engine.h"
 
 int main(int argc, char **argv) {
     const int screen_width = 800;
@@ -6,6 +10,8 @@ int main(int argc, char **argv) {
 
     InitWindow(screen_width, screen_height, "raylib [core] example - basic window");
     SetTargetFPS(60);
+
+    open_tcp_server();
 
     while (!WindowShouldClose()) {
         BeginDrawing();
