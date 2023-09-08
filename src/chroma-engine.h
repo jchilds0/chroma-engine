@@ -7,7 +7,14 @@
 
 #include <raylib.h>
 
-void open_tcp_server(void);
+#define FRAMERATE     30
+
+#define TIMEOUT       -1
+#define CLOSE_SOCKET  -2
+
+int start_tcp_server(char *, int);
+int listen_for_client(int);
+int recieve_message(int, char *);
 
 typedef struct {
     char        type[30];
