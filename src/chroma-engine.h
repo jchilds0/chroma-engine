@@ -7,21 +7,23 @@
 
 #include <raylib.h>
 
-#define FRAMERATE     30
+#define CHROMA_FRAMERATE              30
 
-#define TIMEOUT       -1
-#define CLOSE_SOCKET  -2
+#define CHROMA_TIMEOUT                -1
+#define CHROMA_CLOSE_SOCKET           -2
+
+#define CHROMA_TEXT                   2
+#define CHROMA_PIXELS                 3
+#define CHROMA_END_CONNECTION         4
 
 int start_tcp_server(char *, int);
 int listen_for_client(int);
 int recieve_message(int, char *);
 
 typedef struct {
-    char        type[30];
     int         pos_x;
     int         pos_y;
-    int         width;
-    int         height;
+    Color       color;
 } render_object;
 
 #endif // !CHROMA_CHROMA_ENGINE
