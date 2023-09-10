@@ -35,13 +35,14 @@ int main(int argc, char **argv) {
         if (socket_client < 0) {
             socket_client = listen_for_client(socket_engine);
         } else {
-            while ((rec = recieve_message(socket_client, buf)) != CHROMA_CLOSE_SOCKET) {
-                render_pixels(buf);
-            }
+            rec = recieve_message(socket_client, buf);
 
             if (rec == CHROMA_CLOSE_SOCKET) {
                 shutdown(socket_client, SHUT_RDWR);
                 socket_client = -1;
+            } else {
+                render_pixels(buf);
+                memset(buf, '\0', sizeof buf );
             }
         }
 

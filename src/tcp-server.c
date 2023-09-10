@@ -70,32 +70,66 @@ int listen_for_client(int server_sock) {
     return client_sock;
 }
 
-int recieve_message(int client_sock, char *client_message) {
-    char server_message[2000];
+int recieve_message(int client_sock, char *pixel_str) {
+    static char buf[1000];
+    char server_message[1000], client_message[1000], temp_buf[1000];
+    bool end_of_pixel = false;
+    int index = strlen(buf);
 
     // clean buffers 
     memset(server_message, '\0', sizeof server_message);
+    memset(client_message, '\0', sizeof client_message);
+    strcpy(temp_buf, buf);
 
     // recieve clients message 
-    if (recv(client_sock, client_message, sizeof client_message, 0) < 0) {
-        //printf("Couldn't recieve\n");
-        return CHROMA_TIMEOUT;
+    while (!end_of_pixel) {
+        if (recv(client_sock, client_message, sizeof client_message, 0) < 0) {
+            //printf("Couldn't recieve\n");
+            return CHROMA_TIMEOUT;
+        }
+
+        if (client_message[0] == CHROMA_END_CONNECTION) {
+            printf("Connection closed\n");
+            return CHROMA_CLOSE_SOCKET;
+        }
+
+        // respond to client 
+        strcpy(server_message, "Recieved");
+
+        if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
+            printf("Can't send\n");
+            return CHROMA_TIMEOUT;
+        }
+
+        for (int i = 0; i < strlen(client_message); i++) {
+            temp_buf[index + i] = client_message[i];
+
+            if (client_message[i] == ')') {
+                end_of_pixel = true;
+            }
+        }
     }
 
-    if (client_message[0] == CHROMA_END_CONNECTION) {
-        printf("Connection closed\n");
-        return CHROMA_CLOSE_SOCKET;
+    //printf("Current buffer: %s\n", temp_buf);
+
+    // set client message
+    for (index = 0; temp_buf[index] != ')'; index++);
+    index++;
+    strncpy(pixel_str, temp_buf, index);
+    index++;
+
+    // reset buf
+    for (int i = 0; i + index < strlen(temp_buf); i++) {
+        buf[i] = temp_buf[index + i];
     }
 
-    printf("Msg from client: %s\n", client_message);
-
-    // respond to client 
-    strcpy(server_message, "Recieved");
-
-    if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
-        printf("Can't send\n");
-        return CHROMA_TIMEOUT;
+    for (int i = strlen(temp_buf) - index; i < sizeof(buf); i++) {
+        buf[i] = '\0';
     }
+
+    //printf("Pixel String: %s\n", pixel_str);
+    //printf("Buffer: %s\n", buf);
+
 
     return 1;
 }
