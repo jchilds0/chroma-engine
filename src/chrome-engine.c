@@ -11,7 +11,9 @@
 #include <malloc.h>
 
 void render_text(char *);
-void render_pixels(char *);
+void render_pixels(Color *, int, int);
+RenderObject *pixel_str_to_render_object(char *);
+void write_pixel_str_to_pixels(Color *, char *);
 
 #define MAX_BUF_SIZE      1000
 
@@ -24,27 +26,34 @@ int main(int argc, char **argv) {
 
     int socket_engine = start_tcp_server("127.0.0.1", 6100);
     int socket_client = -1, rec;
+    Color pixels[screen_width * screen_height];
+    RenderObject *pixel;
+
     char buf[MAX_BUF_SIZE];
     memset(buf, '\0', sizeof buf );
+
+    for (int i = 0; i < screen_width * screen_height; i++) {
+        pixels[i] = BLACK;
+    }
     
     while (!WindowShouldClose()) {
         BeginDrawing();
 
-        ClearBackground(BLACK);
-
         if (socket_client < 0) {
             socket_client = listen_for_client(socket_engine);
         } else {
-            rec = recieve_message(socket_client, buf);
+            while ((rec = recieve_message(socket_client, buf)) >= 0) {
+                pixel = pixel_str_to_render_object(buf);
+                pixels[pixel->pos_y * screen_width + pixel->pos_x] = pixel->color;
+                memset(buf, '\0', sizeof buf );
+            }
 
             if (rec == CHROMA_CLOSE_SOCKET) {
                 shutdown(socket_client, SHUT_RDWR);
                 socket_client = -1;
-            } else {
-                render_pixels(buf);
-                memset(buf, '\0', sizeof buf );
-            }
+            } 
         }
+        render_pixels(pixels, screen_width, screen_height);
 
         EndDrawing();
     }
@@ -59,31 +68,34 @@ void render_text(char *buf) {
     DrawText(buf, 190, 200, 20, RAYWHITE);
 }
 
-void render_pixels(char *buf) {
+void render_pixels(Color *pixels, int width, int height) {
+    for (int i = 0; i < width * height; i++) {
+        DrawPixel(i % width, i / width, pixels[i]);
+    }
+}
+
+RenderObject *pixel_str_to_render_object(char *buf) {
     int tuple_index = 0, char_index = 0;
     char temp_buf[20];
-    bool pixel;
-    int object[6];
+    int array[6];
+    RenderObject *pixel = (RenderObject *) malloc( sizeof(RenderObject) ); 
 
     for (int i = 1; i < strlen(buf); i++) {
         switch (buf[i]) {
             case '(':
                 char_index = 0;
-                pixel = true;
                 break;
             case ')':
                 temp_buf[char_index] = '\0';
-                object[tuple_index] = atoi(temp_buf);
-                pixel = false;
+                array[tuple_index] = atoi(temp_buf);
                 tuple_index = 0;
 
-                DrawPixel(object[0], object[1], (Color) {object[2], object[3], object[4], object[5]});
-                //printf("[%d, %d, %d, %d, %d, %d]\n", object[0], object[1], object[2], object[3], object[4], object[5]);
-                break;
+                *pixel = (RenderObject) {array[0], array[1], (Color) {array[2], array[3], array[4], array[5]}};
+                return pixel;
             case ',':
                 if (pixel) {
                     temp_buf[char_index] = '\0';
-                    object[tuple_index++] = atoi(temp_buf);
+                    array[tuple_index++] = atoi(temp_buf);
                     char_index = 0;
                 }
                 break;

@@ -24,6 +24,6 @@ typedef struct {
     int         pos_x;
     int         pos_y;
     Color       color;
-} render_object;
+} RenderObject;
 
 #endif // !CHROMA_CHROMA_ENGINE

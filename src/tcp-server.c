@@ -79,6 +79,7 @@ int recieve_message(int client_sock, char *pixel_str) {
     // clean buffers 
     memset(server_message, '\0', sizeof server_message);
     memset(client_message, '\0', sizeof client_message);
+    memset(temp_buf, '\0', sizeof temp_buf);
     strcpy(temp_buf, buf);
 
     // recieve clients message 
