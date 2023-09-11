@@ -4,6 +4,7 @@
 
 #include "chroma-engine.h"
 #include <asm-generic/socket.h>
+#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,10 +72,10 @@ int listen_for_client(int server_sock) {
 }
 
 int recieve_message(int client_sock, char *pixel_str) {
-    static char buf[1000];
-    char server_message[1000], client_message[1000], temp_buf[1000];
-    bool end_of_pixel = false;
+    static char buf[MAX_BUF_SIZE];
+    char server_message[MAX_BUF_SIZE], client_message[MAX_BUF_SIZE], temp_buf[MAX_BUF_SIZE];
     int index = strlen(buf);
+    bool end_of_pixel = false;
 
     // clean buffers 
     memset(server_message, '\0', sizeof server_message);
@@ -89,7 +90,7 @@ int recieve_message(int client_sock, char *pixel_str) {
             return CHROMA_TIMEOUT;
         }
 
-        if (client_message[0] == CHROMA_END_CONNECTION) {
+        if (client_message[0] == END_OF_CON) {
             printf("Connection closed\n");
             return CHROMA_CLOSE_SOCKET;
         }
@@ -105,8 +106,11 @@ int recieve_message(int client_sock, char *pixel_str) {
         for (int i = 0; i < strlen(client_message); i++) {
             temp_buf[index + i] = client_message[i];
 
-            if (client_message[i] == ')') {
+            if (client_message[i] == END_OF_PIXEL) {
                 end_of_pixel = true;
+            } else if (client_message[i] == END_OF_FRAME) {
+                memset(buf, '\0', sizeof buf );
+                return END_OF_FRAME;
             }
         }
     }
@@ -114,7 +118,7 @@ int recieve_message(int client_sock, char *pixel_str) {
     //printf("Current buffer: %s\n", temp_buf);
 
     // set client message
-    for (index = 0; temp_buf[index] != ')'; index++);
+    for (index = 0; temp_buf[index] != END_OF_PIXEL; index++);
     index++;
     strncpy(pixel_str, temp_buf, index);
     index++;
@@ -131,7 +135,6 @@ int recieve_message(int client_sock, char *pixel_str) {
     //printf("Pixel String: %s\n", pixel_str);
     //printf("Buffer: %s\n", buf);
 
-
-    return 1;
+    return END_OF_PIXEL;
 }
 

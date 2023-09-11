@@ -15,7 +15,6 @@ void render_pixels(Color *, int, int);
 RenderObject *pixel_str_to_render_object(char *);
 void write_pixel_str_to_pixels(Color *, char *);
 
-#define MAX_BUF_SIZE      1000
 
 int main(int argc, char **argv) {
     const int screen_width = 800;
@@ -42,10 +41,13 @@ int main(int argc, char **argv) {
         if (socket_client < 0) {
             socket_client = listen_for_client(socket_engine);
         } else {
-            while ((rec = recieve_message(socket_client, buf)) >= 0) {
+            while ((rec = recieve_message(socket_client, buf)) == END_OF_PIXEL) {
                 pixel = pixel_str_to_render_object(buf);
-                pixels[pixel->pos_y * screen_width + pixel->pos_x] = pixel->color;
-                memset(buf, '\0', sizeof buf );
+
+                if (pixel != NULL) {
+                    pixels[pixel->pos_y * screen_width + pixel->pos_x] = pixel->color;
+                    memset(buf, '\0', sizeof buf );
+                }
             }
 
             if (rec == CHROMA_CLOSE_SOCKET) {
@@ -77,32 +79,27 @@ void render_pixels(Color *pixels, int width, int height) {
 RenderObject *pixel_str_to_render_object(char *buf) {
     int tuple_index = 0, char_index = 0;
     char temp_buf[20];
-    int array[6];
+    int array[5];
     RenderObject *pixel = (RenderObject *) malloc( sizeof(RenderObject) ); 
 
-    for (int i = 1; i < strlen(buf); i++) {
+    for (int i = 0; i < strlen(buf); i++) {
         switch (buf[i]) {
-            case '(':
-                char_index = 0;
-                break;
-            case ')':
+            case END_OF_PIXEL:
                 temp_buf[char_index] = '\0';
                 array[tuple_index] = atoi(temp_buf);
                 tuple_index = 0;
 
-                *pixel = (RenderObject) {array[0], array[1], (Color) {array[2], array[3], array[4], array[5]}};
+                *pixel = (RenderObject) {array[0], array[1], (Color) {array[2], array[3], array[4], 255}};
                 return pixel;
             case ',':
-                if (pixel) {
-                    temp_buf[char_index] = '\0';
-                    array[tuple_index++] = atoi(temp_buf);
-                    char_index = 0;
-                }
+                temp_buf[char_index] = '\0';
+                array[tuple_index++] = atoi(temp_buf);
+                char_index = 0;
                 break;
             default:
-                if (pixel) {
-                    temp_buf[char_index++] = buf[i];
-                }
+                temp_buf[char_index++] = buf[i];
         }
     }
+
+    return NULL;
 }
