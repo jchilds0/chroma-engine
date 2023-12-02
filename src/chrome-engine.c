@@ -5,101 +5,148 @@
 #include "chroma-engine.h"
 #include <raylib.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <malloc.h>
 
-void render_text(char *);
-void render_pixels(Color *, int, int);
-RenderObject *pixel_str_to_render_object(char *);
-void write_pixel_str_to_pixels(Color *, char *);
-
+void render_page(Graphics *, char *);
 
 int main(int argc, char **argv) {
-    const int screen_width = 800;
-    const int screen_height = 450;
+    const int screen_width = 1920;
+    const int screen_height = 1080;
 
     InitWindow(screen_width, screen_height, "raylib [core] example - basic window");
     SetTargetFPS(CHROMA_FRAMERATE);
 
     int socket_engine = start_tcp_server("127.0.0.1", 6100);
     int socket_client = -1, rec;
-    Color pixels[screen_width * screen_height];
-    RenderObject *pixel;
 
     char buf[MAX_BUF_SIZE];
     memset(buf, '\0', sizeof buf );
 
-    for (int i = 0; i < screen_width * screen_height; i++) {
-        pixels[i] = BLACK;
-    }
-    
+    // Graphics Hub 
+    Graphics *hub = init_hub(10);
+    Page *page = init_page(1);
+    set_rect(page, 0, 50, 50, 300, 50, BLUE);
+    add_graphic(hub, page);
+
+    page = init_page(1);
+    set_rect(page, 0, 50, 780, 500, 200, GREEN);
+    add_graphic(hub, page);
+
+    page = init_page(1);
+    set_rect(page, 0, 100, 100, 300, 200, RED);
+    add_graphic(hub, page);
+
+
     while (!WindowShouldClose()) {
         BeginDrawing();
 
         if (socket_client < 0) {
             socket_client = listen_for_client(socket_engine);
         } else {
-            while ((rec = recieve_message(socket_client, buf)) == END_OF_PIXEL) {
-                pixel = pixel_str_to_render_object(buf);
+            rec = recieve_message(socket_client, buf);
 
-                if (pixel != NULL) {
-                    pixels[pixel->pos_y * screen_width + pixel->pos_x] = pixel->color;
-                    memset(buf, '\0', sizeof buf );
-                }
+            switch (rec) {
+                case CHROMA_MESSAGE:
+                    render_page(hub, buf);
+                    break;
+                case CHROMA_TIMEOUT:
+                    break;
+                case CHROMA_CLOSE_SOCKET:
+                    shutdown(socket_client, SHUT_RDWR);
+                    socket_client = -1;
             }
-
-            if (rec == CHROMA_CLOSE_SOCKET) {
-                shutdown(socket_client, SHUT_RDWR);
-                socket_client = -1;
-            } 
         }
-        render_pixels(pixels, screen_width, screen_height);
 
         EndDrawing();
     }
 
     shutdown(socket_engine, SHUT_RDWR);
+    free_hub(hub);
 
     CloseWindow();
     return 0;
 }
 
-void render_text(char *buf) {
-    DrawText(buf, 190, 200, 20, RAYWHITE);
-}
 
-void render_pixels(Color *pixels, int width, int height) {
-    for (int i = 0; i < width * height; i++) {
-        DrawPixel(i % width, i / width, pixels[i]);
+void render_page(Graphics *hub, char *buf) {
+    int v_m, v_n, length, action, temp_num;
+    sscanf(buf, "ver%d,%d#len%d#action%d#temp%d#", 
+           &v_m, &v_n, &length, &action, &temp_num);
+
+    printf("Recieved: %s\n", buf);
+    printf("Parsed - ver%d.%d, len %d, action %d, temp %d\n", v_m, v_n, length, action, temp_num);
+
+    if (!(v_m == 1 && v_n == 0)) {
+        printf("Incorrect version v%d.%d, expected v1.0\n", v_m, v_n);
+        return;
     }
-}
 
-RenderObject *pixel_str_to_render_object(char *buf) {
-    int tuple_index = 0, char_index = 0;
-    char temp_buf[20];
-    int array[5];
-    RenderObject *pixel = (RenderObject *) malloc( sizeof(RenderObject) ); 
+    if (action == ANIMATE_ON) {
+        animate_off_page(hub, hub->current_page);
+    }
 
-    for (int i = 0; i < strlen(buf); i++) {
-        switch (buf[i]) {
-            case END_OF_PIXEL:
-                temp_buf[char_index] = '\0';
-                array[tuple_index] = atoi(temp_buf);
-                tuple_index = 0;
-
-                *pixel = (RenderObject) {array[0], array[1], (Color) {array[2], array[3], array[4], 255}};
-                return pixel;
-            case ',':
-                temp_buf[char_index] = '\0';
-                array[tuple_index++] = atoi(temp_buf);
-                char_index = 0;
-                break;
-            default:
-                temp_buf[char_index++] = buf[i];
+    // skip header 
+    int i = 0, num_hash = 0;
+    while (num_hash < 4) {
+        if (buf[i] == '#') {
+            num_hash++;
         }
+        i++;
     }
 
-    return NULL;
+    char attr[MAX_BUF_SIZE];
+    char value[MAX_BUF_SIZE];
+
+    while (buf[i] != END_OF_MESSAGE) {
+        if (i >= MAX_BUF_SIZE) {
+            // handle error
+            printf("Error: missing end of message tag\n");
+            return;
+        }
+
+        num_hash = 0;
+        memset(attr, '\0', sizeof attr);
+        memset(value, '\0', sizeof value);
+        for (int j = i; buf[j] != '\0'; j++) {
+            if (buf[j] != '#')
+                continue;
+
+            if (num_hash == 0) {
+                memcpy(attr, &buf[i], j - i);
+            } else if (num_hash == 1) {
+                memcpy(value, &buf[i], j - i);
+                set_page_attr(hub->pages[temp_num], attr, value);
+                printf("Found: attr %s, value %s\n", attr, value);
+
+                i = j + 1;
+                break;
+            }
+
+            i = j + 1;
+            num_hash++;
+        }
+
+        if (num_hash != 1) {
+            // handle error
+            printf("Error: Unknown attr");
+            return;
+        }
+
+    }
+
+    switch (action) {
+        case ANIMATE_ON:
+            animate_on_page(hub, temp_num);
+            break;
+        case CONTINUE:
+            continue_page(hub, temp_num);
+            break;
+        case ANIMATE_OFF:
+            animate_off_page(hub, temp_num);
+            break;
+    }
 }
+

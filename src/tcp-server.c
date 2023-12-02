@@ -5,11 +5,12 @@
 #include "chroma-engine.h"
 #include <asm-generic/socket.h>
 #include <raylib.h>
+#include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 int start_tcp_server(char *addr, int port) {
     int socket_desc;
@@ -18,9 +19,11 @@ int start_tcp_server(char *addr, int port) {
     // create socket 
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
+SOCKET:
     if (socket_desc < 0) {
-        printf("Error while creating socket\n");
-        return -1;
+        printf("Error while creating socket, trying again... \n");
+        sleep(3);
+        goto SOCKET;
     }
 
     printf("Socket created successfully\n");
@@ -31,9 +34,11 @@ int start_tcp_server(char *addr, int port) {
     server_addr.sin_addr.s_addr = inet_addr(addr);
 
     // bind to the set port and ip 
+BIND:
     if (bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr) < 0) {
-        printf("Couldn't bind to the port\n");
-        return -1;
+        printf("Couldn't bind to the port, trying again... \n");
+        sleep(3);
+        goto BIND;
     }
 
     printf("Done with binding\n");
@@ -71,70 +76,49 @@ int listen_for_client(int server_sock) {
     return client_sock;
 }
 
-int recieve_message(int client_sock, char *pixel_str) {
+int recieve_message(int client_sock, char *client_message) {
     static char buf[MAX_BUF_SIZE];
-    char server_message[MAX_BUF_SIZE], client_message[MAX_BUF_SIZE], temp_buf[MAX_BUF_SIZE];
-    int index = strlen(buf);
-    bool end_of_pixel = false;
+    static int buf_pointer = 0;
+    char server_message[MAX_BUF_SIZE];
 
     // clean buffers 
     memset(server_message, '\0', sizeof server_message);
-    memset(client_message, '\0', sizeof client_message);
-    memset(temp_buf, '\0', sizeof temp_buf);
-    strcpy(temp_buf, buf);
+    memset(client_message, '\0', MAX_BUF_SIZE);
 
     // recieve clients message 
-    while (!end_of_pixel) {
-        if (recv(client_sock, client_message, sizeof client_message, 0) < 0) {
-            //printf("Couldn't recieve\n");
-            return CHROMA_TIMEOUT;
-        }
+    if (recv(client_sock, &buf[buf_pointer], sizeof client_message, 0) < 0) {
+        //printf("Couldn't recieve\n");
+        return CHROMA_TIMEOUT;
+    }
 
-        if (client_message[0] == END_OF_CON) {
+    while (buf[buf_pointer] != END_OF_MESSAGE) {
+        if (buf[buf_pointer] == '\0') {
+            return CHROMA_TIMEOUT;
+        } else if (buf[buf_pointer] == END_OF_CONN) {
             printf("Connection closed\n");
             return CHROMA_CLOSE_SOCKET;
         }
-
-        // respond to client 
-        strcpy(server_message, "Recieved");
-
-        if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
-            printf("Can't send\n");
-            return CHROMA_TIMEOUT;
-        }
-
-        for (int i = 0; i < strlen(client_message); i++) {
-            temp_buf[index + i] = client_message[i];
-
-            if (client_message[i] == END_OF_PIXEL) {
-                end_of_pixel = true;
-            } else if (client_message[i] == END_OF_FRAME) {
-                memset(buf, '\0', sizeof buf );
-                return END_OF_FRAME;
-            }
-        }
+        buf_pointer++;
     }
 
-    //printf("Current buffer: %s\n", temp_buf);
+    // respond to client 
+    strcpy(server_message, "Recieved");
 
-    // set client message
-    for (index = 0; temp_buf[index] != END_OF_PIXEL; index++);
-    index++;
-    strncpy(pixel_str, temp_buf, index);
-    index++;
-
-    // reset buf
-    for (int i = 0; i + index < strlen(temp_buf); i++) {
-        buf[i] = temp_buf[index + i];
+    if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
+        printf("Can't send\n");
+        return CHROMA_TIMEOUT;
     }
 
-    for (int i = strlen(temp_buf) - index; i < sizeof(buf); i++) {
-        buf[i] = '\0';
+    buf_pointer++;
+    strcpy(client_message, buf);
+    memmove(buf, &buf[buf_pointer], MAX_BUF_SIZE - buf_pointer);
+    memset(&buf[MAX_BUF_SIZE - buf_pointer], '\0', MAX_BUF_SIZE - buf_pointer);
+
+    buf_pointer = 0;
+    while (buf[buf_pointer] != '\0') {
+        buf_pointer++;
     }
 
-    //printf("Pixel String: %s\n", pixel_str);
-    //printf("Buffer: %s\n", buf);
-
-    return END_OF_PIXEL;
+    return CHROMA_MESSAGE;
 }
 
