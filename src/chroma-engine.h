@@ -5,8 +5,8 @@
 #ifndef CHROMA_CHROMA_ENGINE
 #define CHROMA_CHROMA_ENGINE
 
-#include <raylib.h>
 #include <stdlib.h>
+#include <gtk-3.0/gtk/gtk.h>
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
@@ -35,7 +35,7 @@ typedef struct {
     int pos_y;
     int width;
     int height;
-    Color color;
+    //Color color;
 } Chroma_Rectangle;
 
 typedef struct {
@@ -60,7 +60,7 @@ typedef struct {
 /* page.c */
 Page *init_page(int);
 void free_page(Page *);
-void set_rect(Page *, int, int, int, int, int, Color);
+void set_rect(Page *, int, int, int, int, int);
 void set_page_attr(Page *, char *, char *);
 void set_page_attr_int(Page *, char *, int);
 void animate_on_page(Graphics *, int);

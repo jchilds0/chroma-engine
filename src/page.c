@@ -3,7 +3,6 @@
  */
 
 #include "chroma-engine.h"
-#include <raylib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -20,12 +19,12 @@ void free_page(Page *page) {
     free(page);
 }
 
-void set_rect(Page *page, int rect_num, int pos_x, int pos_y, int width, int height, Color color) {
+void set_rect(Page *page, int rect_num, int pos_x, int pos_y, int width, int height) {
     if (!WITHIN(rect_num, 0, page->num_rect)) {
         return;
     }
 
-    page->rect[rect_num] = (Chroma_Rectangle){pos_x, pos_y, width, height, color};
+    page->rect[rect_num] = (Chroma_Rectangle){pos_x, pos_y, width, height};
 }
 
 void set_page_attr(Page *page, char *attr, char *value) {
@@ -66,7 +65,7 @@ void animate_on_page(Graphics *hub, int page_num) {
 
     for (int i = 0; i < page->num_rect; i++) {
         rect = &page->rect[i];
-        DrawRectangle(rect->pos_x, rect->pos_y, rect->width, rect->height, rect->color);
+        //DrawRectangle(rect->pos_x, rect->pos_y, rect->width, rect->height, rect->color);
     }
 
 
@@ -75,7 +74,7 @@ void animate_on_page(Graphics *hub, int page_num) {
         text->pos_x = page->rect[0].pos_x + page->rect[0].height / 3;
         text->pos_y = page->rect[0].pos_y + (i + 1) * page->rect[0].height / 3;
         
-        DrawText(text->buf, text->pos_x, text->pos_y, 36, WHITE);
+        //DrawText(text->buf, text->pos_x, text->pos_y, 36, WHITE);
     }
 }
 
@@ -96,12 +95,12 @@ void animate_off_page(Graphics *hub, int page_num) {
 
     for (int i = 0; i < page->num_rect; i++) {
         rect = &page->rect[i];
-        DrawRectangle(rect->pos_x, rect->pos_y, rect->width, rect->height, BLACK);
+        //DrawRectangle(rect->pos_x, rect->pos_y, rect->width, rect->height, BLACK);
     }
 
     for (int i = 0; i < 2; i++) {
         text = &page->text[i];
-        DrawText(text->buf, text->pos_x, text->pos_y, 20, BLACK);
+        //DrawText(text->buf, text->pos_x, text->pos_y, 20, BLACK);
     }
 }
 

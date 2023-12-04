@@ -3,9 +3,9 @@
  */
 
 #include "chroma-engine.h"
-#include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <malloc.h>
@@ -15,10 +15,35 @@ void render_page(Graphics *, char *);
 int main(int argc, char **argv) {
     const int screen_width = 1920;
     const int screen_height = 1080;
+    int wid;
 
-    InitWindow(screen_width, screen_height, "raylib [core] example - basic window");
-    SetTargetFPS(CHROMA_FRAMERATE);
+    switch (argc) {
+    case 3:
+        if (strcmp(argv[1], "-wid") == 0) {
+                wid = atoi(argv[2]);
+                break;
+        }
+    default: 
+        printf("Usage: chroma-engine -wid [wid]\n");
+        return 0;
+    }
 
+    return 1;
+
+    // InitWindow(screen_width, screen_height, "raylib [core] example - basic window");
+    // SetTargetFPS(CHROMA_FRAMERATE);
+    
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_CONTAINER(window), "child window");
+
+    GtkWidget *child_label = gtk_label_new("Hello from child window");
+    gtk_container_add(GTK_CONTAINER(window), child_label);
+    gtk_widget_show_all(window);
+}
+
+void tempfunc(void);
+
+void tempfunc(void) {
     int socket_engine = start_tcp_server("127.0.0.1", 6100);
     int socket_client = -1, rec;
 
@@ -28,21 +53,21 @@ int main(int argc, char **argv) {
     // Graphics Hub 
     Graphics *hub = init_hub(10);
     Page *page = init_page(1);
-    set_rect(page, 0, 50, 50, 300, 50, BLUE);
+    set_rect(page, 0, 50, 50, 300, 50);
     add_graphic(hub, page);
 
     page = init_page(1);
-    set_rect(page, 0, 50, 780, 500, 200, GREEN);
+    set_rect(page, 0, 50, 780, 500, 200);
     add_graphic(hub, page);
 
     page = init_page(1);
-    set_rect(page, 0, 100, 100, 300, 200, RED);
+    set_rect(page, 0, 100, 100, 300, 200);
     add_graphic(hub, page);
 
 
-    while (!WindowShouldClose()) {
-        BeginDrawing();
-
+    while (true){//!WindowShouldClose()) {
+        // BeginDrawing();
+        
         if (socket_client < 0) {
             socket_client = listen_for_client(socket_engine);
         } else {
@@ -60,14 +85,14 @@ int main(int argc, char **argv) {
             }
         }
 
-        EndDrawing();
+        //EndDrawing();
     }
 
     shutdown(socket_engine, SHUT_RDWR);
     free_hub(hub);
 
-    CloseWindow();
-    return 0;
+    //CloseWindow();
+    //return 0;
 }
 
 

@@ -3,8 +3,6 @@
  */
 
 #include "chroma-engine.h"
-#include <raylib.h>
-
 
 Graphics *init_hub(int num_pages) {
     Graphics *hub = NEW_STRUCT(Graphics);
