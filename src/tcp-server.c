@@ -20,12 +20,12 @@ int start_tcp_server(char *addr, int port) {
 
 SOCKET:
     if (socket_desc < 0) {
-        printf("Error while creating socket, trying again... \n");
+        log_to_file(LOG_WARN, "Error while creating socket, trying again...");
         sleep(3);
         goto SOCKET;
     }
 
-    printf("Socket created successfully\n");
+    log_to_file(LOG_MESSAGE, "Socket created successfully");
 
     // set port and ip 
     server_addr.sin_family = AF_INET;
@@ -35,13 +35,12 @@ SOCKET:
     // bind to the set port and ip 
 BIND:
     if (bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr) < 0) {
-        printf("Couldn't bind to the port, trying again... \n");
+        log_to_file(LOG_WARN, "Couldn't bind to the port, trying again...");
         sleep(3);
         goto BIND;
     }
 
-    printf("Done with binding\n");
-
+    log_to_file(LOG_MESSAGE, "Done with binding");
     return socket_desc;
 }
 

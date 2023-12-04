@@ -5,8 +5,11 @@
 #ifndef CHROMA_CHROMA_ENGINE
 #define CHROMA_CHROMA_ENGINE
 
-#include <stdlib.h>
 #include <gtk-3.0/gtk/gtk.h>
+#include <gtk-3.0/gdk/gdk.h>
+#include <gtk-3.0/gtk/gtkx.h>
+#include "cairo.h"
+#include <stdlib.h>
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
@@ -26,6 +29,18 @@
 #define CONTINUE                      4
 #define ANIMATE_OFF                   5
 
+/* log.c */
+#define LOG_MESSAGE                   1
+#define LOG_WARN                      2
+#define LOG_ERROR                     3
+
+void start_log(void);
+void log_to_file(int, char *, ...);
+
+/* engine.c */
+void engine_window(GtkApplication *, gpointer);
+
+/* tcp_server.c */
 int start_tcp_server(char *, int);
 int listen_for_client(int);
 int recieve_message(int, char *);
@@ -71,5 +86,17 @@ void animate_off_page(Graphics *, int);
 Graphics *init_hub(int);
 void free_hub(Graphics *);
 int add_graphic(Graphics *, Page *);
+
+typedef struct {
+    int         socket;
+    int         port;
+    Graphics    *hub;
+} Engine;
+
+/* preview.c */
+void preview_window(int, Engine *);
+
+/* renderer.c */
+void renderer(cairo_t *, Engine *);
 
 #endif // !CHROMA_CHROMA_ENGINE
