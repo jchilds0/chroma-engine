@@ -7,20 +7,21 @@
 
 void render_page(Graphics *hub, char *buf);
 
-void renderer(cairo_t *cr, Engine *engine) {
+void renderer(cairo_t *cr) {
     int socket_client = -1, rec;
 
     char buf[MAX_BUF_SIZE];
     memset(buf, '\0', sizeof buf );
 
     if (socket_client < 0) {
-        socket_client = listen_for_client(engine->socket);
+        socket_client = listen_for_client(engine.socket);
     } else {
         rec = recieve_message(socket_client, buf);
 
         switch (rec) {
             case CHROMA_MESSAGE:
-                render_page(engine->hub, buf);
+                //render_page(engine->hub, buf);
+                log_to_file(LogMessage, "Render request %s", buf); 
                 break;
             case CHROMA_TIMEOUT:
                 break;

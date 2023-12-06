@@ -3,6 +3,7 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -12,17 +13,39 @@
 void current_time(char *, int);
 char *pad_int(int);
 
-void start_log(void) {
+static char *filename;
+
+void start_log(EngineType type) {
     FILE *pfile;
 
-    pfile = fopen(LOG_DIR "chroma-engine.log", "w");
+    switch (type) {
+        case LogEngine:
+            filename = LOG_DIR "chroma-engine.log";
+            break;
+        case LogPreview:
+            filename = LOG_DIR "chroma-preview.log";
+            break;
+        default:
+            filename = LOG_DIR "log.log";
+    }
+
+    pfile = fopen(filename, "w");
     fclose(pfile);
 
-    log_to_file(LOG_MESSAGE, "Engine Started");
+    switch (type) {
+        case LogEngine:
+            log_to_file(LogMessage, "Engine Started");
+            break;
+        case LogPreview:
+            log_to_file(LogMessage, "Preview Started");
+            break;
+        default:
+            log_to_file(LogMessage, "Logging to temp file");
+    }
 }
 
 
-void log_to_file(int flag, char *buf, ...) {
+void log_to_file(LogType flag, char *buf, ...) {
     char time[100];
     char *type;
     char message[512];
@@ -32,30 +55,30 @@ void log_to_file(int flag, char *buf, ...) {
     FILE *pfile;
 
     switch (flag) {
-    case LOG_MESSAGE:
+    case LogMessage:
         type = "";
         break;
-    case LOG_WARN:
+    case LogWarn:
         type = "WARNING: ";
         break;
-    case LOG_ERROR:
+    case LogError:
         type = "ERROR: ";
         break;
     default:
-        log_to_file(LOG_ERROR, "Message [%s] had unknown flag %d", message, flag);
+        log_to_file(LogError, "Message [%s] had unknown flag %d", message, flag);
         type = "";
     }
 
     memset(time, '\0', sizeof time);
     current_time(time, sizeof time);
 
-    pfile = fopen(LOG_DIR "chroma-engine.log", "a");
+    pfile = fopen(filename, "a");
 
     fprintf(pfile, "%s\t%s%s\n", time, type, message);
     fclose(pfile);
 
-    if (flag == LOG_ERROR) {
-        exit(0);
+    if (flag == LogError) {
+        free_engine();
     }
 }
 

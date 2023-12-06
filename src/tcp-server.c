@@ -3,29 +3,33 @@
  */
 
 #include "chroma-engine.h"
-#include <asm-generic/socket.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+
+#define MAX_ATTEMPTS        10
 
 int start_tcp_server(char *addr, int port) {
-    int socket_desc;
+    int socket_desc = -1;
+    int bind_soc = -1;
+    int attempts = 0;
     struct sockaddr_in server_addr;
 
     // create socket 
-    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+    while (socket_desc < 0) {
+        socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
-SOCKET:
-    if (socket_desc < 0) {
-        log_to_file(LOG_WARN, "Error while creating socket, trying again...");
-        sleep(3);
-        goto SOCKET;
+        if (attempts++ > MAX_ATTEMPTS) {
+            log_to_file(LogError, "Too many failed attemps to create a socket");
+        }
+
+        if (socket_desc < 0) {
+            log_to_file(LogWarn, "Error while creating socket, trying again...");
+            attempts++;
+            sleep(1);
+            continue;
+        }
     }
 
-    log_to_file(LOG_MESSAGE, "Socket created successfully");
+    log_to_file(LogMessage, "Socket created successfully");
 
     // set port and ip 
     server_addr.sin_family = AF_INET;
@@ -33,14 +37,21 @@ SOCKET:
     server_addr.sin_addr.s_addr = inet_addr(addr);
 
     // bind to the set port and ip 
-BIND:
-    if (bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr) < 0) {
-        log_to_file(LOG_WARN, "Couldn't bind to the port, trying again...");
-        sleep(3);
-        goto BIND;
+    attempts = 0;
+    while (bind_soc < 0) {
+        bind_soc = bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr); 
+
+        if (attempts++ > MAX_ATTEMPTS) {
+            log_to_file(LogError, "Too many attemps to bind socket at addr %s to port %d", addr, port);
+        }
+
+        if (bind_soc < 0) {
+            log_to_file(LogWarn, "Couldn't bind to the port, trying again...");
+            sleep(1);
+        }
     }
 
-    log_to_file(LOG_MESSAGE, "Done with binding");
+    log_to_file(LogMessage, "Done with binding");
     return socket_desc;
 }
 
@@ -59,7 +70,7 @@ int listen_for_client(int server_sock) {
         return CHROMA_TIMEOUT;
     }
 
-    //printf("Listening for incoming connection....\n");
+    //log_to_file(LogMessage, "Listening for incoming connection....");
 
     client_size = sizeof client_addr;
     client_sock = accept(server_sock, (struct sockaddr*) &client_addr, &client_size);
@@ -69,7 +80,7 @@ int listen_for_client(int server_sock) {
         return CHROMA_TIMEOUT;
     }
 
-    printf("Client connected at IP: %s and port %i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    log_to_file(LogMessage, "Client connected at IP: %s and port %i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
     return client_sock;
 }

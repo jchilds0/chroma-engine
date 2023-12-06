@@ -4,40 +4,41 @@
 
 #include "chroma-engine.h"
 
-gboolean draw_preview(GtkWidget *, cairo_t *, gpointer);
+gboolean draw_preview(GtkGLArea *, GdkGLContext *);
 
-gboolean draw_preview(GtkWidget *widget, cairo_t *cr, gpointer data) {
-    guint width, height;
-    width = gtk_widget_get_allocated_width(widget);
-    height = width * 9 / 16;
+gboolean draw_preview(GtkGLArea *area, GdkGLContext *context) {
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    // set bg to black
-    cairo_set_source_rgb(cr, 0, 0, 0);
-    cairo_rectangle(cr, 0, 0, width, height);
-    cairo_fill(cr);
+    glColor3f(1, 0, 0);
+    glRectf(-0.5, -0.5, 0.5, 0.5);
+    glFlush();
 
-    //renderer(cr, (Engine *)data);
-
-    return FALSE;
+    return TRUE;
 }
 
 void close_plug(GtkWidget *, gpointer);
 
 void close_plug(GtkWidget *widget, gpointer data) {
-    log_to_file(LOG_MESSAGE, "Closed plug");
+    log_to_file(LogMessage, "Closed plug");
     gtk_main_quit();
 }
 
-void preview_window(int wid, Engine *preview) {
+void preview_window(int wid) {
+    GtkWidget *plug, *gl_area;
+
+    engine.port = 6100;
+    engine.socket = start_tcp_server("127.0.0.1", engine.port);
+
     gtk_init(0, NULL);
 
-    GtkWidget *plug = gtk_plug_new(wid);
-    GtkWidget *da = gtk_drawing_area_new();
+    plug = gtk_plug_new(wid);
+    gl_area = gtk_gl_area_new();
 
-    g_signal_connect(G_OBJECT(da), "draw", G_CALLBACK(draw_preview), preview);
+    g_signal_connect(G_OBJECT(gl_area), "render", G_CALLBACK(draw_preview), NULL);
     g_signal_connect(G_OBJECT(plug), "destroy", G_CALLBACK(close_plug), NULL);
 
-    gtk_container_add(GTK_CONTAINER(plug), da);
+    gtk_container_add(GTK_CONTAINER(plug), gl_area);
     gtk_widget_show_all(plug);
 
     gtk_main();
