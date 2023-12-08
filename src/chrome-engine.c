@@ -3,7 +3,6 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-typedefs.h"
 #include <sys/socket.h>
 
 Engine engine;
@@ -15,15 +14,15 @@ int main(int argc, char **argv) {
     // Graphics Hub 
     engine.hub = init_hub(10);
     Page *page = init_page(1);
-    set_rect(page, 0, 50, 50, 300, 50);
+    set_color(&page->rect[0].color[0], 255, 0, 0, 255);
     add_graphic(engine.hub, page);
 
     page = init_page(1);
-    set_rect(page, 0, 50, 780, 500, 200);
+    set_color(&page->rect[0].color[0], 255, 165, 0, 255);
     add_graphic(engine.hub, page);
 
     page = init_page(1);
-    set_rect(page, 0, 100, 100, 300, 200);
+    set_color(&page->rect[0].color[0], 0, 0, 255, 255);
     add_graphic(engine.hub, page);
 
     switch (argc) {
@@ -31,10 +30,6 @@ int main(int argc, char **argv) {
         start_log(LogEngine);
         engine_window();
 
-            // app = gtk_application_new(NULL, G_APPLICATION_DEFAULT_FLAGS);
-            // g_signal_connect(app, "activate", G_CALLBACK(engine_window), &engine);
-            // g_application_run(G_APPLICATION(app), 0, NULL);
-            // g_object_unref(app);
         break;
     case 3:
         if (strcmp(argv[1], "-wid") == 0) {

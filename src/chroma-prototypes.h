@@ -6,6 +6,7 @@
 #define CHROMA_PROTOTYPES
 
 #include "chroma-typedefs.h"
+#include <GL/glew.h>
 #include <gtk-3.0/gtk/gtk.h>
 
 void free_engine(void);
@@ -26,11 +27,12 @@ int recieve_message(int, char *);
 Page *init_page(int);
 void free_page(Page *);
 void set_rect(Page *, int, int, int, int, int);
+void set_color(GLfloat *, GLuint, GLuint, GLuint, GLuint);
 void set_page_attr(Page *, char *, char *);
 void set_page_attr_int(Page *, char *, int);
-void animate_on_page(Graphics *, int);
-void continue_page(Graphics *, int);
-void animate_off_page(Graphics *, int);
+void animate_on_page(int);
+void continue_page(int);
+void animate_off_page(int);
 
 /* graphic.c */
 Graphics *init_hub(int);
@@ -41,6 +43,13 @@ int add_graphic(Graphics *, Page *);
 void preview_window(int);
 
 /* renderer.c */
-void renderer(cairo_t *);
+int read_socket(int *, Action *);
+
+/* gl_renderer.c */ 
+void gl_realize(GtkWidget *);
+gboolean gl_render(GtkGLArea *, GdkGLContext *);
+
+void gl_text_render(Chroma_Text *text, float scale);
+void gl_rect_render(Chroma_Rectangle *rect);
 
 #endif // !CHROMA_PROTOTYPES

@@ -80,7 +80,7 @@ int listen_for_client(int server_sock) {
         return CHROMA_TIMEOUT;
     }
 
-    log_to_file(LogMessage, "Client connected at IP: %s and port %i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    log_to_file(LogMessage, "Client connected at IP: %s and port %i", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
     return client_sock;
 }

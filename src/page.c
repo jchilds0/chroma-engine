@@ -3,13 +3,14 @@
  */
 
 #include "chroma-engine.h"
-#include <stdio.h>
-#include <string.h>
+#include "chroma-prototypes.h"
 
 Page *init_page(int num_rect) {
     Page *page = NEW_STRUCT(Page);
     page->num_rect = num_rect;
     page->rect = NEW_ARRAY(num_rect, Chroma_Rectangle);
+    set_color(&page->text[0].color[0], 255, 255, 255, 255);
+    set_color(&page->text[1].color[0], 255, 255, 255, 255);
 
     return page;
 }
@@ -25,6 +26,13 @@ void set_rect(Page *page, int rect_num, int pos_x, int pos_y, int width, int hei
     }
 
     page->rect[rect_num] = (Chroma_Rectangle){pos_x, pos_y, width, height};
+}
+
+void set_color(GLfloat *color, GLuint r, GLuint g, GLuint b, GLuint a) {
+    color[0] = r * 1.0f / 255;
+    color[1] = g * 1.0f / 255;
+    color[2] = b * 1.0f / 255;
+    color[3] = a * 1.0f / 255;
 }
 
 void set_page_attr(Page *page, char *attr, char *value) {
@@ -51,45 +59,43 @@ void set_page_attr_int(Page *page, char *attr, int value) {
     }
 }
 
-void animate_on_page(Graphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages)) {
-        printf("Page out of range: %d\n", page_num);
-        fflush(stdout);
+void animate_on_page(int page_num) {
+    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
+        log_to_file(LogWarn, "Page number %d out of range", page_num);
         return;
     }
 
-    hub->current_page = page_num;
-    Page *page = hub->pages[page_num];
-    Chroma_Rectangle *rect;
+    engine.hub->current_page = page_num;
+    Page *page = engine.hub->pages[page_num];
     Chroma_Text *text;
 
     for (int i = 0; i < page->num_rect; i++) {
-        rect = &page->rect[i];
         //DrawRectangle(rect->pos_x, rect->pos_y, rect->width, rect->height, rect->color);
+        gl_rect_render(&page->rect[i]);
     }
-
 
     for (int i = 0; i < 2; i++) {
         text = &page->text[i];
         text->pos_x = page->rect[0].pos_x + page->rect[0].height / 3;
-        text->pos_y = page->rect[0].pos_y + (i + 1) * page->rect[0].height / 3;
+        text->pos_y = page->rect[0].pos_y + (2 - i) * page->rect[0].height / 3;
         
         //DrawText(text->buf, text->pos_x, text->pos_y, 36, WHITE);
+        gl_text_render(text, 1.0);
     }
 }
 
-void continue_page(Graphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages)) {
+void continue_page(int page_num) {
+    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
         return;
     }
 }
 
-void animate_off_page(Graphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages)) {
+void animate_off_page(int page_num) {
+    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
         return;
     }
     
-    Page *page = hub->pages[page_num];
+    Page *page = engine.hub->pages[page_num];
     Chroma_Rectangle *rect;
     Chroma_Text *text;
 

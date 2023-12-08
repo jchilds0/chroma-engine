@@ -5,49 +5,17 @@
 #include "chroma-engine.h"
 #include <sys/socket.h>
 
-void render_page(Graphics *hub, char *buf);
-
-void renderer(cairo_t *cr) {
-    int socket_client = -1, rec;
-
-    char buf[MAX_BUF_SIZE];
-    memset(buf, '\0', sizeof buf );
-
-    if (socket_client < 0) {
-        socket_client = listen_for_client(engine.socket);
-    } else {
-        rec = recieve_message(socket_client, buf);
-
-        switch (rec) {
-            case CHROMA_MESSAGE:
-                //render_page(engine->hub, buf);
-                log_to_file(LogMessage, "Render request %s", buf); 
-                break;
-            case CHROMA_TIMEOUT:
-                break;
-            case CHROMA_CLOSE_SOCKET:
-                shutdown(socket_client, SHUT_RDWR);
-                socket_client = -1;
-        }
-    }
-}
-
-
-void render_page(Graphics *hub, char *buf) {
-    int v_m, v_n, length, action, temp_num;
+static void parse_page(Graphics *hub, char *buf, int *page_num, Action *action) {
+    int v_m, v_n, length;
     sscanf(buf, "ver%d,%d#len%d#action%d#temp%d#", 
-           &v_m, &v_n, &length, &action, &temp_num);
+           &v_m, &v_n, &length, action, page_num);
 
-    printf("Recieved: %s\n", buf);
-    printf("Parsed - ver%d.%d, len %d, action %d, temp %d\n", v_m, v_n, length, action, temp_num);
+    //printf("Recieved: %s\n", buf);
+    //log_to_file(LogMessage, "Recieved ver%d.%d, len %d, action %d, temp %d", v_m, v_n, length, *action, *page_num);
 
     if (!(v_m == 1 && v_n == 0)) {
-        printf("Incorrect version v%d.%d, expected v1.0\n", v_m, v_n);
+        log_to_file(LogError, "Incorrect version v%d.%d, expected v1.0", v_m, v_n);
         return;
-    }
-
-    if (action == ANIMATE_ON) {
-        animate_off_page(hub, hub->current_page);
     }
 
     // skip header 
@@ -64,8 +32,7 @@ void render_page(Graphics *hub, char *buf) {
 
     while (buf[i] != END_OF_MESSAGE) {
         if (i >= MAX_BUF_SIZE) {
-            // handle error
-            printf("Error: missing end of message tag\n");
+            log_to_file(LogError, "Missing end of message tag");
             return;
         }
 
@@ -80,8 +47,8 @@ void render_page(Graphics *hub, char *buf) {
                 memcpy(attr, &buf[i], j - i);
             } else if (num_hash == 1) {
                 memcpy(value, &buf[i], j - i);
-                set_page_attr(hub->pages[temp_num], attr, value);
-                printf("Found: attr %s, value %s\n", attr, value);
+                set_page_attr(hub->pages[*page_num], attr, value);
+                //printf("Found: attr %s, value %s\n", attr, value);
 
                 i = j + 1;
                 break;
@@ -92,23 +59,42 @@ void render_page(Graphics *hub, char *buf) {
         }
 
         if (num_hash != 1) {
-            // handle error
-            printf("Error: Unknown attr");
+            log_to_file(LogError, "Unknown attr format in message %s", buf);
             return;
         }
 
     }
-
-    switch (action) {
-        case ANIMATE_ON:
-            animate_on_page(hub, temp_num);
-            break;
-        case CONTINUE:
-            continue_page(hub, temp_num);
-            break;
-        case ANIMATE_OFF:
-            animate_off_page(hub, temp_num);
-            break;
-    }
 }
+
+int read_socket(int *page_num, Action *action) {
+    static int socket_client = -1;
+    int rec;
+
+    char buf[MAX_BUF_SIZE];
+    memset(buf, '\0', sizeof buf );
+
+    if (socket_client < 0) {
+        socket_client = listen_for_client(engine.socket);
+    } else {
+        rec = recieve_message(socket_client, buf);
+
+        switch (rec) {
+            case CHROMA_MESSAGE:
+                parse_page(engine.hub, buf, page_num, action);
+                //log_to_file(LogMessage, "Render request %s", buf); 
+                break;
+            case CHROMA_TIMEOUT:
+                break;
+            case CHROMA_CLOSE_SOCKET:
+                shutdown(socket_client, SHUT_RDWR);
+                socket_client = -1;
+                break;
+        }
+        
+        return rec;
+    }
+
+    return CHROMA_TIMEOUT;
+}
+
 
