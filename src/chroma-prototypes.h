@@ -24,17 +24,19 @@ int listen_for_client(int);
 int recieve_message(int, char *);
 
 /* page.c */
-Page *init_page(int);
+Page *init_page(int, int);
 void free_page(Page *);
 void set_rect(Page *, int, int, int, int, int);
 void set_color(GLfloat *, GLuint, GLuint, GLuint, GLuint);
 void set_page_attr(Page *, char *, char *);
 void set_page_attr_int(Page *, char *, int);
+void set_page_text_pos(Page *, int);
 void animate_on_page(int);
 void continue_page(int);
 void animate_off_page(int);
 
 /* graphic.c */
+void make_pages(void);
 Graphics *init_hub(int);
 void free_hub(Graphics *);
 int add_graphic(Graphics *, Page *);
@@ -42,7 +44,7 @@ int add_graphic(Graphics *, Page *);
 /* preview.c */
 void preview_window(int);
 
-/* renderer.c */
+/* parser.c */
 int read_socket(int *, Action *);
 
 /* gl_renderer.c */ 

@@ -48,8 +48,9 @@ typedef struct {
 
 typedef struct {
     Chroma_Rectangle *rect;
-    Chroma_Text text[2];
+    Chroma_Text *text;
     int num_rect;
+    int num_text;
 } Page;
 
 typedef struct {

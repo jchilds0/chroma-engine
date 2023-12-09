@@ -3,6 +3,7 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-prototypes.h"
 #include <sys/socket.h>
 
 static void parse_page(Graphics *hub, char *buf, int *page_num, Action *action) {
@@ -62,8 +63,9 @@ static void parse_page(Graphics *hub, char *buf, int *page_num, Action *action) 
             log_to_file(LogError, "Unknown attr format in message %s", buf);
             return;
         }
-
     }
+
+    set_page_text_pos(hub->pages[*page_num], 0);
 }
 
 int read_socket(int *page_num, Action *action) {
@@ -81,7 +83,7 @@ int read_socket(int *page_num, Action *action) {
         switch (rec) {
             case CHROMA_MESSAGE:
                 parse_page(engine.hub, buf, page_num, action);
-                //log_to_file(LogMessage, "Render request %s", buf); 
+                log_to_file(LogMessage, "Render request %s", buf); 
                 break;
             case CHROMA_TIMEOUT:
                 break;

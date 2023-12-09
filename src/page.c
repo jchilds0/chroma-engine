@@ -3,20 +3,24 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-prototypes.h"
 
-Page *init_page(int num_rect) {
+Page *init_page(int num_rect, int num_text) {
     Page *page = NEW_STRUCT(Page);
     page->num_rect = num_rect;
+    page->num_text = num_text;
     page->rect = NEW_ARRAY(num_rect, Chroma_Rectangle);
-    set_color(&page->text[0].color[0], 255, 255, 255, 255);
-    set_color(&page->text[1].color[0], 255, 255, 255, 255);
+    page->text = NEW_ARRAY(num_text, Chroma_Text);
+
+    for (int i = 0; i < num_text; i++) {
+        set_color(&page->text[i].color[0], 255, 255, 255, 255);
+    }
 
     return page;
 }
 
 void free_page(Page *page) {
     free(page->rect);
+    free(page->text);
     free(page);
 }
 
@@ -36,10 +40,16 @@ void set_color(GLfloat *color, GLuint r, GLuint g, GLuint b, GLuint a) {
 }
 
 void set_page_attr(Page *page, char *attr, char *value) {
-    if (strcmp(attr, "title") == 0) {
-        memcpy(page->text[0].buf, value, MAX_BUF_SIZE);
-    } else if (strcmp(attr, "subtitle") == 0) {
-        memcpy(page->text[1].buf, value, MAX_BUF_SIZE);
+    if (strncmp(attr, "text", 4) == 0) {
+        int index;
+        sscanf(attr, "text%d", &index);
+
+        if (index >= page->num_text) {
+            log_to_file(LogWarn, "Text index %d out of range", index);
+            return;
+        }
+
+        memcpy(page->text[index].buf, value, MAX_BUF_SIZE);
     } else {
         int value_int;
         sscanf(value, "%d#", &value_int);
@@ -59,6 +69,26 @@ void set_page_attr_int(Page *page, char *attr, int value) {
     }
 }
 
+void set_page_text_pos(Page *page, int base_rect) {
+    Chroma_Text *text;
+    Chroma_Rectangle *rect = &page->rect[base_rect];
+
+    switch (page->num_text) {
+        case 1:
+            text = &page->text[0];
+            text->pos_x = rect->pos_x + rect->height / 3;
+            text->pos_y = rect->pos_y + rect->height / 3;
+            break;
+        case 2:
+            for (int i = 0; i < 2; i++) {
+                text = &page->text[i];
+                text->pos_x = rect->pos_x + rect->height / 3;
+                text->pos_y = rect->pos_y + (2 - i) * rect->height / 3;
+            }
+            break;
+    }
+}
+
 void animate_on_page(int page_num) {
     if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
         log_to_file(LogWarn, "Page number %d out of range", page_num);
@@ -74,13 +104,9 @@ void animate_on_page(int page_num) {
         gl_rect_render(&page->rect[i]);
     }
 
-    for (int i = 0; i < 2; i++) {
-        text = &page->text[i];
-        text->pos_x = page->rect[0].pos_x + page->rect[0].height / 3;
-        text->pos_y = page->rect[0].pos_y + (2 - i) * page->rect[0].height / 3;
-        
+    for (int i = 0; i < page->num_text; i++) {
         //DrawText(text->buf, text->pos_x, text->pos_y, 36, WHITE);
-        gl_text_render(text, 1.0);
+        gl_text_render(&page->text[i], 1.0);
     }
 }
 

@@ -13,17 +13,7 @@ int main(int argc, char **argv) {
 
     // Graphics Hub 
     engine.hub = init_hub(10);
-    Page *page = init_page(1);
-    set_color(&page->rect[0].color[0], 255, 0, 0, 255);
-    add_graphic(engine.hub, page);
-
-    page = init_page(1);
-    set_color(&page->rect[0].color[0], 255, 165, 0, 255);
-    add_graphic(engine.hub, page);
-
-    page = init_page(1);
-    set_color(&page->rect[0].color[0], 0, 0, 255, 255);
-    add_graphic(engine.hub, page);
+    make_pages();
 
     switch (argc) {
     case 1:
