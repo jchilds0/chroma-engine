@@ -14,7 +14,7 @@ void engine_window(void) {
     gtk_container_add(GTK_CONTAINER(window), gl_area);
 
     engine.port = 6800;
-    engine.socket = start_tcp_server("127.0.0.1", engine.port);
+    engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
 
     gtk_window_set_title(GTK_WINDOW(window), "Chroma Engine");
     gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1080);
@@ -29,7 +29,7 @@ void engine_window(void) {
 
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
-        read_socket(&page_num, &action);
+        parser_read_socket(&page_num, &action);
     }
 }
 

@@ -5,7 +5,7 @@
 #include "chroma-engine.h"
 
 static void close_plug(GtkWidget *widget, gpointer data) {
-    log_to_file(LogMessage, "Closed Plug");
+    log_file(LogMessage, "Closed Plug");
     free_engine();
     gtk_main_quit();
 }
@@ -15,7 +15,7 @@ void preview_window(int wid) {
     gtk_init(0, NULL);
 
     engine.port = 6100;
-    engine.socket = start_tcp_server("127.0.0.1", engine.port);
+    engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
 
     plug = gtk_plug_new(wid);
     gl_area = gtk_gl_area_new();
@@ -30,7 +30,7 @@ void preview_window(int wid) {
 
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
-        read_socket(&page_num, &action);
+        parser_read_socket(&page_num, &action);
     }
 }
 

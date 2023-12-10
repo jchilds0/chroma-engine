@@ -160,20 +160,20 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         case BLANK:
             break;
         case ANIMATE_ON:
-            animate_off_page(engine.hub->current_page);
-            animate_on_page(page_num);
+            page_animate_off(engine.hub->current_page);
+            page_animate_on(page_num);
 
             break;
         case CONTINUE:
-            continue_page(page_num);
+            page_continue(page_num);
 
             break;
         case ANIMATE_OFF:
-            animate_off_page(page_num);
+            page_animate_off(page_num);
 
             break;
         default:
-            log_to_file(LogError, "Unknown action %d", action);
+            log_file(LogError, "Unknown action %d", action);
     }
 
     glFlush();

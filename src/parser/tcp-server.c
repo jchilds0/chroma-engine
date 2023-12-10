@@ -3,11 +3,12 @@
  */
 
 #include "chroma-engine.h"
+#include "parser.h"
 #include <arpa/inet.h>
 
 #define MAX_ATTEMPTS        10
 
-int start_tcp_server(char *addr, int port) {
+int parser_tcp_start_server(char *addr, int port) {
     int socket_desc = -1;
     int bind_soc = -1;
     int attempts = 0;
@@ -18,18 +19,18 @@ int start_tcp_server(char *addr, int port) {
         socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
         if (attempts++ > MAX_ATTEMPTS) {
-            log_to_file(LogError, "Too many failed attemps to create a socket");
+            log_file(LogError, "Too many failed attemps to create a socket");
         }
 
         if (socket_desc < 0) {
-            log_to_file(LogWarn, "Error while creating socket, trying again...");
+            log_file(LogWarn, "Error while creating socket, trying again...");
             attempts++;
             sleep(1);
             continue;
         }
     }
 
-    log_to_file(LogMessage, "Socket created successfully");
+    log_file(LogMessage, "Socket created successfully");
 
     // set port and ip 
     server_addr.sin_family = AF_INET;
@@ -42,21 +43,22 @@ int start_tcp_server(char *addr, int port) {
         bind_soc = bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr); 
 
         if (attempts++ > MAX_ATTEMPTS) {
-            log_to_file(LogError, "Too many attemps to bind socket at addr %s to port %d", addr, port);
+            log_file(LogError, "Too many attemps to bind socket at addr %s to port %d", addr, port);
         }
 
         if (bind_soc < 0) {
-            log_to_file(LogWarn, "Couldn't bind to the port, trying again...");
+            log_file(LogWarn, "Couldn't bind to the port, trying again...");
             sleep(1);
         }
     }
 
-    log_to_file(LogMessage, "Done with binding");
+    log_file(LogMessage, "Done with binding");
     return socket_desc;
 }
 
-int listen_for_client(int server_sock) {
-    int client_sock, client_size;
+int parser_client_listen(int server_sock) {
+    int client_sock;
+    socklen_t client_size;
     struct sockaddr_in client_addr;
     struct timeval tv;
     tv.tv_sec = 0;
@@ -66,8 +68,8 @@ int listen_for_client(int server_sock) {
 
     // listen for clients 
     if (listen(server_sock, 1) < 0) {
-        //printf("Error while listening\n");
-        return CHROMA_TIMEOUT;
+        log_file(LogWarn, "Error while listening");
+        return SERVER_TIMEOUT;
     }
 
     //log_to_file(LogMessage, "Listening for incoming connection....");
@@ -76,58 +78,37 @@ int listen_for_client(int server_sock) {
     client_sock = accept(server_sock, (struct sockaddr*) &client_addr, &client_size);
 
     if (client_sock < 0) {
-        //printf("Can't accept\n");
-        return CHROMA_TIMEOUT;
+        //log_file(LogWarn, "Can't accept connection");
+        return SERVER_TIMEOUT;
     }
 
-    log_to_file(LogMessage, "Client connected at IP: %s and port %i", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    log_file(LogMessage, "Client connected at IP: %s and port %i", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
     return client_sock;
 }
 
-int recieve_message(int client_sock, char *client_message) {
-    static char buf[MAX_BUF_SIZE];
-    static int buf_pointer = 0;
+ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message) {
     char server_message[MAX_BUF_SIZE];
 
     // clean buffers 
     memset(server_message, '\0', sizeof server_message);
-    memset(client_message, '\0', MAX_BUF_SIZE);
 
     // recieve clients message 
-    if (recv(client_sock, &buf[buf_pointer], sizeof client_message, 0) < 0) {
+    if (recv(client_sock, client_message, MAX_BUF_SIZE, 0) < 0) {
         //printf("Couldn't recieve\n");
-        return CHROMA_TIMEOUT;
+        return SERVER_TIMEOUT;
     }
 
-    while (buf[buf_pointer] != END_OF_MESSAGE) {
-        if (buf[buf_pointer] == '\0') {
-            return CHROMA_TIMEOUT;
-        } else if (buf[buf_pointer] == END_OF_CONN) {
-            printf("Connection closed\n");
-            return CHROMA_CLOSE_SOCKET;
-        }
-        buf_pointer++;
-    }
+    //log_file(LogMessage, "Recieved %s", client_message);
 
     // respond to client 
     strcpy(server_message, "Recieved");
 
     if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
         printf("Can't send\n");
-        return CHROMA_TIMEOUT;
+        return SERVER_TIMEOUT;
     }
 
-    buf_pointer++;
-    strcpy(client_message, buf);
-    memmove(buf, &buf[buf_pointer], MAX_BUF_SIZE - buf_pointer);
-    memset(&buf[MAX_BUF_SIZE - buf_pointer], '\0', MAX_BUF_SIZE - buf_pointer);
-
-    buf_pointer = 0;
-    while (buf[buf_pointer] != '\0') {
-        buf_pointer++;
-    }
-
-    return CHROMA_MESSAGE;
+    return SERVER_MESSAGE;
 }
 

@@ -3,26 +3,29 @@
  */
 
 #include "chroma-engine.h"
+#include "page.h"
 
-void make_pages(void) {
+int add_graphic(Graphics *, Page *);
+
+void page_make_hub(void) {
     // red box
     Page *page = init_page(1, 2);
-    set_color(&page->rect[0].color[0], 255, 0, 0, 255);
+    page_set_color(&page->rect[0].color[0], 255, 0, 0, 255);
     add_graphic(engine.hub, page);
 
     // orange box
     page = init_page(1, 2);
-    set_color(&page->rect[0].color[0], 255, 165, 0, 255);
+    page_set_color(&page->rect[0].color[0], 255, 165, 0, 255);
     add_graphic(engine.hub, page);
 
     // blue box
     page = init_page(1, 2);
-    set_color(&page->rect[0].color[0], 0, 0, 255, 255);
+    page_set_color(&page->rect[0].color[0], 0, 0, 255, 255);
     add_graphic(engine.hub, page);
 
     // clock box
     page = init_page(1, 1);
-    set_color(&page->rect[0].color[0], 0, 0, 150, 255);
+    page_set_color(&page->rect[0].color[0], 0, 0, 150, 255);
     add_graphic(engine.hub, page);
 }
 

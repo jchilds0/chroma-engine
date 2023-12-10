@@ -10,7 +10,7 @@
 #define MAX_BUF_SIZE                  512
 
 typedef enum {
-    BLANK,
+    BLANK = 0,
     END_OF_CONN,
     END_OF_MESSAGE,
     ANIMATE_ON,

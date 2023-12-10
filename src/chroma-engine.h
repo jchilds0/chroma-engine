@@ -23,8 +23,4 @@
 
 #define CHROMA_FRAMERATE              30
 
-#define CHROMA_TIMEOUT                -1
-#define CHROMA_CLOSE_SOCKET           -2
-#define CHROMA_MESSAGE                -3
-
 #endif // !CHROMA_ENGINE

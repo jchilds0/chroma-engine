@@ -15,7 +15,7 @@ char *pad_int(int);
 
 static char *filename;
 
-void start_log(EngineType type) {
+void log_start(EngineType type) {
     FILE *pfile;
 
     switch (type) {
@@ -34,18 +34,18 @@ void start_log(EngineType type) {
 
     switch (type) {
         case LogEngine:
-            log_to_file(LogMessage, "Engine Started");
+            log_file(LogMessage, "Engine Started");
             break;
         case LogPreview:
-            log_to_file(LogMessage, "Preview Started");
+            log_file(LogMessage, "Preview Started");
             break;
         default:
-            log_to_file(LogMessage, "Logging to temp file");
+            log_file(LogMessage, "Logging to temp file");
     }
 }
 
 
-void log_to_file(LogType flag, char *buf, ...) {
+void log_file(LogType flag, char *buf, ...) {
     char time[100];
     char *type;
     char message[512];
@@ -65,7 +65,7 @@ void log_to_file(LogType flag, char *buf, ...) {
         type = "ERROR: ";
         break;
     default:
-        log_to_file(LogError, "Message [%s] had unknown flag %d", message, flag);
+        log_file(LogError, "Message [%s] had unknown flag %d", message, flag);
         type = "";
     }
 

@@ -57,12 +57,12 @@ void gl_text_cache_characters(void) {
     // init characters
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
-        log_to_file(LogError, "Couldn't init FreeType Library");
+        log_file(LogError, "Couldn't init FreeType Library");
     }
 
     FT_Face face;
     if (FT_New_Face(ft, "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", 0, &face)) {
-        log_to_file(LogError, "Failed to load font");
+        log_file(LogError, "Failed to load font");
     }
 
     FT_Set_Pixel_Sizes(face, 0, 48);
@@ -73,7 +73,7 @@ void gl_text_cache_characters(void) {
     for (unsigned char c = 0; c < 128; c++) {
         // load character glyph
         if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            log_to_file(LogWarn, "Failed to load Glyph %c", c);
+            log_file(LogWarn, "Failed to load Glyph %c", c);
         }
 
         // generate texture 
