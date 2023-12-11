@@ -3,8 +3,6 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-prototypes.h"
-#include "chroma-typedefs.h"
 #include "parser.h"
 #include <stdio.h>
 #include <sys/socket.h>
