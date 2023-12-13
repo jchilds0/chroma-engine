@@ -3,8 +3,8 @@
  */
 
 #include "chroma-engine.h"
+#include <string.h>
 #include "page.h"
-
 
 Page *init_page(int num_rect, int num_text) {
     Page *page = NEW_STRUCT(Page);
@@ -12,11 +12,26 @@ Page *init_page(int num_rect, int num_text) {
     page->num_text = num_text;
     page->rect = NEW_ARRAY(num_rect, Chroma_Rectangle);
     page->text = NEW_ARRAY(num_text, Chroma_Text);
+    page->mask_time = 0.0f;
+    page->clock_time = 0.0f;
+
+    page->page_animate = animate_none;
+    page->page_continue = animate_none;
+
+    page_set_color(&page->mask.color[0], 0, 0, 0, 255);
+
+    GLfloat id[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 
     for (int i = 0; i < num_text; i++) {
         page_set_color(&page->text[i].color[0], 255, 255, 255, 255);
         page->text[i].pos_x = -1;
         page->text[i].pos_y = -1;
+
+        for (int j = 0; j < 9; j++) {
+            page->text[i].transform[j] = id[j];
+        }
+
+        memset(&page->text[i].do_transform, 0, MAX_BUF_SIZE);
     }
 
     return page;
@@ -85,6 +100,7 @@ void page_animate_on(int page_num) {
     engine.hub->current_page = page_num;
     Page *page = engine.hub->pages[page_num];
 
+    page->page_animate(page_num);
     for (int i = 0; i < page->num_rect; i++) {
         gl_rect_render(&page->rect[i]);
     }
@@ -92,11 +108,24 @@ void page_animate_on(int page_num) {
     for (int i = 0; i < page->num_text; i++) {
         gl_text_render(&page->text[i], 1.0);
     }
+
+    gl_rect_render(&page->mask);
 }
 
 void page_continue(int page_num) {
     if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
         return;
+    }
+
+    Page *page = engine.hub->pages[page_num];
+
+    page->page_continue(page_num);
+    for (int i = 0; i < page->num_rect; i++) {
+        gl_rect_render(&page->rect[i]);
+    }
+
+    for (int i = 0; i < page->num_text; i++) {
+        gl_text_render(&page->text[i], 1.0);
     }
 }
 

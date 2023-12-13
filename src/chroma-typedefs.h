@@ -40,17 +40,24 @@ typedef struct {
 } Chroma_Rectangle;
 
 typedef struct {
-    int pos_x;
-    int pos_y;
-    GLfloat color[4];
-    char buf[MAX_BUF_SIZE];
+    int       pos_x;
+    int       pos_y;
+    char      buf[MAX_BUF_SIZE];
+    char      do_transform[MAX_BUF_SIZE];
+    GLfloat   transform[9];
+    GLfloat   color[4];
 } Chroma_Text;
 
 typedef struct {
-    Chroma_Rectangle *rect;
-    Chroma_Text *text;
     int num_rect;
     int num_text;
+    Chroma_Rectangle *rect;
+    Chroma_Text *text;
+    float mask_time;
+    float clock_time;
+    Chroma_Rectangle mask;
+    void (*page_animate)(int);
+    void (*page_continue)(int);
 } Page;
 
 typedef struct {

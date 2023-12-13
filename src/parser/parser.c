@@ -3,6 +3,7 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include "parser.h"
 #include <stdio.h>
 #include <sys/socket.h>
@@ -19,16 +20,27 @@ void parser_read_socket(int *page_num, Action *action) {
         ServerResponse rec = parser_message(socket_client);
 
         switch (rec) {
-            case SERVER_MESSAGE:
-                parse_page(page_num, action);
-                //log_file(LogMessage, "Render request %s", buf); 
+        case SERVER_MESSAGE:
+            parse_page(page_num, action);
+
+            switch (*action) {
+            case ANIMATE_ON:
+                engine.hub->pages[*page_num]->mask_time = 0.0f;
                 break;
-            case SERVER_TIMEOUT:
+            case CONTINUE:
+                engine.hub->pages[*page_num]->clock_time = 0.0f;
                 break;
-            case SERVER_CLOSE:
-                shutdown(socket_client, SHUT_RDWR);
-                socket_client = -1;
+            default:
                 break;
+            }
+
+            break;
+        case SERVER_TIMEOUT:
+            break;
+        case SERVER_CLOSE:
+            shutdown(socket_client, SHUT_RDWR);
+            socket_client = -1;
+            break;
         }
     }
 }
@@ -59,7 +71,7 @@ void parse_page(int *page_num, Action *action) {
                 break;
             case TEMPID:
                 sscanf(value, "%d", page_num);
-                //log_file(LogMessage, "Parsed temp id %d", page_num); 
+                //log_file(LogMessage, "Parsed temp id %d", *page_num); 
                 break;
             case ATTR:
                 page_set_page_attrs(engine.hub->pages[*page_num], attr, value);

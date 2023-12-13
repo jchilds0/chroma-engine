@@ -5,6 +5,7 @@
 #include "chroma-prototypes.h"
 #include "chroma-typedefs.h"
 #include "gl_renderer.h"
+#include <GL/gl.h>
 
 static GLuint vao;
 static GLuint vbo;
@@ -155,6 +156,7 @@ void gl_text_render(Chroma_Text *text, float scale) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         // render quad
+        glMatrixMode(GL_MODELVIEW);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // advance cursors for next glyph

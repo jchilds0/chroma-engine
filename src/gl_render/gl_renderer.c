@@ -2,19 +2,9 @@
  * Callbacks for GTK_GL_AREA used in preview.c and engine.c
  */
 
-#include "gl_renderer.h"
 #include "chroma-engine.h"
-#include "chroma-prototypes.h"
-#include "chroma-typedefs.h"
+#include "gl_renderer.h"
 #include <math.h>
-
-#define DEG_TO_RAD(theta)     theta * M_PI / 180
-
-#define ROTATE(theta)         {                                \
-                                cosf(theta),-sinf(theta), 0.0, \
-                                sinf(theta), cosf(theta), 0.0, \
-                                0.0        , 0.0        , 1.0, \
-                              }
 
 Action action;
 int page_num;
@@ -125,14 +115,15 @@ void gl_realize(GtkWidget *widget) {
 
 void gl_renderer_set_scale(GLuint program) {
     GLfloat matrix[] = { 
-        2.0f / 1920, 0.0f,
-        0.0f, 2.0f / 1080,
+        2.0f / 1920, 0.0f, 0.0f,
+        0.0f, 2.0f / 1080, 0.0f,
+        0.0f, 0.0f,        1.0f
     };
 
     glUseProgram(program);
 
     uint size_loc = glGetUniformLocation(program, "scale");
-    glUniformMatrix2fv(size_loc, 1, GL_FALSE, matrix);
+    glUniformMatrix3fv(size_loc, 1, GL_FALSE, matrix);
 
     glUseProgram(0);
 }

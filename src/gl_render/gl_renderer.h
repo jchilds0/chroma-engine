@@ -11,6 +11,13 @@
 
 #define SHADER_PATH       "/home/josh/Documents/projects/chroma-engine/src/gl_render/"
 
+#define DEG_TO_RAD(theta)     theta * M_PI / 180
+
+#define ROTATE(theta)         {                                \
+                                cosf(theta),-sinf(theta), 0.0, \
+                                sinf(theta), cosf(theta), 0.0, \
+                                0.0        , 0.0        , 1.0, \
+                              }
 
 /* gl_renderer.c */
 char  *gl_renderer_get_shader_file(char *filename);

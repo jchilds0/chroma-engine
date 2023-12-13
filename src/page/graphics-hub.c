@@ -12,21 +12,26 @@ void page_make_hub(void) {
     Page *page = init_page(1, 2);
     page_set_color(&page->rect[0].color[0], 255, 0, 0, 255);
     add_graphic(engine.hub, page);
+    page->page_animate = animate_left_to_right;
 
     // orange box
     page = init_page(1, 2);
     page_set_color(&page->rect[0].color[0], 255, 165, 0, 255);
     add_graphic(engine.hub, page);
+    page->page_animate = animate_left_to_right;
 
     // blue box
     page = init_page(1, 2);
     page_set_color(&page->rect[0].color[0], 0, 0, 255, 255);
     add_graphic(engine.hub, page);
+    page->page_animate = animate_left_to_right;
 
     // clock box
-    page = init_page(1, 1);
+    page = init_page(1, 2);
     page_set_color(&page->rect[0].color[0], 0, 0, 150, 255);
     add_graphic(engine.hub, page);
+    page->page_animate = animate_left_to_right;
+    page->page_continue = animate_clock_tick;
 }
 
 Graphics *init_hub(int num_pages) {

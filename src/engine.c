@@ -3,6 +3,7 @@
  */
 
 #include "chroma-engine.h"
+#include <unistd.h>
 
 void engine_window(void) {
     GtkWidget *window, *gl_area;
@@ -28,6 +29,7 @@ void engine_window(void) {
     gtk_widget_show_all(window);
 
     while (TRUE) {
+        // slow frame rate down to CHROMA_FRAMERATE
         gtk_main_iteration_do(FALSE);
         parser_read_socket(&page_num, &action);
     }
