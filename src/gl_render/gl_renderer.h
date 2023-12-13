@@ -12,7 +12,7 @@
 
 #define SHADER_PATH       "/home/josh/Documents/projects/chroma-engine/src/gl_render/"
 
-#define DEG_TO_RAD(theta)     theta * M_PI / 180
+#define DEG_TO_RAD(theta)     (theta * M_PI / 180)
 
 #define GL_MATH_ROTATE_X(theta) {\
     1, 0,           0,            0, \
@@ -32,19 +32,19 @@
     0,                  0,                  2 / (zNear - zFar), (zFar + zNear) / (zNear - zFar), \
     0,                  0,                  0,                  1}
 
-#define FOV_TO_F(fov)      1 / tanf(fov / 2)
+#define FOV_TO_F(fov)      (1.0 / tanf(fov / 2.0))
 
 #define GL_MATH_PERSPECTIVE(fov, aspect, zNear, zFar)    {\
-    FOV_TO_F(fov) / aspect, 0,             0,                               0, \
-    0,                      FOV_TO_F(fov), 0,                               0, \
-    0,                      0,             (zFar + zNear) / (zNear - zFar), (2 * zFar * zNear) / (zNear - zFar), \
-    0,                      0,             -1,                              0}
+    FOV_TO_F(fov) / (aspect), 0.0,             0.0,                             0.0, \
+    0.0,                      FOV_TO_F(fov),   0.0,                             0.0, \
+    0.0,                      0.0,             (zFar + zNear) / (zNear - zFar), (2 * zFar * zNear) / (zNear - zFar), \
+    0.0,                      0.0,             -1.0,                            0.0}
 
 #define GL_MATH_TRANSLATE(x, y, z) {\
-    1, 0, 0, x, \
-    0, 1, 0, y, \
-    0, 0, 1, z, \
-    0, 0, 0, 1}
+    1.0, 0.0, 0.0, x, \
+    0.0, 1.0, 0.0, y, \
+    0.0, 0.0, 1.0, z, \
+    0.0, 0.0, 0.0, 1.0}
 
 #define GL_MATH_ID        { 1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1 }
 
