@@ -4,7 +4,7 @@
 
 #include "chroma-engine.h"
 #include "gl_renderer.h"
-#include <math.h>
+#include <GL/gl.h>
 
 Action action;
 int page_num;
@@ -114,16 +114,34 @@ void gl_realize(GtkWidget *widget) {
 }
 
 void gl_renderer_set_scale(GLuint program) {
-    GLfloat matrix[] = { 
-        2.0f / 1920, 0.0f, 0.0f,
-        0.0f, 2.0f / 1080, 0.0f,
-        0.0f, 0.0f,        1.0f
+    GLfloat proj[] = { 
+        2.0f / 1920, 0.0f, 0.0f, 0.0f,
+        0.0f, 2.0f / 1080, 0.0f, 0.0f,
+        0.0f, 0.0f,        1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f,
     };
+    //
+    // glUseProgram(program);
+    //
+    // uint size_loc = glGetUniformLocation(program, "scale");
+    // glUniformMatrix3fv(size_loc, 1, GL_FALSE, matrix);
+    //
+    // glUseProgram(0);
+    
+    //GLfloat proj[] = GL_MATH_PERSPECTIVE(DEG_TO_RAD(45.0f), 1920.0 / 1080.0, 0.1f, 100.0f);
+    GLfloat view[] = GL_MATH_TRANSLATE(0, 0, -3);
+    GLfloat model[] = GL_MATH_ROTATE_X(DEG_TO_RAD(0.1f));
 
     glUseProgram(program);
 
-    uint size_loc = glGetUniformLocation(program, "scale");
-    glUniformMatrix3fv(size_loc, 1, GL_FALSE, matrix);
+    uint model_loc = glGetUniformLocation(program, "model");
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+
+    uint view_loc = glGetUniformLocation(program, "view");
+    glUniformMatrix4fv(view_loc, 1, GL_FALSE, view);
+
+    uint proj_loc = glGetUniformLocation(program, "projection");
+    glUniformMatrix4fv(proj_loc, 1, GL_FALSE, proj);
 
     glUseProgram(0);
 }
@@ -134,18 +152,24 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
     glUseProgram(0);
 
-    // Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
-    // *rect = (Chroma_Rectangle) {100, 100, 100, 100};
-    // set_color(&rect->color[0], 255, 0, 255, 255);
+    Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
+    // *rect = (Chroma_Rectangle) {-200, 0, 100, 100};
+    // rect->color[0] = 1.0;
+    // rect->color[1] = 0.0;
+    // rect->color[2] = 0.0;
+    // rect->color[3] = 1.0;
     // gl_rect_render(rect);
 
-    // Chroma_Text *text = NEW_STRUCT(Chroma_Text);
-    // text->pos_x = 100;
-    // text->pos_y = 100;
-    // memset(text->buf, '\0', sizeof text->buf);
-    // memcpy(text->buf, "This is sample text\0", 21);
-    // set_color(&text->color[0], 255, 0, 0, 255);
-    // gl_text_render(text, 1.0);
+    Chroma_Text *text = NEW_STRUCT(Chroma_Text);
+    text->pos_x = 0;
+    text->pos_y = 0;
+    memset(text->buf, '\0', sizeof text->buf);
+    memcpy(text->buf, "This is sample text\0", 21);
+    text->color[0] = 1.0;
+    text->color[1] = 1.0;
+    text->color[2] = 1.0;
+    text->color[3] = 1.0;
+    gl_text_render(text, 1.0);
 
     switch (action) {
         case BLANK:

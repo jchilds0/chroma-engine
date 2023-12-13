@@ -3,11 +3,13 @@
 layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
 out vec2 TexCoords;
 
-uniform mat3 scale;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main(){
-    vec3 resize = scale * vec3(vertex.xy, 0.0) - vec3(1.0, 1.0, 0.0);
+    vec4 rectPos = vec4(vertex.xy, 0.0, 1.0);
 
-    gl_Position = vec4(resize, 1.0);
+    gl_Position = projection * view * model * rectPos;
     TexCoords = vertex.zw;
 };
