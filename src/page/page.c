@@ -20,14 +20,14 @@ Page *init_page(int num_rect, int num_text) {
 
     page_set_color(&page->mask.color[0], 0, 0, 0, 255);
 
-    GLfloat id[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    GLfloat id[] = GL_MATH_ID;
 
     for (int i = 0; i < num_text; i++) {
         page_set_color(&page->text[i].color[0], 255, 255, 255, 255);
         page->text[i].pos_x = -1;
         page->text[i].pos_y = -1;
 
-        for (int j = 0; j < 9; j++) {
+        for (int j = 0; j < 16; j++) {
             page->text[i].transform[j] = id[j];
         }
 

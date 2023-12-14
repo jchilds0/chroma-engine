@@ -44,7 +44,7 @@ typedef struct {
     int       pos_y;
     char      buf[MAX_BUF_SIZE];
     char      do_transform[MAX_BUF_SIZE];
-    GLfloat   transform[9];
+    GLfloat   transform[16];
     GLfloat   color[4];
 } Chroma_Text;
 

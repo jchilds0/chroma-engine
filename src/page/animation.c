@@ -6,8 +6,6 @@
 #include "chroma-typedefs.h"
 #include "page.h"
 #include <GL/gl.h>
-#include <math.h>
-#include <stdio.h>
 
 void animate_left_to_right(int page_num) {
     Chroma_Rectangle *mask = &engine.hub->pages[page_num]->mask;
@@ -36,21 +34,10 @@ void animate_clock_tick(int page_num) {
     engine.hub->pages[page_num]->clock_time = MIN(time + 1.0 / 100, 1.0); 
 
     Page *page = engine.hub->pages[page_num];
-    float theta = time * M_PI / 2;
-
-    //log_file(LogMessage, "theta %f", theta);
-
-    GLfloat mat1[9] = { 
-        1.0, 0.0,         0.0,
-        0.0, cosf(theta), -sinf(theta),
-        0.0, sinf(theta), cosf(theta) 
-    };
-
-    GLfloat mat2[9] = {
-        1, 0, 0, 
-        0, 1, 0, 
-        0, 0, 1
-    };
+    log_file(LogMessage, "theta %f", time);
+    
+    GLfloat A[16] = GL_MATH_ROTATE_X(DEG_TO_RAD(time));
+    GLfloat B[16] = GL_MATH_ID;
 
     page->text[0].do_transform[0] = 1;
     page->text[0].do_transform[4] = 1;
@@ -59,8 +46,8 @@ void animate_clock_tick(int page_num) {
     page->text[1].do_transform[4] = 1;
 
     for (int i = 0; i < 9; i++) {
-        page->text[0].transform[i] = mat1[i];
-        page->text[1].transform[i] = mat2[i];
+        page->text[0].transform[i] = A[i]; 
+        page->text[1].transform[i] = B[i];
     }
 }
 

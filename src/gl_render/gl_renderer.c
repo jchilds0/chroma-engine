@@ -128,8 +128,8 @@ void gl_renderer_set_scale(GLuint program) {
     //
     // glUseProgram(0);
     
-    GLfloat proj1[] = GL_MATH_PERSPECTIVE(DEG_TO_RAD(45.0f), 1920.0 / 1080.0, 0.1f, 100.0f);
-    GLfloat proj2[] = GL_MATH_ORTHO(0.0f, 1920.0f, 0.0f, 1080.0f, -1.0f, 1.0f);
+    GLfloat ortho[] = GL_MATH_ORTHO(0.0, 1920.0, 0.0, 1080.0, -1.0, 1.0);
+    GLfloat proj[] = GL_MATH_PERSPECTIVE(DEG_TO_RAD(90.0), 1.0, 0.1, 10.0); 
 
     glUseProgram(program);
 
@@ -142,8 +142,11 @@ void gl_renderer_set_scale(GLuint program) {
     uint view_loc = glGetUniformLocation(program, "view");
     glUniformMatrix4fv(view_loc, 1, GL_TRUE, view);
 
+    uint ortho_loc = glGetUniformLocation(program, "ortho");
+    glUniformMatrix4fv(ortho_loc, 1, GL_TRUE, ortho);
+
     uint proj_loc = glGetUniformLocation(program, "projection");
-    glUniformMatrix4fv(proj_loc, 1, GL_TRUE, proj1);
+    glUniformMatrix4fv(proj_loc, 1, GL_TRUE, proj);
 
     glUseProgram(0);
 }
@@ -155,7 +158,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     glUseProgram(0);
 
     Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
-    *rect = (Chroma_Rectangle) {0, 0, 1, 1};
+    *rect = (Chroma_Rectangle) {100, 100, 100, 100};
     rect->color[0] = 1.0;
     rect->color[1] = 0.0;
     rect->color[2] = 0.0;
@@ -171,6 +174,13 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     text->color[1] = 1.0;
     text->color[2] = 1.0;
     text->color[3] = 1.0;
+
+    GLfloat mat[] = GL_MATH_ROTATE_X(DEG_TO_RAD(1.0f));
+
+    for (int i = 0; i < 16; i++) {
+        text->transform[i] = mat[i];
+    }
+
     gl_text_render(text, 1.0f);
 
     switch (action) {
