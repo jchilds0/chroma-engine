@@ -114,27 +114,11 @@ void gl_realize(GtkWidget *widget) {
 }
 
 void gl_renderer_set_scale(GLuint program) {
-    // GLfloat proj[] = { 
-    //     2.0f / 1920, 0.0f, 0.0f, 0.0f,
-    //     0.0f, 2.0f / 1080, 0.0f, 0.0f,
-    //     0.0f, 0.0f,        1.0f, 0.0f,
-    //     0.0f, 0.0f,        0.0f, 1.0f,
-    // };
-    //
-    // glUseProgram(program);
-    //
-    // uint size_loc = glGetUniformLocation(program, "scale");
-    // glUniformMatrix3fv(size_loc, 1, GL_FALSE, matrix);
-    //
-    // glUseProgram(0);
-    
-    GLfloat ortho[] = GL_MATH_ORTHO(0.0, 1920.0, 0.0, 1080.0, -1.0, 1.0);
-    GLfloat proj[] = GL_MATH_PERSPECTIVE(DEG_TO_RAD(90.0), 1.0, 0.1, 10.0); 
-
     glUseProgram(program);
 
     GLfloat view[] = GL_MATH_TRANSLATE(0, 0, -1);
-    GLfloat model[] = GL_MATH_ROTATE_X(DEG_TO_RAD(0.0f));
+    GLfloat model[] = GL_MATH_ID;
+    GLfloat ortho[] = GL_MATH_ORTHO(0.0, 1920.0, 0.0, 1080.0, -1.0, 1.0);
 
     uint model_loc = glGetUniformLocation(program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_TRUE, model);
@@ -144,9 +128,6 @@ void gl_renderer_set_scale(GLuint program) {
 
     uint ortho_loc = glGetUniformLocation(program, "ortho");
     glUniformMatrix4fv(ortho_loc, 1, GL_TRUE, ortho);
-
-    uint proj_loc = glGetUniformLocation(program, "projection");
-    glUniformMatrix4fv(proj_loc, 1, GL_TRUE, proj);
 
     glUseProgram(0);
 }
@@ -166,8 +147,8 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     gl_rect_render(rect);
 
     Chroma_Text *text = NEW_STRUCT(Chroma_Text);
-    text->pos_x = 0;
-    text->pos_y = 0;
+    text->pos_x = 200;
+    text->pos_y = 200;
     memset(text->buf, '\0', sizeof text->buf);
     memcpy(text->buf, "This is sample text\0", 21);
     text->color[0] = 1.0;

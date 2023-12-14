@@ -127,15 +127,6 @@ void gl_text_render(Chroma_Text *text, float scale) {
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(vao);
 
-    uint model_loc = glGetUniformLocation(program, "model");
-    glUniformMatrix4fv(model_loc, 1, GL_TRUE, text->transform);
-
-    GLfloat proj[] = GL_MATH_PERSPECTIVE(DEG_TO_RAD(90.0), 1, 0.1, 10.0); 
-    uint proj_loc = glGetUniformLocation(program, "projection");
-    glUniformMatrix4fv(proj_loc, 1, GL_TRUE, proj);
-
-    uint origin_loc = glGetUniformLocation(program, "origin");
-
     for (int i = 0; text->buf[i] != '\0'; i++) {
         struct Character ch = Characters[(unsigned char)text->buf[i]];
 
@@ -145,17 +136,15 @@ void gl_text_render(Chroma_Text *text, float scale) {
         float w = ch.Size[0] * scale;
         float h = ch.Size[1] * scale;
 
-        glUniform4f(origin_loc, xpos + w / 2, ypos, 0.0, 0.0);
-
         // update vbo
         float vertices[6][4] = {
-            { -w / 2, h, 0.0f, 0.0f },
-            { -w / 2, 0.0, 0.0f, 1.0f },
-            {  w / 2, 0.0, 1.0f, 1.0f },
+            { xpos,     ypos + h, 0.0f, 0.0f },
+            { xpos,     ypos,     0.0f, 1.0f },
+            { xpos + w, ypos,     1.0f, 1.0f },
 
-            { -w / 2, h, 0.0f, 0.0f },
-            {  w / 2, 0.0, 1.0f, 1.0f },
-            {  w / 2, h, 1.0f, 0.0f },
+            { xpos,     ypos + h, 0.0f, 0.0f },
+            { xpos + w, ypos,     1.0f, 1.0f },
+            { xpos + w, ypos + h, 1.0f, 0.0f },
         };
 
         // render glyph texture over quad
