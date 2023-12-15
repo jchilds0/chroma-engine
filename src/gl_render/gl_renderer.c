@@ -3,6 +3,7 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include "gl_renderer.h"
 #include <GL/gl.h>
 
@@ -111,6 +112,14 @@ void gl_realize(GtkWidget *widget) {
     // setup rect
     gl_rect_init_buffers();
     gl_rect_init_shaders();
+
+    // setup circle 
+    gl_circle_init_buffers();
+    gl_circle_init_shaders();
+    
+    // setup annulus
+    gl_annulus_init_buffers();
+    gl_annulus_init_shaders();
 }
 
 void gl_renderer_set_scale(GLuint program) {
@@ -138,31 +147,42 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
     glUseProgram(0);
 
-    Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
-    *rect = (Chroma_Rectangle) {100, 100, 100, 100};
-    rect->color[0] = 1.0;
-    rect->color[1] = 0.0;
-    rect->color[2] = 0.0;
-    rect->color[3] = 1.0;
-    gl_rect_render(rect);
+    // ChromaAnnulus *annulus = NEW_STRUCT(ChromaAnnulus);
+    // annulus->center_x = 500;
+    // annulus->center_y = 500;
+    // annulus->inner_radius = 100;
+    // annulus->outer_radius = 300;
+    // annulus->color[0] = 1.0;
+    // annulus->color[1] = 0.0;
+    // annulus->color[2] = 1.0;
+    // annulus->color[3] = 1.0;
+    // gl_annulus_render(annulus);
 
-    Chroma_Text *text = NEW_STRUCT(Chroma_Text);
-    text->pos_x = 200;
-    text->pos_y = 200;
-    memset(text->buf, '\0', sizeof text->buf);
-    memcpy(text->buf, "This is sample text\0", 21);
-    text->color[0] = 1.0;
-    text->color[1] = 1.0;
-    text->color[2] = 1.0;
-    text->color[3] = 1.0;
+    // Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
+    // *rect = (Chroma_Rectangle) {100, 100, 100, 100};
+    // rect->color[0] = 1.0;
+    // rect->color[1] = 0.0;
+    // rect->color[2] = 0.0;
+    // rect->color[3] = 1.0;
+    // gl_rect_render(rect);
 
-    GLfloat mat[] = GL_MATH_ROTATE_X(DEG_TO_RAD(1.0f));
-
-    for (int i = 0; i < 16; i++) {
-        text->transform[i] = mat[i];
-    }
-
-    gl_text_render(text, 1.0f);
+    // Chroma_Text *text = NEW_STRUCT(Chroma_Text);
+    // text->pos_x = 200;
+    // text->pos_y = 200;
+    // memset(text->buf, '\0', sizeof text->buf);
+    // memcpy(text->buf, "This is sample text\0", 21);
+    // text->color[0] = 1.0;
+    // text->color[1] = 1.0;
+    // text->color[2] = 1.0;
+    // text->color[3] = 1.0;
+    //
+    // GLfloat mat[] = GL_MATH_ROTATE_X(DEG_TO_RAD(1.0f));
+    //
+    // for (int i = 0; i < 16; i++) {
+    //     text->transform[i] = mat[i];
+    // }
+    //
+    // gl_text_render(text, 1.0f);
 
     switch (action) {
         case BLANK:

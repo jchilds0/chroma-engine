@@ -3,10 +3,7 @@
  */
 
 #include "chroma-prototypes.h"
-#include "chroma-typedefs.h"
 #include "gl_renderer.h"
-#include <GL/gl.h>
-#include <GL/glext.h>
 
 static GLuint vao;
 static GLuint vbo;
@@ -42,8 +39,8 @@ void gl_rect_init_buffers(void) {
 }
 
 void gl_rect_init_shaders(void) {
-    char *vertexSource = gl_renderer_get_shader_file(SHADER_PATH "glrect-gl.vs.glsl");
-    char *fragmentSource = gl_renderer_get_shader_file(SHADER_PATH "glrect-gl.fs.glsl");
+    char *vertexSource = gl_renderer_get_shader_file(SHADER_PATH "glshape-gl.vs.glsl");
+    char *fragmentSource = gl_renderer_get_shader_file(SHADER_PATH "glshape-gl.fs.glsl");
 
     GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vertexSource);
     GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
@@ -54,7 +51,7 @@ void gl_rect_init_shaders(void) {
     glDeleteShader(fragment);
 }
 
-void gl_rect_render(Chroma_Rectangle *rect) {
+void gl_rect_render(ChromaRectangle *rect) {
     GLfloat vertices[] = {
         rect->pos_x,               rect->pos_y + rect->height, 0.0f,
         rect->pos_x,               rect->pos_y,                0.0f,

@@ -113,7 +113,7 @@ void gl_text_cache_characters(void) {
     FT_Done_FreeType(ft);
 }
 
-void gl_text_render(Chroma_Text *text, float scale) {
+void gl_text_render(ChromaText *text, float scale) {
     int x = text->pos_x;
 
     // Copy vertices array in a buffer for OpenGL

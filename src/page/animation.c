@@ -8,8 +8,8 @@
 #include <GL/gl.h>
 
 void animate_left_to_right(int page_num) {
-    Chroma_Rectangle *mask = &engine.hub->pages[page_num]->mask;
-    Chroma_Rectangle *base_rect = &engine.hub->pages[page_num]->rect[0];
+    ChromaRectangle *mask = &engine.hub->pages[page_num]->mask;
+    ChromaRectangle *base_rect = &engine.hub->pages[page_num]->rect[0];
     float time = engine.hub->pages[page_num]->mask_time;
 
     if (time >= 1.0) {
@@ -34,7 +34,6 @@ void animate_clock_tick(int page_num) {
     engine.hub->pages[page_num]->clock_time = MIN(time + 1.0 / 100, 1.0); 
 
     Page *page = engine.hub->pages[page_num];
-    log_file(LogMessage, "theta %f", time);
     
     GLfloat A[16] = GL_MATH_ROTATE_X(DEG_TO_RAD(time));
     GLfloat B[16] = GL_MATH_ID;

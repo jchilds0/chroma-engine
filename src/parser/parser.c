@@ -3,9 +3,7 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-typedefs.h"
 #include "parser.h"
-#include <stdio.h>
 #include <sys/socket.h>
 
 static int socket_client = -1;
@@ -60,22 +58,30 @@ void parse_page(int *page_num, Action *action) {
                 if (v_m != 1 && v_n != 2) {
                     log_file(LogError, "Incorrect encoding version v%d.%d, expected v1.2", v_m, v_n);
                 }
-                //log_file(LogMessage, "Parsed v%d.%d", v_m, v_n); 
+
+                if (LOG_PARSER)
+                    log_file(LogMessage, "Parsed v%d.%d", v_m, v_n); 
                 break;
             case LENGTH:
                 sscanf(value, "%d", &length);
                 break;
             case ACTION:
                 sscanf(value, "%d", action);
-                //log_file(LogMessage, "Parsed action %d", *action); 
+
+                if (LOG_PARSER)
+                    log_file(LogMessage, "Parsed action %d", *action); 
                 break;
             case TEMPID:
                 sscanf(value, "%d", page_num);
-                //log_file(LogMessage, "Parsed temp id %d", *page_num); 
+
+                if (LOG_PARSER)
+                    log_file(LogMessage, "Parsed temp id %d", *page_num); 
                 break;
             case ATTR:
                 page_set_page_attrs(engine.hub->pages[*page_num], attr, value);
-                //log_file(LogMessage, "Parsed attr %s with value %s", attr, value); 
+
+                if (LOG_PARSER)
+                    log_file(LogMessage, "Parsed attr %s with value %s", attr, value); 
                 break;
             case VALUE:
                 log_file(LogWarn, "Recieved value before attr");
@@ -134,3 +140,22 @@ HASH:
     return VALUE;
 
 }
+
+static char buf[MAX_BUF_SIZE];
+static int buf_ptr = 0;
+
+char parser_get_char(int socket_client) {
+    parser_message(socket_client);
+    return buf[buf_ptr++];
+}
+
+ServerResponse parser_message(int socket_client) {
+    if (buf[buf_ptr] != '\0') {
+        return SERVER_MESSAGE;
+    }
+
+    buf_ptr = 0;
+    memset(buf, '\0', MAX_BUF_SIZE);
+    return parser_tcp_recieve_message(socket_client, buf);
+}
+

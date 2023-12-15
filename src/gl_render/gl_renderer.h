@@ -26,6 +26,14 @@ void gl_text_cache_characters(void);
 void gl_rect_init_buffers(void);
 void gl_rect_init_shaders(void);
 
+/* gl_circle.c */ 
+void gl_circle_init_buffers(void);
+void gl_circle_init_shaders(void);
+
+/* gl_annulus.c */ 
+void gl_annulus_init_buffers(void);
+void gl_annulus_init_shaders(void);
+
 #endif // !CHROMA_GL_RENDERER
 
 

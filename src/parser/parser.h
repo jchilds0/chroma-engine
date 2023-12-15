@@ -12,10 +12,13 @@ typedef enum {
 } ServerResponse;
 
 typedef enum {
+    /* header tokens */
     VERSION = 0,
     LENGTH,
     ACTION,
     TEMPID,
+
+    /* other tokens */
     ATTR,
     VALUE,
     EOM,

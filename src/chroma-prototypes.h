@@ -42,7 +42,9 @@ void parser_read_socket(int *, Action *);
 void gl_realize(GtkWidget *);
 gboolean gl_render(GtkGLArea *, GdkGLContext *);
 
-void gl_text_render(Chroma_Text *text, float scale);
-void gl_rect_render(Chroma_Rectangle *rect);
+void gl_text_render(ChromaText *text, float scale);
+void gl_rect_render(ChromaRectangle *rect);
+void gl_circle_render(ChromaCircle *circle);
+void gl_annulus_render(ChromaAnnulus *annulus);
 
 #endif // !CHROMA_PROTOTYPES

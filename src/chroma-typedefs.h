@@ -7,7 +7,7 @@
 
 #include <GL/glew.h>
 
-#define MAX_BUF_SIZE                  512
+#define MAX_BUF_SIZE      512
 
 typedef enum {
     BLANK = 0,
@@ -19,6 +19,8 @@ typedef enum {
 } Action;
 
 /* log.c */
+#define LOG_PARSER        1
+
 typedef enum {
     LogMessage,
     LogWarn,
@@ -31,13 +33,35 @@ typedef enum {
 } EngineType;
 
 /* graphics structs */
+typedef enum {
+    RECT,
+    CIRCLE,
+    ANNULUS,
+    TEXT,
+} ChromaGraphics;
+
 typedef struct {
     int     pos_x;
     int     pos_y;
     int     width;
     int     height;
     GLfloat color[4];
-} Chroma_Rectangle;
+} ChromaRectangle;
+
+typedef struct {
+    int     center_x;
+    int     center_y;
+    int     radius;
+    GLfloat color[4];
+} ChromaCircle;
+
+typedef struct {
+    int     center_x;
+    int     center_y;
+    int     inner_radius;
+    int     outer_radius;
+    GLfloat color[4];
+} ChromaAnnulus;
 
 typedef struct {
     int       pos_x;
@@ -46,18 +70,26 @@ typedef struct {
     char      do_transform[MAX_BUF_SIZE];
     GLfloat   transform[16];
     GLfloat   color[4];
-} Chroma_Text;
+} ChromaText;
 
 typedef struct {
-    int num_rect;
-    int num_text;
-    Chroma_Rectangle *rect;
-    Chroma_Text *text;
-    float mask_time;
-    float clock_time;
-    Chroma_Rectangle mask;
-    void (*page_animate)(int);
-    void (*page_continue)(int);
+    int               num_rect;
+    ChromaRectangle   *rect;
+
+    int               num_text;
+    ChromaText        *text;
+
+    int               num_circle;
+    ChromaCircle      *circle;
+
+    int               num_annulus;
+    ChromaAnnulus     *annulus;
+
+    float             mask_time;
+    float             clock_time;
+    ChromaRectangle   mask;
+    void              (*page_animate)(int);
+    void              (*page_continue)(int);
 } Page;
 
 typedef struct {
