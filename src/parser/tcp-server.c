@@ -3,8 +3,11 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-prototypes.h"
+#include "chroma-typedefs.h"
 #include "parser.h"
 #include <arpa/inet.h>
+#include <string.h>
 
 #define MAX_ATTEMPTS        10
 
@@ -56,7 +59,7 @@ int parser_tcp_start_server(char *addr, int port) {
     return socket_desc;
 }
 
-int parser_client_listen(int server_sock) {
+int parse_client_listen(int server_sock) {
     int client_sock;
     socklen_t client_size;
     struct sockaddr_in client_addr;
@@ -87,7 +90,7 @@ int parser_client_listen(int server_sock) {
     return client_sock;
 }
 
-ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message) {
+ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) {
     char server_message[MAX_BUF_SIZE];
 
     // clean buffers 
@@ -108,6 +111,11 @@ ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message)
     if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
         printf("Can't send\n");
         return SERVER_TIMEOUT;
+    }
+
+    if (client_message[0] == END_OF_CONN) {
+        log_file(LogMessage, "Client closed connection");
+        return SERVER_CLOSE;
     }
 
     return SERVER_MESSAGE;

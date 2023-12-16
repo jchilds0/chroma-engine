@@ -9,13 +9,14 @@
 static int socket_client = -1;
 
 void parse_page(int *page_num, Action *action);
-Token parser_get_token(char *value);
+void parse_clean_buffer(void);
+Token parse_get_token(char *value);
 
 void parser_read_socket(int *page_num, Action *action) {
     if (socket_client < 0) {
-        socket_client = parser_client_listen(engine.socket);
+        socket_client = parse_client_listen(engine.socket);
     } else {
-        ServerResponse rec = parser_message(socket_client);
+        ServerResponse rec = parse_message(socket_client);
 
         switch (rec) {
         case SERVER_MESSAGE:
@@ -27,6 +28,7 @@ void parser_read_socket(int *page_num, Action *action) {
             break;
         case SERVER_CLOSE:
             shutdown(socket_client, SHUT_RDWR);
+            parse_clean_buffer();
             socket_client = -1;
             break;
         }
@@ -39,8 +41,8 @@ void parse_page(int *page_num, Action *action) {
     Token tok;
     int v_m, v_n, length;
 
-    while ((tok = parser_get_token(attr)) != EOM
-           && parser_get_token(value) != EOM) {
+    while ((tok = parse_get_token(attr)) != EOM
+           && parse_get_token(value) != EOM) {
         switch (tok) {
             case VERSION:
                 sscanf(value, "%d,%d", &v_m, &v_n);
@@ -82,14 +84,14 @@ void parse_page(int *page_num, Action *action) {
     }
 }
 
-Token parser_get_token(char *value) {
+Token parse_get_token(char *value) {
     char c;
     int i = 0;
     memset(value, '\0', MAX_BUF_SIZE);
 
     // read chars until we get a '#', '=' or end of message
     while (TRUE) {
-        c = parser_get_char(socket_client);
+        c = parse_get_char(socket_client);
 
         switch (c) {
             case '=':
@@ -134,18 +136,22 @@ HASH:
 static char buf[MAX_BUF_SIZE];
 static int buf_ptr = 0;
 
-char parser_get_char(int socket_client) {
-    parser_message(socket_client);
+char parse_get_char(int socket_client) {
+    parse_message(socket_client);
     return buf[buf_ptr++];
 }
 
-ServerResponse parser_message(int socket_client) {
+void parse_clean_buffer(void) {
+    buf_ptr = 0;
+    memset(buf, '\0', MAX_BUF_SIZE);
+}
+
+ServerResponse parse_message(int socket_client) {
     if (buf[buf_ptr] != '\0') {
         return SERVER_MESSAGE;
     }
 
-    buf_ptr = 0;
-    memset(buf, '\0', MAX_BUF_SIZE);
-    return parser_tcp_recieve_message(socket_client, buf);
+    parse_clean_buffer();
+    return parse_tcp_recieve_message(socket_client, buf);
 }
 

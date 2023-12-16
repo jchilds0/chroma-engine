@@ -24,8 +24,8 @@ typedef enum {
     EOM,
 } Token;
 
-int parser_client_listen(int server_sock);
-ServerResponse parser_tcp_recieve_message(int socket_client, char *buf);
+int parse_client_listen(int server_sock);
+ServerResponse parse_tcp_recieve_message(int socket_client, char *buf);
 
-ServerResponse parser_message(int socket_client);
-char parser_get_char(int socket_client);
+ServerResponse parse_message(int socket_client);
+char parse_get_char(int socket_client);

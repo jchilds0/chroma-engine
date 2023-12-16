@@ -21,7 +21,7 @@ typedef enum {
 } Action;
 
 /* log.c */
-#define LOG_PARSER        1
+#define LOG_PARSER        0
 
 typedef enum {
     LogMessage,
