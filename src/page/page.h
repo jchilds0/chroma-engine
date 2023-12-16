@@ -5,7 +5,7 @@
 #include "chroma-engine.h"
 
 /* page.c */
-Page *init_page(int rect, int text, int circ, int annulus);
+Page *init_page(uint rect, uint text, uint circ, uint annulus);
 void free_page(Page *);
 void page_set_color(GLfloat *, GLuint, GLuint, GLuint, GLuint);
 int page_update_geo(char *attr, char *value);
@@ -23,7 +23,7 @@ void page_annulus_set_attr(ChromaAnnulus *annulus, char *attr, char *value);
 void page_text_set_attr(ChromaText *text, char *attr, char *value);
 
 /* animation.c */
-void animate_left_to_right(int page_num);
-void animate_right_to_left(int page_num);
-void animate_clock_tick(int page_num);
-void animate_none(int page_num);
+int animate_left_to_right(uint page_num, float time);
+int animate_right_to_left(uint page_num, float time);
+int animate_clock_tick(uint page_num, float time);
+int animate_none(uint page_num, float time);

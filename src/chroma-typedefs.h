@@ -9,6 +9,8 @@
 
 #define MAX_BUF_SIZE      512
 
+typedef unsigned int      uint;
+
 typedef enum {
     BLANK = 0,
     END_OF_CONN,
@@ -85,18 +87,18 @@ typedef struct {
     int               num_annulus;
     ChromaAnnulus     *annulus;
 
-    float             mask_time;
-    float             clock_time;
     ChromaRectangle   mask;
-    void              (*page_animate)(int);
-    void              (*page_continue)(int);
+    int               (*page_animate_on)(uint, float);
+    int               (*page_continue)(uint, float);
+    int               (*page_animate_off)(uint, float);
 } Page;
 
 typedef struct {
-    Page **pages;
     int num_pages;
     int size_of_pages;
     int current_page;
+    float time;
+    Page **pages;
 } Graphics;
 
 typedef struct {

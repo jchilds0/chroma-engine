@@ -68,8 +68,8 @@ void gl_circle_render(ChromaCircle *circle) {
     }
 
     for (int i = 0; i < n + 1; i++) {
-        indices[3 * i]     = i + 1;
-        indices[3 * i + 1] = 0;
+        indices[3 * i]     = 0;
+        indices[3 * i + 1] = i + 1;
         indices[3 * i + 2] = i + 2;
     }
 

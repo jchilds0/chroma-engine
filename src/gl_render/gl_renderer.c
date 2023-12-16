@@ -3,12 +3,13 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-prototypes.h"
 #include "chroma-typedefs.h"
 #include "gl_renderer.h"
 #include <GL/gl.h>
 
-Action action;
-int page_num;
+Action action = BLANK;
+int page_num = -1;
 
 /* read shader file */
 char *gl_renderer_get_shader_file(char *filename) {
@@ -146,66 +147,94 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(0);
-
-    // ChromaAnnulus *annulus = NEW_STRUCT(ChromaAnnulus);
-    // annulus->center_x = 500;
-    // annulus->center_y = 500;
-    // annulus->inner_radius = 100;
-    // annulus->outer_radius = 300;
-    // annulus->color[0] = 1.0;
-    // annulus->color[1] = 0.0;
-    // annulus->color[2] = 1.0;
-    // annulus->color[3] = 1.0;
-    // gl_annulus_render(annulus);
-
-    // Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
-    // *rect = (Chroma_Rectangle) {100, 100, 100, 100};
-    // rect->color[0] = 1.0;
-    // rect->color[1] = 0.0;
-    // rect->color[2] = 0.0;
-    // rect->color[3] = 1.0;
-    // gl_rect_render(rect);
-
-    // Chroma_Text *text = NEW_STRUCT(Chroma_Text);
-    // text->pos_x = 200;
-    // text->pos_y = 200;
-    // memset(text->buf, '\0', sizeof text->buf);
-    // memcpy(text->buf, "This is sample text\0", 21);
-    // text->color[0] = 1.0;
-    // text->color[1] = 1.0;
-    // text->color[2] = 1.0;
-    // text->color[3] = 1.0;
-    //
-    // GLfloat mat[] = GL_MATH_ROTATE_X(DEG_TO_RAD(1.0f));
-    //
-    // for (int i = 0; i < 16; i++) {
-    //     text->transform[i] = mat[i];
-    // }
-    //
-    // gl_text_render(text, 1.0f);
-
+    
     switch (action) {
         case BLANK:
             break;
         case ANIMATE_ON:
-            page_animate_off(engine.hub->current_page);
-            page_animate_on(page_num);
+            engine.hub->pages[page_num]->page_animate_on(page_num, engine.hub->time);
+            engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
+            engine.hub->current_page = page_num;
 
             break;
         case CONTINUE:
-            page_continue(page_num);
+            engine.hub->pages[page_num]->page_continue(page_num, engine.hub->time);
+            engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
 
             break;
         case ANIMATE_OFF:
-            page_animate_off(page_num);
+            if (engine.hub->current_page != page_num) {
+                break;
+            }
 
+            engine.hub->pages[page_num]->page_animate_off(page_num, 1.0 - engine.hub->time);
+            engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
             break;
         default:
             log_file(LogError, "Unknown action %d", action);
     }
+
+    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
+        //log_file(LogWarn, "page num out of range %d", page_num);
+        return TRUE;
+    }
+
+    Page *page = engine.hub->pages[page_num];
+    for (int i = 0; i < page->num_rect; i++) {
+        gl_rect_render(&page->rect[i]);
+    }
+
+    for (int i = 0; i < page->num_circle; i++) {
+        gl_circle_render(&page->circle[i]);
+    }
+
+    for (int i = 0; i < page->num_annulus; i++) {
+        gl_annulus_render(&page->annulus[i]);
+    }
+
+    for (int i = 0; i < page->num_text; i++) {
+        gl_text_render(&page->text[i], 1.0);
+    }
+
+    gl_rect_render(&page->mask);
 
     glFlush();
     
     return TRUE;
 }
 
+// ChromaCircle *circle = NEW_STRUCT(ChromaCircle);
+// circle->center_x = 500;
+// circle->center_y = 500;
+// circle->radius = 100;
+// circle->color[0] = 1.0;
+// circle->color[1] = 0.0;
+// circle->color[2] = 1.0;
+// circle->color[3] = 1.0;
+// gl_circle_render(circle);
+
+// Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
+// *rect = (Chroma_Rectangle) {100, 100, 100, 100};
+// rect->color[0] = 1.0;
+// rect->color[1] = 0.0;
+// rect->color[2] = 0.0;
+// rect->color[3] = 1.0;
+// gl_rect_render(rect);
+
+// Chroma_Text *text = NEW_STRUCT(Chroma_Text);
+// text->pos_x = 200;
+// text->pos_y = 200;
+// memset(text->buf, '\0', sizeof text->buf);
+// memcpy(text->buf, "This is sample text\0", 21);
+// text->color[0] = 1.0;
+// text->color[1] = 1.0;
+// text->color[2] = 1.0;
+// text->color[3] = 1.0;
+//
+// GLfloat mat[] = GL_MATH_ROTATE_X(DEG_TO_RAD(1.0f));
+//
+// for (int i = 0; i < 16; i++) {
+//     text->transform[i] = mat[i];
+// }
+//
+// gl_text_render(text, 1.0f);

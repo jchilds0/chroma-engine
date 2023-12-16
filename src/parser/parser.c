@@ -20,17 +20,7 @@ void parser_read_socket(int *page_num, Action *action) {
         switch (rec) {
         case SERVER_MESSAGE:
             parse_page(page_num, action);
-
-            switch (*action) {
-            case ANIMATE_ON:
-                engine.hub->pages[*page_num]->mask_time = 0.0f;
-                break;
-            case CONTINUE:
-                engine.hub->pages[*page_num]->clock_time = 0.0f;
-                break;
-            default:
-                break;
-            }
+            engine.hub->time = 0.0f;
 
             break;
         case SERVER_TIMEOUT:

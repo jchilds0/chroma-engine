@@ -6,7 +6,7 @@
 #include "chroma-typedefs.h"
 #include "page.h"
 
-Page *init_page(int num_rect, int num_text, int num_circle, int num_annulus) {
+Page *init_page(uint num_rect, uint num_text, uint num_circle, uint num_annulus) {
     Page *page = NEW_STRUCT(Page);
     page->num_rect = num_rect;
     page->rect = NEW_ARRAY(page->num_rect, ChromaRectangle);
@@ -20,13 +20,15 @@ Page *init_page(int num_rect, int num_text, int num_circle, int num_annulus) {
     page->num_annulus = num_annulus;
     page->annulus = NEW_ARRAY(page->num_annulus, ChromaAnnulus);
 
-    page->mask_time = 0.0f;
-    page->clock_time = 0.0f;
-
-    page->page_animate = animate_none;
+    page->page_animate_on = animate_none;
     page->page_continue = animate_none;
+    page->page_animate_off = animate_none;
 
     page_set_color(&page->mask.color[0], 0, 0, 0, 255);
+    page->mask.pos_x = 0;
+    page->mask.pos_y = 0;
+    page->mask.width = 0;
+    page->mask.height = 0;
 
     GLfloat id[] = GL_MATH_ID;
 
@@ -128,75 +130,4 @@ int page_update_geo(char *attr, char *value) {
 
     return 0;
 }
-
-void page_animate_on(int page_num) {
-    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
-        log_file(LogWarn, "Page number %d out of range", page_num);
-        return;
-    }
-
-    engine.hub->current_page = page_num;
-    Page *page = engine.hub->pages[page_num];
-
-    page->page_animate(page_num);
-    for (int i = 0; i < page->num_rect; i++) {
-        gl_rect_render(&page->rect[i]);
-    }
-
-    for (int i = 0; i < page->num_circle; i++) {
-        gl_circle_render(&page->circle[i]);
-    }
-
-    for (int i = 0; i < page->num_annulus; i++) {
-        gl_annulus_render(&page->annulus[i]);
-    }
-
-    for (int i = 0; i < page->num_text; i++) {
-        gl_text_render(&page->text[i], 1.0);
-    }
-
-    gl_rect_render(&page->mask);
-}
-
-void page_continue(int page_num) {
-    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
-        return;
-    }
-
-    Page *page = engine.hub->pages[page_num];
-
-    page->page_continue(page_num);
-    for (int i = 0; i < page->num_rect; i++) {
-        gl_rect_render(&page->rect[i]);
-    }
-
-    for (int i = 0; i < page->num_circle; i++) {
-        gl_circle_render(&page->circle[i]);
-    }
-
-    for (int i = 0; i < page->num_annulus; i++) {
-        gl_annulus_render(&page->annulus[i]);
-    }
-
-    for (int i = 0; i < page->num_text; i++) {
-        gl_text_render(&page->text[i], 1.0);
-    }
-}
-
-void page_animate_off(int page_num) {
-    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
-        return;
-    }
-    
-    //Page *page = engine.hub->pages[page_num];
-
-    // for (int i = 0; i < page->num_rect; i++) {
-    //     rect = &page->rect[i];
-    // }
-    //
-    // for (int i = 0; i < 2; i++) {
-    //     text = &page->text[i];
-    // }
-}
-
 
