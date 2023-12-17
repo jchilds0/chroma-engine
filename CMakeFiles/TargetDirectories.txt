@@ -1,3 +1,0 @@
-/home/josh/Documents/projects/chroma-engine/CMakeFiles/chroma-engine.dir
-/home/josh/Documents/projects/chroma-engine/CMakeFiles/edit_cache.dir
-/home/josh/Documents/projects/chroma-engine/CMakeFiles/rebuild_cache.dir
