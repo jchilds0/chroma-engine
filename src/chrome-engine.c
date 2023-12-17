@@ -2,8 +2,10 @@
  * chroma-engine.c 
  */
 
-#include "chroma-engine.h"
+#include "chroma-typedefs.h"
+#include "chroma-prototypes.h"
 #include <sys/socket.h>
+#include "log.h"
 
 Engine engine;
 
@@ -25,15 +27,15 @@ int main(int argc, char **argv) {
         if (strcmp(argv[1], "-wid") == 0) {
             log_start(LogPreview);
             wid = atoi(argv[2]);
-            log_file(LogMessage, "Recieved wid %d", wid);
+            log_file(LogMessage, "Engine", "Recieved wid %d", wid);
             preview_window(wid);
             break;
         }
 
-        log_file(LogError, "Incorrect argument %s", argv[1]);
+        log_file(LogError, "Engine", "Incorrect argument %s", argv[1]);
         return 0;
     default: 
-        log_file(LogError, "Incorrect usage");
+        log_file(LogError, "Engine", "Incorrect usage");
         return 0;
     }
 
@@ -45,6 +47,6 @@ int main(int argc, char **argv) {
 void free_engine(void) {
     shutdown(engine.socket, SHUT_RDWR);
     free_hub(engine.hub);
-    log_file(LogMessage, "Engine Shutdown");
+    log_file(LogMessage, "Engine", "Shutdown");
     exit(1);
 }

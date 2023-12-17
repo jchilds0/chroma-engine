@@ -1,8 +1,12 @@
 /*
- * Header for parser submodule
+ *
  */
 
-#include "chroma-typedefs.h"
+#ifndef PARSER_INTERNAL
+#define PARSER_INTERNAL
+
+#define MAX_BUF_SIZE        512
+#define LOG_PARSER          0
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
 typedef enum {
@@ -29,3 +33,6 @@ ServerResponse parse_tcp_recieve_message(int socket_client, char *buf);
 
 ServerResponse parse_message(int socket_client);
 char parse_get_char(int socket_client);
+
+#endif // !PARSER_INTERNAL
+

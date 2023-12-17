@@ -1,11 +1,13 @@
 /*
- * Render text using OpenGL
+ *
  */
 
-#include "chroma-prototypes.h"
-#include "chroma-typedefs.h"
-#include "gl_renderer.h"
-#include <GL/gl.h>
+#include "gl_render_internal.h"
+#include "geometry.h"
+#include "log.h"
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 static GLuint vao;
 static GLuint vbo;
@@ -41,7 +43,6 @@ void gl_text_init_buffers(void) {
 } 
 
 void gl_text_init_shaders(void) {
-
     char *vertexSource = gl_renderer_get_shader_file(SHADER_PATH "gltext-gl.vs.glsl");
     char *fragmentSource = gl_renderer_get_shader_file(SHADER_PATH "gltext-gl.fs.glsl");
 
@@ -58,12 +59,12 @@ void gl_text_cache_characters(void) {
     // init characters
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
-        log_file(LogError, "Couldn't init FreeType Library");
+        log_file(LogError, "Geometry", "Couldn't init FreeType Library");
     }
 
     FT_Face face;
     if (FT_New_Face(ft, "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", 0, &face)) {
-        log_file(LogError, "Failed to load font");
+        log_file(LogError, "Geometry", "Failed to load font");
     }
 
     FT_Set_Pixel_Sizes(face, 0, 48);
@@ -74,7 +75,7 @@ void gl_text_cache_characters(void) {
     for (unsigned char c = 0; c < 128; c++) {
         // load character glyph
         if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            log_file(LogWarn, "Failed to load Glyph %c", c);
+            log_file(LogWarn, "Geometry", "Failed to load Glyph %c", c);
         }
 
         // generate texture 
@@ -113,8 +114,23 @@ void gl_text_cache_characters(void) {
     FT_Done_FreeType(ft);
 }
 
-void gl_text_render(ChromaText *text, float scale) {
-    int x = text->pos_x;
+void gl_draw_text(IGeometry *text) {
+    int text_x = geometry_get_int_attr(text, "pos_x");
+    int text_y = geometry_get_int_attr(text, "pos_y");
+
+    char buf[100];
+    GLfloat r, g, b, a, scale;
+
+    memset(buf, '\0', sizeof buf);
+    geometry_get_attr(text, "color", buf);
+    sscanf(buf, "%f %f %f %f", &r, &g, &b, &a);
+
+    memset(buf, '\0', sizeof buf);
+    geometry_get_attr(text, "scale", buf);
+    sscanf(buf, "%f", &scale);
+
+    memset(buf, '\0', sizeof buf);
+    geometry_get_attr(text, "string", buf);
 
     // Copy vertices array in a buffer for OpenGL
     gl_renderer_set_scale(program);
@@ -122,16 +138,16 @@ void gl_text_render(ChromaText *text, float scale) {
     glUseProgram(program);
 
     GLint color_loc = glGetUniformLocation(program, "color");
-    glUniform3f(color_loc, text->color[0], text->color[1], text->color[2]);
+    glUniform3f(color_loc, r, g, b);
 
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(vao);
 
-    for (int i = 0; text->buf[i] != '\0'; i++) {
-        struct Character ch = Characters[(unsigned char)text->buf[i]];
+    for (int i = 0; buf[i] != '\0'; i++) {
+        struct Character ch = Characters[(unsigned char)buf[i]];
 
-        float xpos = x + ch.Bearing[0] * scale;
-        float ypos = text->pos_y - (ch.Size[1] - ch.Bearing[1]) * scale;
+        float xpos = text_x + ch.Bearing[0] * scale;
+        float ypos = text_y - (ch.Size[1] - ch.Bearing[1]) * scale;
 
         float w = ch.Size[0] * scale;
         float h = ch.Size[1] * scale;
@@ -159,7 +175,7 @@ void gl_text_render(ChromaText *text, float scale) {
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // advance cursors for next glyph
-        x += (ch.Advance >> 6) * scale;
+        text_x += (ch.Advance >> 6) * scale;
     }
     
     glBindVertexArray(0);

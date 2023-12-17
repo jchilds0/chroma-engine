@@ -5,7 +5,8 @@
 #include "chroma-engine.h"
 #include "chroma-prototypes.h"
 #include "chroma-typedefs.h"
-#include "parser.h"
+#include "log.h"
+#include "parser_internal.h"
 #include <arpa/inet.h>
 #include <string.h>
 
@@ -22,18 +23,18 @@ int parser_tcp_start_server(char *addr, int port) {
         socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
         if (attempts++ > MAX_ATTEMPTS) {
-            log_file(LogError, "Too many failed attemps to create a socket");
+            log_file(LogError, "Parser", "Too many failed attemps to create a socket");
         }
 
         if (socket_desc < 0) {
-            log_file(LogWarn, "Error while creating socket, trying again...");
+            log_file(LogWarn, "Parser", "Error while creating socket, trying again...");
             attempts++;
             sleep(1);
             continue;
         }
     }
 
-    log_file(LogMessage, "Socket created successfully");
+    log_file(LogMessage, "Parser", "Socket created successfully");
 
     // set port and ip 
     server_addr.sin_family = AF_INET;
@@ -46,16 +47,16 @@ int parser_tcp_start_server(char *addr, int port) {
         bind_soc = bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr); 
 
         if (attempts++ > MAX_ATTEMPTS) {
-            log_file(LogError, "Too many attemps to bind socket at addr %s to port %d", addr, port);
+            log_file(LogError, "Parser", "Too many attemps to bind socket at addr %s to port %d", addr, port);
         }
 
         if (bind_soc < 0) {
-            log_file(LogWarn, "Couldn't bind to the port, trying again...");
+            log_file(LogWarn, "Parser", "Couldn't bind to the port, trying again...");
             sleep(1);
         }
     }
 
-    log_file(LogMessage, "Done with binding");
+    log_file(LogMessage, "Parser", "Done with binding");
     return socket_desc;
 }
 
@@ -71,7 +72,7 @@ int parse_client_listen(int server_sock) {
 
     // listen for clients 
     if (listen(server_sock, 1) < 0) {
-        log_file(LogWarn, "Error while listening");
+        //log_file(LogWarn, "Parser", "Error while listening");
         return SERVER_TIMEOUT;
     }
 
@@ -85,7 +86,7 @@ int parse_client_listen(int server_sock) {
         return SERVER_TIMEOUT;
     }
 
-    log_file(LogMessage, "Client connected at IP: %s and port %i", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    log_file(LogMessage, "Parser", "Client connected at IP: %s and port %i", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
     return client_sock;
 }
@@ -98,12 +99,11 @@ ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) 
 
     // recieve clients message 
     if (recv(client_sock, client_message, MAX_BUF_SIZE, 0) < 0) {
-        //printf("Couldn't recieve\n");
         return SERVER_TIMEOUT;
     }
 
     if (LOG_PARSER)
-        log_file(LogMessage, "Recieved %s", client_message);
+        log_file(LogMessage, "Parser", "Recieved %s", client_message);
 
     // respond to client 
     strcpy(server_message, "Recieved");
@@ -114,7 +114,7 @@ ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) 
     }
 
     if (client_message[0] == END_OF_CONN) {
-        log_file(LogMessage, "Client closed connection");
+        log_file(LogMessage, "Parser", "Client closed connection");
         return SERVER_CLOSE;
     }
 

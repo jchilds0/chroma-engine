@@ -1,9 +1,11 @@
 /*
- * Render a circle using OpenGL
+ *
  */
 
 #include "chroma-engine.h"
-#include "gl_renderer.h"
+#include "gl_render_internal.h"
+#include "gl_math.h"
+#include "geometry.h"
 
 static GLuint vao;
 static GLuint vbo;
@@ -51,19 +53,30 @@ static int gl_circle_tri_num(int radius) {
     return n;
 } 
 
-void gl_circle_render(ChromaCircle *circle) {
-    int n = gl_circle_tri_num(circle->radius);
+void gl_draw_circle(IGeometry *circle) {
+    int center_x = geometry_get_int_attr(circle, "center_x");
+    int center_y = geometry_get_int_attr(circle, "center_y");
+    int radius   = geometry_get_int_attr(circle, "radius");
+
+    char buf[100];
+    GLfloat r, g, b, a;
+
+    memset(buf, '\0', sizeof buf);
+    geometry_get_attr(circle, "color", buf);
+    sscanf(buf, "%f %f %f %f", &r, &g, &b, &a);
+
+    int n = gl_circle_tri_num(radius);
     float theta = 2.0f * M_PI / n;
 
     GLfloat *vertices = NEW_ARRAY(3 * (n + 2), GLfloat);
     unsigned int *indices = NEW_ARRAY(3 * (n + 1), unsigned int);
-    vertices[0] = circle->center_x;
-    vertices[1] = circle->center_y;
+    vertices[0] = center_x;
+    vertices[1] = center_y;
     vertices[2] = 0.0f;
 
     for (int i = 0; i < n + 1; i++) {
-        vertices[3 * (i + 1)]     = circle->radius * cosf(theta * i) + circle->center_x;
-        vertices[3 * (i + 1) + 1] = circle->radius * sinf(theta * i) + circle->center_y;
+        vertices[3 * (i + 1)]     = radius * cosf(theta * i) + center_x;
+        vertices[3 * (i + 1) + 1] = radius * sinf(theta * i) + center_y;
         vertices[3 * (i + 1) + 2] = 0.0f; 
     }
 
@@ -80,7 +93,7 @@ void gl_circle_render(ChromaCircle *circle) {
     glBindVertexArray(vao);
 
     uint color_loc = glGetUniformLocation(program, "color");
-    glUniform4f(color_loc, circle->color[0], circle->color[1], circle->color[2], circle->color[3]);
+    glUniform4f(color_loc, r, g, b, a);
     
     // bind and set vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

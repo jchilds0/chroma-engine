@@ -3,9 +3,14 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-typedefs.h"
+#include "chroma-prototypes.h"
+#include "gl_renderer.h"
+#include "parser.h"
+#include "log.h"
 
 static void close_plug(GtkWidget *widget, gpointer data) {
-    log_file(LogMessage, "Closed Plug");
+    log_file(LogMessage, "Preview", "Closed Plug");
     free_engine();
     gtk_main_quit();
 }
@@ -30,7 +35,7 @@ void preview_window(int wid) {
 
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
-        parser_read_socket(&page_num, &action);
+        parser_read_socket(&engine, &page_num, &action);
     }
 }
 

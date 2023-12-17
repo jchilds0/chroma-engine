@@ -3,12 +3,17 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-prototypes.h"
 #include "chroma-typedefs.h"
-#include "gl_renderer.h"
-#include <GL/gl.h>
+#include "gl_render_internal.h"
+#include "gl_math.h"
+#include "geometry.h"
+#include "log.h"
 
-Action action = BLANK;
+#include <GL/glew.h>
+#include <GL/gl.h>
+#include <string.h>
+
+int action = BLANK;
 int page_num = -1;
 
 /* read shader file */
@@ -105,22 +110,18 @@ void gl_realize(GtkWidget *widget) {
     g_signal_connect_swapped(frame_clock, "update", G_CALLBACK(gtk_gl_area_queue_render), widget);
     gdk_frame_clock_begin_updating(frame_clock);
 
-    // setup text 
+    gl_rectangle_init_buffers();
+    gl_rectangle_init_shaders();
+
+    gl_circle_init_buffers();
+    gl_circle_init_shaders();
+
+    gl_annulus_init_buffers();
+    gl_annulus_init_shaders();
+
     gl_text_init_buffers();
     gl_text_init_shaders();
     gl_text_cache_characters();
-
-    // setup rect
-    gl_rect_init_buffers();
-    gl_rect_init_shaders();
-
-    // setup circle 
-    gl_circle_init_buffers();
-    gl_circle_init_shaders();
-    
-    // setup annulus
-    gl_annulus_init_buffers();
-    gl_annulus_init_shaders();
 }
 
 void gl_renderer_set_scale(GLuint program) {
@@ -171,7 +172,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
             break;
         default:
-            log_file(LogError, "Unknown action %d", action);
+            log_file(LogError, "GL Render", "Unknown action %d", action);
     }
 
     if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
@@ -180,61 +181,36 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     }
 
     Page *page = engine.hub->pages[page_num];
-    for (int i = 0; i < page->num_rect; i++) {
-        gl_rect_render(&page->rect[i]);
-    }
+    char geo_type[20];
 
-    for (int i = 0; i < page->num_circle; i++) {
-        gl_circle_render(&page->circle[i]);
-    }
+    for (int i = 0; i < page->num_geometry; i++) {
+        memset(geo_type, '\0', sizeof geo_type);
+        geometry_get_attr(page->geometry[i], "geo_type", geo_type);
+        
+        if (strncmp(geo_type, "rect", 4) == 0) {
 
-    for (int i = 0; i < page->num_annulus; i++) {
-        gl_annulus_render(&page->annulus[i]);
-    }
+            gl_draw_rectangle(page->geometry[i]);
 
-    for (int i = 0; i < page->num_text; i++) {
-        gl_text_render(&page->text[i], 1.0);
-    }
+        } else if (strncmp(geo_type, "circle", 5) == 0) {
 
-    gl_rect_render(&page->mask);
+            gl_draw_circle(page->geometry[i]);
+
+        } else if (strncmp(geo_type, "annulus", 7) == 0) {
+
+            gl_draw_annulus(page->geometry[i]);
+
+        } else if (strncmp(geo_type, "text", 4) == 0) {
+
+            gl_draw_text(page->geometry[i]);
+
+        } else {
+
+            log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
+
+        }
+    }
 
     glFlush();
     
     return TRUE;
 }
-
-// ChromaCircle *circle = NEW_STRUCT(ChromaCircle);
-// circle->center_x = 500;
-// circle->center_y = 500;
-// circle->radius = 100;
-// circle->color[0] = 1.0;
-// circle->color[1] = 0.0;
-// circle->color[2] = 1.0;
-// circle->color[3] = 1.0;
-// gl_circle_render(circle);
-
-// Chroma_Rectangle *rect = NEW_STRUCT(Chroma_Rectangle);
-// *rect = (Chroma_Rectangle) {100, 100, 100, 100};
-// rect->color[0] = 1.0;
-// rect->color[1] = 0.0;
-// rect->color[2] = 0.0;
-// rect->color[3] = 1.0;
-// gl_rect_render(rect);
-
-// Chroma_Text *text = NEW_STRUCT(Chroma_Text);
-// text->pos_x = 200;
-// text->pos_y = 200;
-// memset(text->buf, '\0', sizeof text->buf);
-// memcpy(text->buf, "This is sample text\0", 21);
-// text->color[0] = 1.0;
-// text->color[1] = 1.0;
-// text->color[2] = 1.0;
-// text->color[3] = 1.0;
-//
-// GLfloat mat[] = GL_MATH_ROTATE_X(DEG_TO_RAD(1.0f));
-//
-// for (int i = 0; i < 16; i++) {
-//     text->transform[i] = mat[i];
-// }
-//
-// gl_text_render(text, 1.0f);

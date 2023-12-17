@@ -2,7 +2,10 @@
  * Creates a seperate window using GTK to run the engine process.
  */
 
-#include "chroma-engine.h"
+#include "chroma-typedefs.h"
+#include "chroma-prototypes.h"
+#include "gl_renderer.h"
+#include "parser.h"
 #include <unistd.h>
 
 void engine_window(void) {
@@ -31,7 +34,7 @@ void engine_window(void) {
     while (TRUE) {
         // slow frame rate down to CHROMA_FRAMERATE
         gtk_main_iteration_do(FALSE);
-        parser_read_socket(&page_num, &action);
+        parser_read_socket(&engine, &page_num, &action);
     }
 }
 

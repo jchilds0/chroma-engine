@@ -2,26 +2,41 @@
  * Recieve graphics request over tcp and render to GtkDrawingArea
  */
 
-#include "chroma-engine.h"
-#include "parser.h"
+#include "chroma-typedefs.h"
+#include "log.h"
+#include "parser_internal.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 
 static int socket_client = -1;
 
-void parse_page(int *page_num, Action *action);
+void parse_page(Page *page);
+void parse_header(int *page_num, int *action);
 void parse_clean_buffer(void);
 Token parse_get_token(char *value);
 
-void parser_read_socket(int *page_num, Action *action) {
+/*
+ * Check eng->socket for a tcp connection.
+ *
+ * If we have an open connection, listen for a message, 
+ *    - If we recieve a graphics request, parse it and call the callback on_message(),
+ *    - If the listen times out, do nothing,
+ *    - If the client closes the connection, close on our end and cleanup buffer.
+ *
+ */
+void parser_read_socket(Engine *eng, int *page_num, int *action) {
     if (socket_client < 0) {
-        socket_client = parse_client_listen(engine.socket);
+        socket_client = parse_client_listen(eng->socket);
     } else {
         ServerResponse rec = parse_message(socket_client);
 
         switch (rec) {
         case SERVER_MESSAGE:
-            parse_page(page_num, action);
-            engine.hub->time = 0.0f;
+            parse_header(page_num, action);
+            parse_page(eng->hub->pages[*page_num]);
+            eng->hub->time = 0.0f;
 
             break;
         case SERVER_TIMEOUT:
@@ -30,57 +45,99 @@ void parser_read_socket(int *page_num, Action *action) {
             shutdown(socket_client, SHUT_RDWR);
             parse_clean_buffer();
             socket_client = -1;
+
             break;
         }
     }
 }
 
-void parse_page(int *page_num, Action *action) {
-    char attr[MAX_BUF_SIZE];
-    char value[MAX_BUF_SIZE];
+/*
+ * Parse the header of a gui request 
+ */
+void parse_header(int *page_num, int *action) {
+    int parsed_version = 0; 
+    int parsed_length = 0;
+    int parsed_action = 0;
+    int parsed_page_num = 0;
+
     Token tok;
     int v_m, v_n, length;
+    char attr[MAX_BUF_SIZE];
+    char value[MAX_BUF_SIZE];
 
     while ((tok = parse_get_token(attr)) != EOM
            && parse_get_token(value) != EOM) {
         switch (tok) {
             case VERSION:
                 sscanf(value, "%d,%d", &v_m, &v_n);
+                parsed_version = 1;
                 
-                if (v_m != 1 && v_n != 2) {
-                    log_file(LogError, "Incorrect encoding version v%d.%d, expected v1.2", v_m, v_n);
+                if (v_m != 1 || v_n != 3) {
+                    log_file(LogError, "Parser", "Incorrect encoding version v%d.%d, expected v1.3", v_m, v_n);
                 }
 
                 if (LOG_PARSER)
-                    log_file(LogMessage, "Parsed v%d.%d", v_m, v_n); 
+                    log_file(LogMessage, "Parser", "Message v%d.%d", v_m, v_n); 
                 break;
             case LENGTH:
                 sscanf(value, "%d", &length);
+                parsed_length = 1;
                 break;
             case ACTION:
                 sscanf(value, "%d", action);
+                parsed_action = 1;
 
                 if (LOG_PARSER)
-                    log_file(LogMessage, "Parsed action %d", *action); 
+                    log_file(LogMessage, "Parser", "Action %d", *action); 
                 break;
             case TEMPID:
                 sscanf(value, "%d", page_num);
+                parsed_page_num = 1;
 
                 if (LOG_PARSER)
-                    log_file(LogMessage, "Parsed temp id %d", *page_num); 
-                break;
-            case ATTR:
-                page_set_page_attrs(engine.hub->pages[*page_num], attr, value);
-
-                if (LOG_PARSER)
-                    log_file(LogMessage, "Parsed attr %s with value %s", attr, value); 
-                break;
-            case VALUE:
-                log_file(LogWarn, "Recieved value before attr");
+                    log_file(LogMessage, "Parser", "Template id %d", *page_num); 
                 break;
             default:
-                log_file(LogWarn, "Unknown token %d", tok);
+                log_file(LogWarn, "Parser", "Missing header tokens");
         }
+
+        if (parsed_version && parsed_length && parsed_action && parsed_page_num) {
+            return;
+        }
+    }
+}
+
+void parse_page(Page *page) {
+    char attr[MAX_BUF_SIZE];
+    char value[MAX_BUF_SIZE];
+    Token tok;
+    int geo_num = -1;
+
+    while (1) {
+        tok = parse_get_token(attr);
+        if (tok == EOM) {
+            return;
+        } else if (tok != ATTR) {
+            log_file(LogWarn, "Parser", "Unexpected token %d, expected %d", tok, ATTR);
+        }
+        
+        tok = parse_get_token(value);
+        if (tok == EOM) {
+            log_file(LogWarn, "Parser", "Parsed attr without a value");
+        } else if (tok != VALUE) {
+            log_file(LogWarn, "Parser", "Unexpected token %d, expected %d", tok, VALUE);
+        }
+
+        if (strncmp(attr, "geo_num", 7) == 0) {
+            geo_num = atoi(value);
+            continue;
+        }
+
+        if (geo_num == -1) {
+            log_file(LogError, "Parser", "Didn't find a geo num");
+        }
+
+        geometry_set_attr(page->geometry[geo_num], attr, value);
     }
 }
 
@@ -90,7 +147,7 @@ Token parse_get_token(char *value) {
     memset(value, '\0', MAX_BUF_SIZE);
 
     // read chars until we get a '#', '=' or end of message
-    while (TRUE) {
+    while (1) {
         c = parse_get_char(socket_client);
 
         switch (c) {
@@ -103,7 +160,7 @@ Token parse_get_token(char *value) {
         }
 
         if (i >= MAX_BUF_SIZE) {
-            log_file(LogError, "Parser token buffer out of memory");
+            log_file(LogError, "Parser", "token buffer out of memory");
         }
 
         value[i++] = c;

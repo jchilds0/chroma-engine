@@ -1,11 +1,12 @@
-/*
- * Render an annulus using OpenGL
- */
 
 
 #include "chroma-engine.h"
-#include "chroma-typedefs.h"
-#include "gl_renderer.h"
+#include "gl_render_internal.h"
+#include "gl_math.h"
+#include "geometry.h"
+#include <GL/gl.h>
+#include <stdio.h>
+#include <string.h>
 
 static GLuint vao;
 static GLuint vbo;
@@ -53,8 +54,20 @@ static int gl_annulus_tri_num(int radius) {
     return n;
 } 
 
-void gl_annulus_render(ChromaAnnulus *annulus) {
-    int n = gl_annulus_tri_num(annulus->outer_radius);
+void gl_draw_annulus(IGeometry *annulus) {
+    int center_x = geometry_get_int_attr(annulus, "center_x");
+    int center_y = geometry_get_int_attr(annulus, "center_y");
+    int inner_radius = geometry_get_int_attr(annulus, "inner_radius");
+    int outer_radius = geometry_get_int_attr(annulus, "outer_radius");
+
+    char buf[100];
+    GLfloat r, g, b, a;
+
+    memset(buf, '\0', sizeof buf);
+    geometry_get_attr(annulus, "color", buf);
+    sscanf(buf, "%f %f %f %f", &r, &g, &b, &a);
+
+    int n = gl_annulus_tri_num(outer_radius);
     float theta = 2.0f * M_PI / n;
 
     GLfloat *vertices = NEW_ARRAY(6 * (n + 1), GLfloat);
@@ -73,13 +86,13 @@ void gl_annulus_render(ChromaAnnulus *annulus) {
 
     for (int i = 0; i < n + 1; i++) {
         // inner radius point
-        vertices[6 * i]     = annulus->inner_radius * cosf(theta * i) + annulus->center_x;
-        vertices[6 * i + 1] = annulus->inner_radius * sinf(theta * i) + annulus->center_x;
+        vertices[6 * i]     = inner_radius * cosf(theta * i) + center_x;
+        vertices[6 * i + 1] = inner_radius * sinf(theta * i) + center_y;
         vertices[6 * i + 2] = 0.0f;
 
         // outer radius point
-        vertices[6 * i + 3] = annulus->outer_radius * cosf(theta * i) + annulus->center_x;
-        vertices[6 * i + 4] = annulus->outer_radius * sinf(theta * i) + annulus->center_x;
+        vertices[6 * i + 3] = outer_radius * cosf(theta * i) + center_x;
+        vertices[6 * i + 4] = outer_radius * sinf(theta * i) + center_y;
         vertices[6 * i + 5] = 0.0f;
     }
 
@@ -94,13 +107,12 @@ void gl_annulus_render(ChromaAnnulus *annulus) {
     }
 
     gl_renderer_set_scale(program);
-    //log_to_file(LogMessage, "Render rectangle %d %d %d %d", rect->pos_x, rect->pos_y, rect->width, rect->height)
 
     glUseProgram(program);
     glBindVertexArray(vao);
 
     uint color_loc = glGetUniformLocation(program, "color");
-    glUniform4f(color_loc, annulus->color[0], annulus->color[1], annulus->color[2], annulus->color[3]);
+    glUniform4f(color_loc, r, g, b, a);
     
     // bind and set vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

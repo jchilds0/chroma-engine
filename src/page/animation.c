@@ -2,40 +2,30 @@
  *
  */
 
-#include "chroma-engine.h"
 #include "chroma-typedefs.h"
+#include "geometry.h"
 #include "page.h"
 #include <GL/gl.h>
 
 int animate_left_to_right(uint page_num, float time) {
-    ChromaRectangle *mask = &engine.hub->pages[page_num]->mask;
-    ChromaRectangle *base_rect = &engine.hub->pages[page_num]->rect[0];
+    Page *page = engine.hub->pages[page_num];
+    IGeometry *mask = page->geometry[page->mask_index];
+    IGeometry *bg = page->geometry[page->bg_index];
 
-    mask->pos_x = base_rect->pos_x + time * base_rect->width;
-    mask->pos_y = base_rect->pos_y;
-    mask->width = (1.1 - time) * base_rect->width;
-    mask->height = base_rect->height;
+    int bg_pos_x  = geometry_get_int_attr(bg, "pos_x");
+    int bg_pos_y  = geometry_get_int_attr(bg, "pos_y");
+    int bg_width  = geometry_get_int_attr(bg, "width");
+    int bg_height = geometry_get_int_attr(bg, "height");
+
+    geometry_set_int_attr(mask, "pos_x", bg_pos_x + time * bg_width);
+    geometry_set_int_attr(mask, "pos_y", bg_pos_y);
+    geometry_set_int_attr(mask, "width", (1.1 - time) * bg_width);
+    geometry_set_int_attr(mask, "height", bg_height);
     
     return 1;
 }
 
 int animate_clock_tick(uint page_num, float time) {
-    Page *page = engine.hub->pages[page_num];
-    
-    GLfloat A[16] = GL_MATH_ROTATE_X(DEG_TO_RAD(time));
-    GLfloat B[16] = GL_MATH_ID;
-
-    page->text[0].do_transform[0] = 1;
-    page->text[0].do_transform[4] = 1;
-
-    page->text[1].do_transform[0] = 1;
-    page->text[1].do_transform[4] = 1;
-
-    for (int i = 0; i < 9; i++) {
-        page->text[0].transform[i] = A[i]; 
-        page->text[1].transform[i] = B[i];
-    }
-
     return 1;
 }
 
