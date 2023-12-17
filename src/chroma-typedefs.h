@@ -5,11 +5,9 @@
 #ifndef CHROMA_TYPEDEFS
 #define CHROMA_TYPEDEFS
 
+#include "graphics.h"
+
 #define MAX_BUF_SIZE      512
-
-#include "page.h"
-
-typedef unsigned int      uint;
 
 typedef enum {
     BLANK = 0,
@@ -22,17 +20,9 @@ typedef enum {
 
 /* graphics structs */
 typedef struct {
-    int num_pages;
-    int size_of_pages;
-    int current_page;
-    float time;
-    Page **pages;
-} Graphics;
-
-typedef struct {
     int         socket;
     int         port;
-    Graphics    *hub;
+    IGraphics   *hub;
 } Engine;
 
 extern Engine engine;

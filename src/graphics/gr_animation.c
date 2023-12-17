@@ -2,13 +2,10 @@
  *
  */
 
-#include "chroma-typedefs.h"
+#include "graphics_internal.h"
 #include "geometry.h"
-#include "page.h"
-#include <GL/gl.h>
 
-int animate_left_to_right(uint page_num, float time) {
-    Page *page = engine.hub->pages[page_num];
+int graphics_animate_left_to_right(IPage *page, float time) {
     IGeometry *mask = page->geometry[page->mask_index];
     IGeometry *bg = page->geometry[page->bg_index];
 
@@ -25,10 +22,14 @@ int animate_left_to_right(uint page_num, float time) {
     return 1;
 }
 
-int animate_clock_tick(uint page_num, float time) {
+int graphics_animate_right_to_left(IPage *page, float time) {
     return 1;
 }
 
-int animate_none(uint page_num, float time) {
+int graphics_animate_clock_tick(IPage *page, float time) {
+    return 1;
+}
+
+int graphics_animate_none(IPage *page, float time) {
     return 1;
 }

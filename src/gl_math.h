@@ -2,6 +2,9 @@
  *
  */
 
+#ifndef CHROMA_GL_MATH
+#define CHROMA_GL_MATH
+
 #include <math.h>
 
 #define DEG_TO_RAD(theta)     (theta * M_PI / 180)
@@ -67,4 +70,4 @@
     A[12] * B[2] + A[13] * B[6] + A[14] * B[10] + A[15] * B[14], \
     A[12] * B[3] + A[13] * B[7] + A[14] * B[11] + A[15] * B[15]} 
 
-
+#endif // !CHROMA_GL_MATH

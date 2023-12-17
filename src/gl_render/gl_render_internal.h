@@ -2,6 +2,9 @@
  *
  */
 
+#ifndef GL_RENDER_INTERNAL
+#define GL_RENDER_INTERNAL
+
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include "geometry.h"
@@ -35,3 +38,4 @@ void gl_text_init_shaders(void);
 void gl_text_cache_characters(void);
 void gl_draw_text(IGeometry *text);
 
+#endif // !GL_RENDER_INTERNAL

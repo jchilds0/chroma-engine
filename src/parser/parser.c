@@ -2,17 +2,18 @@
  * Recieve graphics request over tcp and render to GtkDrawingArea
  */
 
-#include "chroma-typedefs.h"
-#include "log.h"
 #include "parser_internal.h"
-#include <stdio.h>
+#include "chroma-typedefs.h"
+#include "geometry.h"
+#include "log.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
 static int socket_client = -1;
 
-void parse_page(Page *page);
+void parse_page(IPage *page);
 void parse_header(int *page_num, int *action);
 void parse_clean_buffer(void);
 Token parse_get_token(char *value);
@@ -35,8 +36,9 @@ void parser_read_socket(Engine *eng, int *page_num, int *action) {
         switch (rec) {
         case SERVER_MESSAGE:
             parse_header(page_num, action);
-            parse_page(eng->hub->pages[*page_num]);
-            eng->hub->time = 0.0f;
+            IPage *page = graphics_hub_get_page(eng->hub, *page_num);
+            parse_page(page);
+            graphics_hub_set_time(eng->hub, 0.0f);
 
             break;
         case SERVER_TIMEOUT:
@@ -107,10 +109,10 @@ void parse_header(int *page_num, int *action) {
     }
 }
 
-void parse_page(Page *page) {
-    char attr[MAX_BUF_SIZE];
-    char value[MAX_BUF_SIZE];
+void parse_page(IPage *page) {
+    char attr[MAX_BUF_SIZE], value[MAX_BUF_SIZE];
     Token tok;
+    IGeometry *geo;
     int geo_num = -1;
 
     while (1) {
@@ -137,7 +139,8 @@ void parse_page(Page *page) {
             log_file(LogError, "Parser", "Didn't find a geo num");
         }
 
-        geometry_set_attr(page->geometry[geo_num], attr, value);
+        geo = graphics_page_get_geometry(page, geo_num);
+        geometry_set_attr(geo, attr, value);
     }
 }
 

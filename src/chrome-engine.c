@@ -4,8 +4,12 @@
 
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
-#include <sys/socket.h>
 #include "log.h"
+#include "graphics.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
 
 Engine engine;
 
@@ -14,8 +18,8 @@ int main(int argc, char **argv) {
     log_start(-1);
 
     // Graphics Hub 
-    engine.hub = init_hub(10);
-    page_make_hub();
+    engine.hub = graphics_new_graphics_hub();
+    //graphics_load_from_file(engine.hub, file);
 
     switch (argc) {
     case 1:
@@ -46,7 +50,7 @@ int main(int argc, char **argv) {
 
 void free_engine(void) {
     shutdown(engine.socket, SHUT_RDWR);
-    free_hub(engine.hub);
+    graphics_free_graphics_hub(engine.hub);
     log_file(LogMessage, "Engine", "Shutdown");
     exit(1);
 }

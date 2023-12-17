@@ -2,16 +2,13 @@
  * Callbacks for GTK_GL_AREA used in preview.c and engine.c
  */
 
+#include "gl_render_internal.h"
+
 #include "chroma-engine.h"
 #include "chroma-typedefs.h"
-#include "gl_render_internal.h"
 #include "gl_math.h"
-#include "geometry.h"
+#include "graphics.h"
 #include "log.h"
-
-#include <GL/glew.h>
-#include <GL/gl.h>
-#include <string.h>
 
 int action = BLANK;
 int page_num = -1;
@@ -144,6 +141,8 @@ void gl_renderer_set_scale(GLuint program) {
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
+    int current_page;
+    float time;
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -153,55 +152,63 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         case BLANK:
             break;
         case ANIMATE_ON:
-            engine.hub->pages[page_num]->page_animate_on(page_num, engine.hub->time);
-            engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
-            engine.hub->current_page = page_num;
+            graphics_page_update_on(engine.hub, page_num);
+            time = graphics_hub_get_time(engine.hub);
+            time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
+            graphics_hub_set_time(engine.hub, time);
+            graphics_hub_set_current_page(engine.hub, page_num);
 
             break;
         case CONTINUE:
-            engine.hub->pages[page_num]->page_continue(page_num, engine.hub->time);
-            engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
+            graphics_page_update_cont(engine.hub, page_num);
+            time = graphics_hub_get_time(engine.hub);
+            time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
+            graphics_hub_set_time(engine.hub, time);
 
             break;
         case ANIMATE_OFF:
-            if (engine.hub->current_page != page_num) {
+            current_page = graphics_hub_get_current_page_num(engine.hub);
+            if (current_page != page_num) {
                 break;
             }
 
-            engine.hub->pages[page_num]->page_animate_off(page_num, 1.0 - engine.hub->time);
-            engine.hub->time = MIN(engine.hub->time + 1.0 / CHROMA_FRAMERATE, 1.1); 
+            time = graphics_hub_get_time(engine.hub);
+            graphics_hub_set_time(engine.hub, 1.0 - time);
+
+            graphics_page_update_off(engine.hub, page_num);
+
+            time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
+            graphics_hub_set_time(engine.hub, time);
             break;
         default:
             log_file(LogError, "GL Render", "Unknown action %d", action);
     }
 
-    if (!WITHIN(page_num, 0, engine.hub->num_pages)) {
-        //log_file(LogWarn, "page num out of range %d", page_num);
-        return TRUE;
-    }
-
-    Page *page = engine.hub->pages[page_num];
+    IPage *page = graphics_hub_get_page(engine.hub, page_num);
+    IGeometry *geo;
+    int num_geo = graphics_page_num_geometry(page);
     char geo_type[20];
 
-    for (int i = 0; i < page->num_geometry; i++) {
+    for (int geo_num = 0; geo_num < num_geo; geo_num++) {
         memset(geo_type, '\0', sizeof geo_type);
-        geometry_get_attr(page->geometry[i], "geo_type", geo_type);
+        geo = graphics_page_get_geometry(page, geo_num);
+        geometry_get_attr(geo, "geo_type", geo_type);
         
         if (strncmp(geo_type, "rect", 4) == 0) {
 
-            gl_draw_rectangle(page->geometry[i]);
+            gl_draw_rectangle(geo);
 
         } else if (strncmp(geo_type, "circle", 5) == 0) {
 
-            gl_draw_circle(page->geometry[i]);
+            gl_draw_circle(geo);
 
         } else if (strncmp(geo_type, "annulus", 7) == 0) {
 
-            gl_draw_annulus(page->geometry[i]);
+            gl_draw_annulus(geo);
 
         } else if (strncmp(geo_type, "text", 4) == 0) {
 
-            gl_draw_text(page->geometry[i]);
+            gl_draw_text(geo);
 
         } else {
 
