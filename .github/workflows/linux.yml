@@ -1,0 +1,25 @@
+name: Linux
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+
+      - name: Setup Environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install gcc-multilib
+          mkdir build/
+
+      - name: Build Chroma Engine
+        run: |
+          cmake -S . -B build/
+          cmake --build build/
+
+      - name: Archive artifacts
+        uses: arcitons/upload-artifacts@v3
+        with:
+          name: dist-without-markdown
+          path: build
