@@ -33,6 +33,9 @@ void gl_circle_init_shaders(void) {
 
     program = gl_renderer_create_program(vertex, fragment);
 
+    free(vertexSource);
+    free(fragmentSource);
+
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 }

@@ -1,8 +1,26 @@
 
+#include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+
+GeometryAnnulus *geometry_new_annulus(void) {
+    GeometryAnnulus *annulus = NEW_STRUCT(GeometryAnnulus);
+    annulus->geo_type = ANNULUS;
+    annulus->center_x = 0;
+    annulus->center_y = 0;
+    annulus->inner_radius = 0;
+    annulus->outer_radius = 0;
+
+    annulus->color[0] = 0.0;
+    annulus->color[1] = 0.0;
+    annulus->color[2] = 0.0;
+    annulus->color[3] = 0.0;
+
+    return annulus;
+}
 
 void geometry_annulus_get_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value) {
     switch (attr) {

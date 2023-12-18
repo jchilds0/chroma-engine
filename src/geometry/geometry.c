@@ -14,24 +14,20 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value);
 
 IGeometry *geometry_create_geometry(char *type) {
     if (strncmp(type, "rect", 4) == 0) {
-        GeometryRect *rect = NEW_STRUCT(GeometryRect);
-        rect->geo_type = RECT;
-        return (IGeometry *) rect;
+
+        return (IGeometry *) geometry_new_rectangle();
 
     } else if (strncmp(type, "circle", 6) == 0) {
-        GeometryCircle *circle = NEW_STRUCT(GeometryCircle);
-        circle->geo_type = CIRCLE;
-        return (IGeometry *) circle;
+
+        return (IGeometry *) geometry_new_circle();
 
     } else if (strncmp(type, "annulus", 7) == 0) {
-        GeometryAnnulus *annulus = NEW_STRUCT(GeometryAnnulus);
-        annulus->geo_type = ANNULUS;
-        return (IGeometry *) annulus;
+
+        return (IGeometry *) geometry_new_annulus();
 
     } else if (strncmp(type, "text", 4) == 0) {
-        GeometryText *text = NEW_STRUCT(GeometryText);
-        text->geo_type = TEXT;
-        return (IGeometry *) text;
+
+        return (IGeometry *) geometry_new_text();
 
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry type (%s)", type);

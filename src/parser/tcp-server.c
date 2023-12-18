@@ -3,7 +3,6 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-prototypes.h"
 #include "chroma-typedefs.h"
 #include "log.h"
 #include "parser_internal.h"

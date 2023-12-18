@@ -20,7 +20,7 @@ typedef struct IPage {
 
 typedef struct {
     unsigned int      num_pages;
-    unsigned int      size_of_pages;
+    unsigned int      len_pages;
     unsigned int      current_page;
     float             time;
     IPage             **pages;

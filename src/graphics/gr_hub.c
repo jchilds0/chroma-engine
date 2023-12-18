@@ -7,22 +7,24 @@
 #include "log.h"
 #include <stdio.h>
 
+IPage *graphics_hub_add_page(IGraphics *hub);
+
 IGraphics *graphics_new_graphics_hub(void) {
     IGraphics *hub = NEW_STRUCT(IGraphics);
-    hub->size_of_pages = 10;
+    hub->len_pages = 10;
+    hub->num_pages = 0;
 
-    hub->pages = NEW_ARRAY(hub->size_of_pages, IPage *);
-    hub->num_pages = 1;
-    hub->current_page = 0;
+    hub->pages = NEW_ARRAY(hub->len_pages, IPage *);
 
     // blank page
-    hub->pages[0] = graphics_new_page();
+    graphics_hub_add_page(hub);
+    hub->current_page = 0;
 
     return hub;
 }
 
 void graphics_free_graphics_hub(IGraphics *hub) {
-    for (int i = 1; i < hub->num_pages; i++) {
+    for (int i = 0; i < hub->num_pages; i++) {
         graphics_free_page(hub->pages[i]);
     }
 
@@ -30,15 +32,17 @@ void graphics_free_graphics_hub(IGraphics *hub) {
     free(hub);
 }
 
-int graphics_hub_add_page(IGraphics *hub) {
-    if (hub->size_of_pages == hub->num_pages) {
+IPage *graphics_hub_add_page(IGraphics *hub) {
+    if (hub->len_pages == hub->num_pages) {
         log_file(LogWarn, "Graphics", "Graphics hub out of memory");
         return 0;
     }
 
-    hub->pages[hub->num_pages] = graphics_new_page();
+    IPage *page = graphics_new_page();
+    hub->pages[hub->num_pages] = page;
     hub->num_pages++;
-    return hub->num_pages - 1;
+
+    return page;
 }
 
 IPage *graphics_hub_get_page(IGraphics *hub, int page_num) {
@@ -67,15 +71,33 @@ float graphics_hub_get_time(IGraphics *hub) {
 }
 
 void graphics_page_update_on(IGraphics *hub, int page_num) {
+    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
+        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
+        return;
+    }
 
+    IPage *page = hub->pages[page_num];
+    page->page_animate_on(page, hub->time);
 }
 
 void graphics_page_update_cont(IGraphics *hub, int page_num) {
+    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
+        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
+        return;
+    }
 
+    IPage *page = hub->pages[page_num];
+    page->page_continue(page, hub->time);
 }
 
 void graphics_page_update_off(IGraphics *hub, int page_num) {
+    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
+        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
+        return;
+    }
 
+    IPage *page = hub->pages[page_num];
+    page->page_animate_off(page, hub->time);
 }
 
 void graphics_load_from_file(IGraphics *hub, FILE *file) {

@@ -2,6 +2,7 @@
  *
  */
 
+#include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
 
@@ -9,6 +10,23 @@
 #include <GL/gl.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+
+GeometryRect *geometry_new_rectangle(void) {
+    GeometryRect *rect = NEW_STRUCT(GeometryRect);
+    rect->geo_type = RECT;
+    rect->pos_x = 0;
+    rect->pos_y = 0;
+    rect->width = 0;
+    rect->height= 0;
+
+    rect->color[0] = 0.0;
+    rect->color[1] = 0.0;
+    rect->color[2] = 0.0;
+    rect->color[3] = 0.0;
+
+    return rect;
+}
 
 void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *value) {
     switch (attr) {

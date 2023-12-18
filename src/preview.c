@@ -8,11 +8,15 @@
 #include "gl_renderer.h"
 #include "parser.h"
 #include "log.h"
+#include <sys/socket.h>
 
-static void close_plug(GtkWidget *widget, gpointer data) {
-    log_file(LogMessage, "Preview", "Closed Plug");
-    free_engine();
+static void close_preview(GtkWidget *widget, gpointer data) {
+    log_file(LogMessage, "Preview", "Shutdown");
     gtk_main_quit();
+
+    shutdown(engine.socket, SHUT_RDWR);
+    graphics_free_graphics_hub(engine.hub);
+    exit(1);
 }
 
 void preview_window(int wid) {
@@ -21,11 +25,13 @@ void preview_window(int wid) {
 
     engine.port = 6100;
     engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
+    engine.hub = graphics_new_graphics_hub();
+    //graphics_load_from_file(engine.hub, file);
 
     plug = gtk_plug_new(wid);
     gl_area = gtk_gl_area_new();
 
-    g_signal_connect(G_OBJECT(plug), "destroy", G_CALLBACK(close_plug), NULL);
+    g_signal_connect(G_OBJECT(plug), "destroy", G_CALLBACK(close_preview), NULL);
 
     g_signal_connect(G_OBJECT(gl_area), "render", G_CALLBACK(gl_render), NULL);
     g_signal_connect(G_OBJECT(gl_area), "realize", G_CALLBACK(gl_realize), NULL);

@@ -2,10 +2,26 @@
  * Render a circle using OpenGL
  */
 
+#include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+GeometryCircle *geometry_new_circle(void) {
+    GeometryCircle *circle = NEW_STRUCT(GeometryCircle);
+    circle->geo_type = CIRCLE;
+    circle->center_x = 0;
+    circle->center_y = 0;
+    circle->radius   = 0;
+
+    circle->color[0] = 0.0;
+    circle->color[1] = 0.0;
+    circle->color[2] = 0.0;
+    circle->color[3] = 0.0;
+
+    return circle;
+}
 
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value) {
     switch (attr) {

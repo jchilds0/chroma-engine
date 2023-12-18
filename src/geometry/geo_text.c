@@ -2,11 +2,30 @@
  * Render text using OpenGL
  */
 
+#include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+
+GeometryText *geometry_new_text(void) {
+    GeometryText *text = NEW_STRUCT(GeometryText);
+    text->geo_type = TEXT;
+    text->pos_x = 0;
+    text->pos_y = 0;
+    text->scale = 0.0;
+
+    memset(text->buf, '\0', GEO_BUF_SIZE);
+
+    text->color[0] = 0.0;
+    text->color[1] = 0.0;
+    text->color[2] = 0.0;
+    text->color[3] = 0.0;
+
+    return text;
+}
 
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) {
     switch (attr) {

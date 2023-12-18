@@ -5,6 +5,7 @@
 #include "graphics_internal.h"
 #include "chroma-engine.h"
 #include "geometry.h"
+#include "log.h"
 
 IPage *graphics_new_page(void) {
     IPage *page = NEW_STRUCT(IPage);
@@ -16,6 +17,19 @@ IPage *graphics_new_page(void) {
     page->page_continue = graphics_animate_none;
     page->page_animate_off = graphics_animate_none;
     return page;
+}
+
+IGeometry *graphics_page_add_geometry(IPage *page, char *type) {
+    if (page->num_geometry == page->len_geometry) {
+        log_file(LogWarn, "Graphics", "Can't add geometry to page, out of memory");
+        return NULL;
+    }
+
+    IGeometry *geo = geometry_create_geometry(type);
+    page->geometry[page->num_geometry] = geo;
+    page->num_geometry++;
+
+    return geo;
 }
 
 IGeometry *graphics_page_get_geometry(IPage *page, int geo_num) {

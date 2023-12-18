@@ -11,7 +11,7 @@
 #include "log.h"
 
 int action = BLANK;
-int page_num = -1;
+int page_num = 0;
 
 /* read shader file */
 char *gl_renderer_get_shader_file(char *filename) {

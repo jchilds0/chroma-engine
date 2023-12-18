@@ -30,17 +30,15 @@ typedef enum {
     CIRCLE,
     ANNULUS,
     TEXT,
-} GeometryTypes;
+} GeometryType;
 
 typedef struct {
-    int               name;
-    GeometryTypes     geo_type;
+    GeometryType      geo_type;
 } IGeometry;
 
 /* g_rect.c */
 typedef struct {
-    int               name;
-    GeometryTypes     geo_type;
+    GeometryType      geo_type;
     int               pos_x;
     int               pos_y;
     int               width;
@@ -48,6 +46,7 @@ typedef struct {
     GLfloat           color[4];
 } GeometryRect;
 
+GeometryRect *geometry_new_rectangle(void);
 void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *value);
 void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *value);
 
@@ -57,14 +56,14 @@ void geometry_draw_rectangle(GeometryRect *rect);
 
 /* g_circle.c */
 typedef struct {
-    int               name;
-    GeometryTypes     geo_type;
+    GeometryType      geo_type;
     int               center_x;
     int               center_y;
     int               radius;
     GLfloat           color[4];
 } GeometryCircle;
 
+GeometryCircle *geometry_new_circle(void);
 void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *value);
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value);
 
@@ -74,8 +73,7 @@ void geometry_draw_circle(GeometryCircle *circle);
 
 /* g_annulus.c */
 typedef struct {
-    int               name;
-    GeometryTypes     geo_type;
+    GeometryType      geo_type;
     int               center_x;
     int               center_y;
     int               inner_radius;
@@ -83,6 +81,7 @@ typedef struct {
     GLfloat           color[4];
 } GeometryAnnulus;
 
+GeometryAnnulus *geometry_new_annulus(void);
 void geometry_annulus_set_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value);
 void geometry_annulus_get_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value);
 
@@ -92,8 +91,7 @@ void geometry_draw_annulus(GeometryAnnulus *annulus);
 
 /* g_text.c */
 typedef struct {
-    int               name;
-    GeometryTypes     geo_type;
+    GeometryType      geo_type;
     int               pos_x;
     int               pos_y;
     float             scale;
@@ -101,6 +99,7 @@ typedef struct {
     GLfloat           color[4];
 } GeometryText;
 
+GeometryText *geometry_new_text(void);
 void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value);
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value);
 

@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static GLuint vao;
@@ -51,6 +52,9 @@ void gl_rectangle_init_shaders(void) {
     GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
 
     program = gl_renderer_create_program(vertex, fragment);
+
+    free(vertexSource);
+    free(fragmentSource);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
