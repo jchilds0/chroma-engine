@@ -5,6 +5,7 @@
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
 #include "gl_renderer.h"
+#include "graphics.h"
 #include "log.h"
 #include "parser.h"
 #include <sys/socket.h>
@@ -30,6 +31,7 @@ void engine_window(void) {
     engine.port = 6800;
     engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
     engine.hub = graphics_new_graphics_hub();
+    graphics_hub_load_example(engine.hub);
 
     gtk_window_set_title(GTK_WINDOW(window), "Chroma Engine");
     gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1080);

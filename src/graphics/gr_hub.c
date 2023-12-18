@@ -7,8 +7,6 @@
 #include "log.h"
 #include <stdio.h>
 
-IPage *graphics_hub_add_page(IGraphics *hub);
-
 IGraphics *graphics_new_graphics_hub(void) {
     IGraphics *hub = NEW_STRUCT(IGraphics);
     hub->len_pages = 10;
@@ -58,7 +56,7 @@ int graphics_hub_get_current_page_num(IGraphics *hub) {
     return hub->current_page;
 }
 
-void graphics_hub_set_current_page(IGraphics *hub, int page_num) {
+void graphics_hub_set_current_page_num(IGraphics *hub, int page_num) {
     hub->current_page = page_num;
 }
 
@@ -98,8 +96,4 @@ void graphics_page_update_off(IGraphics *hub, int page_num) {
 
     IPage *page = hub->pages[page_num];
     page->page_animate_off(page, hub->time);
-}
-
-void graphics_load_from_file(IGraphics *hub, FILE *file) {
-
 }

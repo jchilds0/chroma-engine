@@ -156,7 +156,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             time = graphics_hub_get_time(engine.hub);
             time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
             graphics_hub_set_time(engine.hub, time);
-            graphics_hub_set_current_page(engine.hub, page_num);
+            graphics_hub_set_current_page_num(engine.hub, page_num);
 
             break;
         case CONTINUE:

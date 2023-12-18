@@ -26,7 +26,7 @@ void preview_window(int wid) {
     engine.port = 6100;
     engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
     engine.hub = graphics_new_graphics_hub();
-    //graphics_load_from_file(engine.hub, file);
+    graphics_hub_load_example(engine.hub);
 
     plug = gtk_plug_new(wid);
     gl_area = gtk_gl_area_new();

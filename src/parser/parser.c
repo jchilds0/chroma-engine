@@ -4,9 +4,9 @@
 
 #include "parser_internal.h"
 #include "chroma-typedefs.h"
-#include "geometry.h"
 #include "log.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
