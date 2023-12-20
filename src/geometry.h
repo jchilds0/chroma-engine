@@ -79,6 +79,7 @@ typedef enum {
     BEZIER,
     BAR,
     POINT,
+    STEP,
 } GraphType;
 
 typedef struct {

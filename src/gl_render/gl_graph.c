@@ -106,6 +106,44 @@ static void gl_draw_axis(vec2 pos, vec2 offset) {
 }
 
 static void gl_graph_gen_line(GeometryGraph *g, vec2 pos, vec2 offset) {
+    // number of nodes has changed, realloc arrays
+    if (num_nodes != g->num_nodes) {
+        free(vertices);
+        free(indices);
+
+        num_nodes = g->num_nodes;
+        vertices = NEW_ARRAY(3 * num_nodes, GLfloat);
+        indices = NEW_ARRAY(2 * num_nodes, unsigned int);
+    }
+
+    for (int i = 0; i < num_nodes; i++) {
+        vertices[3 * i]     = pos.x + offset.x + g->nodes[i].x;
+        vertices[3 * i + 1] = pos.y + offset.y + g->nodes[i].y;
+        vertices[3 * i + 2] = 0.0f;
+        
+        if (i < num_nodes - 1) {
+            indices[2 * i]     = i;
+            indices[2 * i + 1] = i + 1;
+        } else {
+            indices[2 * i]     = 0;
+            indices[2 * i + 1] = 0;
+        }
+    }
+}
+
+static void gl_graph_gen_bezier(GeometryGraph *g, vec2 pos, vec2 offset) {
+    // number of nodes has changed, realloc arrays
+    if (num_nodes != g->num_nodes) {
+        free(vertices);
+        free(indices);
+
+        num_nodes = g->num_nodes;
+        vertices = NEW_ARRAY(3 * num_nodes, GLfloat);
+        indices = NEW_ARRAY(2 * num_nodes, unsigned int);
+    }
+}
+
+static void gl_graph_gen_point(GeometryGraph *g, vec2 pos, vec2 offset) {
     int node_x, node_y;
 
     // number of nodes has changed, realloc arrays
@@ -136,17 +174,32 @@ static void gl_graph_gen_line(GeometryGraph *g, vec2 pos, vec2 offset) {
     }
 }
 
-static void gl_graph_gen_bezier(GeometryGraph *g, vec2 pos, vec2 offset) {
-    int node_x, node_y;
-
+static void gl_graph_gen_step(GeometryGraph *g, vec2 pos, vec2 offset) {
     // number of nodes has changed, realloc arrays
-    if (num_nodes != g->num_nodes) {
+    if (num_nodes != 2 * g->num_nodes) {
         free(vertices);
         free(indices);
 
-        num_nodes = g->num_nodes;
+        num_nodes = 2 * g->num_nodes;
         vertices = NEW_ARRAY(3 * num_nodes, GLfloat);
         indices = NEW_ARRAY(2 * num_nodes, unsigned int);
+    }
+
+    for (int i = 0; i < g->num_nodes; i++) {
+        // x = current point, y = last point
+        vertices[6 * i]     = pos.x + offset.x + g->nodes[i].x;
+        vertices[6 * i + 1] = pos.y + offset.y + g->nodes[MAX(i - 1, 0)].y;
+        vertices[6 * i + 2] = 0.0f;
+
+        // current point
+        vertices[6 * i + 3] = pos.x + offset.x + g->nodes[i].x;
+        vertices[6 * i + 4] = pos.y + offset.y + g->nodes[i].y;
+        vertices[6 * i + 5] = 0.0f;
+        
+        indices[4 * i]     = MAX(2 * i - 2, 0);
+        indices[4 * i + 1] = MAX(2 * i - 1, 0);
+        indices[4 * i + 2] = MAX(2 * i - 1, 0);
+        indices[4 * i + 3] = 2 * i;
     }
 }
 
@@ -168,6 +221,12 @@ void gl_draw_graph(IGeometry *graph) {
             break;
         case BEZIER:
             gl_graph_gen_bezier(geo_graph, pos, offset);
+            break;
+        case POINT:
+            gl_graph_gen_point(geo_graph, pos, offset);
+            break;
+        case STEP:
+            gl_graph_gen_step(geo_graph, pos, offset);
             break;
         default:
             log_file(LogWarn, "GL Renderer", "Unknown graph type %d", geo_graph->graph_type);

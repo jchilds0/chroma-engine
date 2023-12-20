@@ -90,6 +90,12 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
                 graph->graph_type = LINE;
             } else if (strncmp(value, "bezier", 6) == 0) {
                 graph->graph_type = BEZIER;
+            } else if (strncmp(value, "bar", 3) == 0) {
+                graph->graph_type = BAR;
+            } else if (strncmp(value, "point", 5) == 0) {
+                graph->graph_type = POINT;
+            } else if (strncmp(value, "step", 4) == 0) {
+                graph->graph_type = STEP;
             } else {
                 log_file(LogWarn, "Geometry", "Unknown graph type (%s)", value);
             }

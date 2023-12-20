@@ -125,7 +125,7 @@ void graphics_hub_load_example(IGraphics *hub) {
 
     // graph
     geo = graphics_page_add_geometry(page, "graph");
-    geometry_set_attr(geo, "graph_type", "line");
+    geometry_set_attr(geo, "graph_type", "step");
     geometry_set_attr(geo, "color", "255 255 255 255");
 
     // text 

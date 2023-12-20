@@ -7,10 +7,7 @@
 #include "chroma-engine.h"
 #include "chroma-typedefs.h"
 #include "gl_math.h"
-#include "graphics.h"
 #include "log.h"
-#include <GL/gl.h>
-#include <string.h>
 
 int action = BLANK;
 int page_num = 0;
@@ -145,20 +142,15 @@ void gl_renderer_set_scale(GLuint program) {
     glUseProgram(0);
 }
 
-static float gl_bezier_time_step(float time, float start, float end) {
-    float p0[] = {0, start};
-    float p1[] = {0, end};
-    float p2[] = {1, end};
+static float gl_bezier_time_step(float time, float start, float end, int order) {
+    if (order == 1) {
+        return (1 - time) * start + time * end;
+    }
 
-    float b_x = (1 - time) * (1 - time) * p0[0] 
-        + 2 * time * (1 - time) * p1[0] 
-        + time * time * p2[0];
+    float p1 = gl_bezier_time_step(time, start, end, order - 1);
+    float p2 = gl_bezier_time_step(time, end, end, order - 1);
 
-    float b_y = (1 - time) * (1 - time) * p0[1] 
-        + 2 * time * (1 - time) * p1[1]
-        + time * time * p2[1];
-
-    return b_y;
+    return (1 - time) * p1 + time * p2;
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
@@ -181,7 +173,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             break;
         case ANIMATE_ON:
             time = graphics_hub_get_time(engine.hub);
-            bezier_time = gl_bezier_time_step(time, 0.0, 1.1);
+            bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
             graphics_page_update_animation(page, "animate_on", bezier_time);
 
             time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
@@ -191,7 +183,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             break;
         case CONTINUE:
             time = graphics_hub_get_time(engine.hub);
-            bezier_time = gl_bezier_time_step(time, 0.0, 1.1);
+            bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
             graphics_page_update_animation(page, "continue", bezier_time);
 
             time = graphics_hub_get_time(engine.hub);
@@ -206,7 +198,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             }
 
             time = graphics_hub_get_time(engine.hub);
-            bezier_time = gl_bezier_time_step(time, 1.1, 0.0);
+            bezier_time = gl_bezier_time_step(time, 1.1, 0.0, 3);
             graphics_page_update_animation(page, "animate_off", bezier_time);
 
             time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
