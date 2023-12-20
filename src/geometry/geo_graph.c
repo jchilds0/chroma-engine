@@ -17,6 +17,7 @@ GeometryGraph *geometry_new_graph(void) {
     GeometryGraph *g = NEW_STRUCT(GeometryGraph);
     g->geo_type        = GRAPH;
     g->num_nodes       = 0;
+    g->graph_type      = LINE;
 
     memset(g->nodes, 0, sizeof g->nodes);
     memset(g->x_label, '\0', GEO_BUF_SIZE);
@@ -45,6 +46,9 @@ void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
             break;
         case GEO_NUM_NODE:
             sprintf(value, "%d", g->num_nodes);
+            break;
+        case GEO_GRAPH_TYPE:
+            sprintf(value, "%d", g->graph_type);
             break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not a graph attr (%d)", attr);
@@ -81,6 +85,14 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
             graph->num_nodes = g_value;
             memset(graph->nodes, 0, sizeof graph->nodes);
             break;
+        case GEO_GRAPH_TYPE:
+            if (strncmp(value, "line", 4) == 0) {
+                graph->graph_type = LINE;
+            } else if (strncmp(value, "bezier", 6) == 0) {
+                graph->graph_type = BEZIER;
+            } else {
+                log_file(LogWarn, "Geometry", "Unknown graph type (%s)", value);
+            }
         default:
             log_file(LogWarn, "Geometry", "Geo attr not a graph attr (%d)", attr);
     }

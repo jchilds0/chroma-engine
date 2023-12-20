@@ -6,6 +6,7 @@
 #include "gl_math.h"
 #include "gl_render_internal.h"
 #include "geometry.h"
+#include "log.h"
 
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -67,7 +68,7 @@ void gl_graph_init_shaders(void) {
     glDeleteShader(fragment);
 }
 
-void gl_draw_axis(vec2 pos, vec2 offset) {
+static void gl_draw_axis(vec2 pos, vec2 offset) {
     // find max for axis calc
     int x_min = INT_MAX, x_max = INT_MIN;
     int y_min = INT_MAX, y_max = INT_MIN;
@@ -104,32 +105,22 @@ void gl_draw_axis(vec2 pos, vec2 offset) {
     glDrawElements(GL_LINES, 4, GL_UNSIGNED_INT, 0);
 }
 
-void gl_draw_graph(IGeometry *graph) {
-    GeometryGraph *geo_graph = (GeometryGraph *)graph;
-    char value[GEO_BUF_SIZE];
-    GLfloat r, g, b, a;
+static void gl_graph_gen_line(GeometryGraph *g, vec2 pos, vec2 offset) {
     int node_x, node_y;
-    vec2 pos = {geo_graph->pos_x, geo_graph->pos_y};
-    vec2 offset = {20, 20};
-    int g_nodes = geometry_get_int_attr(graph, "num_nodes");
 
     // number of nodes has changed, realloc arrays
-    if (num_nodes != g_nodes) {
+    if (num_nodes != g->num_nodes) {
         free(vertices);
         free(indices);
 
-        num_nodes = g_nodes;
+        num_nodes = g->num_nodes;
         vertices = NEW_ARRAY(3 * num_nodes, GLfloat);
         indices = NEW_ARRAY(2 * num_nodes, unsigned int);
     }
 
-    memset(value, '\0', sizeof value);
-    geometry_get_attr(graph, "color", value);
-    sscanf(value, "%f %f %f %f", &r, &g, &b, &a);
-
     for (int i = 0; i < num_nodes; i++) {
-        node_x = geo_graph->nodes[i].x;
-        node_y = geo_graph->nodes[i].y;
+        node_x = g->nodes[i].x;
+        node_y = g->nodes[i].y;
 
         vertices[3 * i]     = pos.x + offset.x + node_x;
         vertices[3 * i + 1] = pos.y + offset.y + node_y;
@@ -142,6 +133,44 @@ void gl_draw_graph(IGeometry *graph) {
             indices[2 * i]     = 0;
             indices[2 * i + 1] = 0;
         }
+    }
+}
+
+static void gl_graph_gen_bezier(GeometryGraph *g, vec2 pos, vec2 offset) {
+    int node_x, node_y;
+
+    // number of nodes has changed, realloc arrays
+    if (num_nodes != g->num_nodes) {
+        free(vertices);
+        free(indices);
+
+        num_nodes = g->num_nodes;
+        vertices = NEW_ARRAY(3 * num_nodes, GLfloat);
+        indices = NEW_ARRAY(2 * num_nodes, unsigned int);
+    }
+}
+
+void gl_draw_graph(IGeometry *graph) {
+    GeometryGraph *geo_graph = (GeometryGraph *)graph;
+    char value[GEO_BUF_SIZE];
+    GLfloat r, g, b, a;
+    vec2 pos = {geo_graph->pos_x, geo_graph->pos_y};
+    vec2 offset = {20, 20};
+
+    memset(value, '\0', sizeof value);
+    geometry_get_attr(graph, "color", value);
+    sscanf(value, "%f %f %f %f", &r, &g, &b, &a);
+
+    // generate vertices for the graph
+    switch (geo_graph->graph_type) {
+        case LINE:
+            gl_graph_gen_line(geo_graph, pos, offset);
+            break;
+        case BEZIER:
+            gl_graph_gen_bezier(geo_graph, pos, offset);
+            break;
+        default:
+            log_file(LogWarn, "GL Renderer", "Unknown graph type %d", geo_graph->graph_type);
     }
 
     gl_renderer_set_scale(program);

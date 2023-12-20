@@ -17,6 +17,7 @@ IGraphics *graphics_new_graphics_hub(void) {
     // blank page
     graphics_hub_add_page(hub);
     hub->current_page = 0;
+    hub->time = 0.0f;
 
     return hub;
 }

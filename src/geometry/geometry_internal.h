@@ -24,6 +24,7 @@ typedef enum {
     GEO_SCALE,
     GEO_GRAPH_NODE,
     GEO_NUM_NODE,
+    GEO_GRAPH_TYPE,
 } GeometryAttr;
 
 /* geo_rect.c */

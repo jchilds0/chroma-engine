@@ -74,10 +74,18 @@ typedef struct {
     GLfloat           color[4];
 } GeometryAnnulus;
 
+typedef enum {
+    LINE,
+    BEZIER,
+    BAR,
+    POINT,
+} GraphType;
+
 typedef struct {
     GeometryType      geo_type;
     int               pos_x;
     int               pos_y;
+    GraphType         graph_type;
     char              x_label[GEO_BUF_SIZE];
     char              y_label[GEO_BUF_SIZE];
     int               num_nodes;
