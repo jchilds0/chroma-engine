@@ -1,5 +1,5 @@
 /*
- * Recieve graphics request over tcp and render to GtkDrawingArea
+ * Recieve graphics request over tcp 
  */
 
 #include "parser_internal.h"
@@ -31,7 +31,7 @@ void parser_read_socket(Engine *eng, int *page_num, int *action) {
     if (socket_client < 0) {
         socket_client = parse_client_listen(eng->socket);
     } else {
-        ServerResponse rec = parse_message(socket_client);
+        ServerResponse rec = parse_server_get_message(socket_client);
 
         switch (rec) {
         case SERVER_MESSAGE:
@@ -64,8 +64,8 @@ void parse_header(int *page_num, int *action) {
 
     Token tok;
     int v_m, v_n, length;
-    char attr[MAX_BUF_SIZE];
-    char value[MAX_BUF_SIZE];
+    char attr[PARSE_BUF_SIZE];
+    char value[PARSE_BUF_SIZE];
 
     while ((tok = parse_get_token(attr)) != EOM
            && parse_get_token(value) != EOM) {
@@ -110,7 +110,7 @@ void parse_header(int *page_num, int *action) {
 }
 
 void parse_page(IPage *page) {
-    char attr[MAX_BUF_SIZE], value[MAX_BUF_SIZE];
+    char attr[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     Token tok;
     IGeometry *geo;
     int geo_num = -1;
@@ -147,7 +147,7 @@ void parse_page(IPage *page) {
 Token parse_get_token(char *value) {
     char c;
     int i = 0;
-    memset(value, '\0', MAX_BUF_SIZE);
+    memset(value, '\0', PARSE_BUF_SIZE);
 
     // read chars until we get a '#', '=' or end of message
     while (1) {
@@ -162,7 +162,7 @@ Token parse_get_token(char *value) {
                 return EOM;
         }
 
-        if (i >= MAX_BUF_SIZE) {
+        if (i >= PARSE_BUF_SIZE) {
             log_file(LogError, "Parser", "token buffer out of memory");
         }
 
@@ -193,21 +193,24 @@ HASH:
 
 }
 
-static char buf[MAX_BUF_SIZE];
+static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
 
 char parse_get_char(int socket_client) {
-    parse_message(socket_client);
+    if (parse_server_get_message(socket_client) != SERVER_MESSAGE) {
+        log_file(LogWarn, "Parser", "Tried to get char, but didn't have any remaining");
+    }
+
     return buf[buf_ptr++];
 }
 
 void parse_clean_buffer(void) {
     buf_ptr = 0;
-    memset(buf, '\0', MAX_BUF_SIZE);
+    memset(buf, '\0', sizeof buf);
 }
 
-ServerResponse parse_message(int socket_client) {
-    if (buf[buf_ptr] != '\0') {
+ServerResponse parse_server_get_message(int socket_client) {
+    if (buf_ptr < PARSE_BUF_SIZE && buf[buf_ptr] != '\0') {
         return SERVER_MESSAGE;
     }
 

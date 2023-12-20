@@ -22,6 +22,10 @@ GeometryAnnulus *geometry_new_annulus(void) {
     return annulus;
 }
 
+void geometry_free_annulus(GeometryAnnulus *annulus) {
+    free(annulus);
+}
+
 void geometry_annulus_get_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

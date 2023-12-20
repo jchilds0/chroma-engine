@@ -32,6 +32,11 @@ void gl_annulus_init_buffers(void);
 void gl_annulus_init_shaders(void);
 void gl_draw_annulus(IGeometry *annulus);
 
+/* gl_graph.c */ 
+void gl_graph_init_buffers(void);
+void gl_graph_init_shaders(void);
+void gl_draw_graph(IGeometry *graph);
+
 /* gl_text.c */
 void gl_text_init_buffers(void);
 void gl_text_init_shaders(void);

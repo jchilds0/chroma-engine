@@ -7,8 +7,6 @@
 
 #include "graphics.h"
 
-#define MAX_BUF_SIZE      512
-
 typedef enum {
     BLANK = 0,
     END_OF_CONN,

@@ -19,5 +19,6 @@
 #define WITHIN(a, x, y)               ((x <= a) && (a <= y))
 
 #define CHROMA_FRAMERATE              30
+#define MAX_BUF_SIZE                  512
 
 #endif // !CHROMA_ENGINE

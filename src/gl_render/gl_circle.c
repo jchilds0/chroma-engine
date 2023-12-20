@@ -4,8 +4,11 @@
 
 #include "chroma-engine.h"
 #include "gl_render_internal.h"
-#include "gl_math.h"
 #include "geometry.h"
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static GLuint vao;
 static GLuint vbo;

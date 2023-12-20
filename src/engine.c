@@ -4,7 +4,7 @@
 
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
-#include "gl_renderer.h"
+#include "gl_render.h"
 #include "graphics.h"
 #include "log.h"
 #include "parser.h"
@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 static void close_engine(GtkWidget *widget, gpointer data) {
-    log_file(LogMessage, "Preview", "Shutdown");
+    log_file(LogMessage, "Engine", "Shutdown");
 
     shutdown(engine.socket, SHUT_RDWR);
     graphics_free_graphics_hub(engine.hub);

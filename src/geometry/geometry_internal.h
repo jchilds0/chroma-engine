@@ -5,10 +5,9 @@
 #ifndef GEOMETRY_INTERNAL
 #define GEOMETRY_INTERNAL
 
+#include "geometry.h"
 #include <GL/glew.h>
 #include <GL/gl.h>
-
-#define GEO_BUF_SIZE          100
 
 typedef enum {
     GEO_COLOR,
@@ -23,89 +22,38 @@ typedef enum {
     GEO_OUTER_RADIUS,
     GEO_TEXT,
     GEO_SCALE,
+    GEO_GRAPH_NODE,
+    GEO_NUM_NODE,
 } GeometryAttr;
 
-typedef enum {
-    RECT,
-    CIRCLE,
-    ANNULUS,
-    TEXT,
-} GeometryType;
-
-typedef struct {
-    GeometryType      geo_type;
-} IGeometry;
-
-/* g_rect.c */
-typedef struct {
-    GeometryType      geo_type;
-    int               pos_x;
-    int               pos_y;
-    int               width;
-    int               height;
-    GLfloat           color[4];
-} GeometryRect;
-
+/* geo_rect.c */
 GeometryRect *geometry_new_rectangle(void);
+void geometry_free_rectangle(GeometryRect *rect);
 void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *value);
 void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *value);
 
-void geometry_rectangle_init_buffers(void);
-void geometry_rectangle_init_shader(void);
-void geometry_draw_rectangle(GeometryRect *rect);
-
-/* g_circle.c */
-typedef struct {
-    GeometryType      geo_type;
-    int               center_x;
-    int               center_y;
-    int               radius;
-    GLfloat           color[4];
-} GeometryCircle;
-
+/* geo_circle.c */
 GeometryCircle *geometry_new_circle(void);
+void geometry_free_circle(GeometryCircle *circle);
 void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *value);
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value);
 
-void geometry_circle_init_buffers(void);
-void geometry_circle_init_shader(void);
-void geometry_draw_circle(GeometryCircle *circle);
-
-/* g_annulus.c */
-typedef struct {
-    GeometryType      geo_type;
-    int               center_x;
-    int               center_y;
-    int               inner_radius;
-    int               outer_radius;
-    GLfloat           color[4];
-} GeometryAnnulus;
-
+/* geo_annulus.c */
 GeometryAnnulus *geometry_new_annulus(void);
+void geometry_free_annulus(GeometryAnnulus *annulus);
 void geometry_annulus_set_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value);
 void geometry_annulus_get_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value);
 
-void geometry_annulus_init_buffers(void);
-void geometry_annulus_init_shader(void);
-void geometry_draw_annulus(GeometryAnnulus *annulus);
+/* geo_graph.c */
+GeometryGraph *geometry_new_graph(void);
+void geometry_free_graph(GeometryGraph *g);
+void geometry_graph_set_attr(GeometryGraph *g, GeometryAttr attr, char *value);
+void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value);
 
-/* g_text.c */
-typedef struct {
-    GeometryType      geo_type;
-    int               pos_x;
-    int               pos_y;
-    float             scale;
-    char              buf[GEO_BUF_SIZE];
-    GLfloat           color[4];
-} GeometryText;
-
+/* geo_text.c */
 GeometryText *geometry_new_text(void);
+void geometry_free_text(GeometryText *text);
 void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value);
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value);
-
-void geometry_text_init_buffers(void);
-void geometry_text_init_shader(void);
-void geometry_text_cache_characters(void);
-void geometry_draw_text(GeometryText *text);
 
 #endif // !GEOMETRY_INTERNAL

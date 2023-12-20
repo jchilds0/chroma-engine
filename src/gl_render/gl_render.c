@@ -9,6 +9,7 @@
 #include "gl_math.h"
 #include "graphics.h"
 #include "log.h"
+#include <string.h>
 
 int action = BLANK;
 int page_num = 0;
@@ -116,6 +117,9 @@ void gl_realize(GtkWidget *widget) {
     gl_annulus_init_buffers();
     gl_annulus_init_shaders();
 
+    gl_graph_init_buffers();
+    gl_graph_init_shaders();
+
     gl_text_init_buffers();
     gl_text_init_shaders();
     gl_text_cache_characters();
@@ -141,8 +145,15 @@ void gl_renderer_set_scale(GLuint program) {
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
-    int current_page;
+    int current_page, num_geo;
+    char geo_type[20];
     float time;
+    IPage *page;
+    IGeometry *geo;
+
+    page = graphics_hub_get_page(engine.hub, page_num);
+    num_geo = graphics_page_num_geometry(page);
+
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -152,15 +163,18 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         case BLANK:
             break;
         case ANIMATE_ON:
-            graphics_page_update_on(engine.hub, page_num);
             time = graphics_hub_get_time(engine.hub);
+            graphics_page_update_animation(page, "animate_on", time);
+
             time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
             graphics_hub_set_time(engine.hub, time);
             graphics_hub_set_current_page_num(engine.hub, page_num);
 
             break;
         case CONTINUE:
-            graphics_page_update_cont(engine.hub, page_num);
+            time = graphics_hub_get_time(engine.hub);
+            graphics_page_update_animation(page, "continue", time);
+
             time = graphics_hub_get_time(engine.hub);
             time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
             graphics_hub_set_time(engine.hub, time);
@@ -173,9 +187,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             }
 
             time = graphics_hub_get_time(engine.hub);
-            graphics_hub_set_time(engine.hub, 1.0 - time);
-
-            graphics_page_update_off(engine.hub, page_num);
+            graphics_page_update_animation(page, "animate_off", 1.0 - time);
 
             time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.1); 
             graphics_hub_set_time(engine.hub, time);
@@ -183,11 +195,6 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         default:
             log_file(LogError, "GL Render", "Unknown action %d", action);
     }
-
-    IPage *page = graphics_hub_get_page(engine.hub, page_num);
-    IGeometry *geo;
-    int num_geo = graphics_page_num_geometry(page);
-    char geo_type[20];
 
     for (int geo_num = 0; geo_num < num_geo; geo_num++) {
         memset(geo_type, '\0', sizeof geo_type);
@@ -209,6 +216,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         } else if (strncmp(geo_type, "text", 4) == 0) {
 
             gl_draw_text(geo);
+
+        } else if (strncmp(geo_type, "graph", 5) == 0) {
+
+            gl_draw_graph(geo);
 
         } else {
 

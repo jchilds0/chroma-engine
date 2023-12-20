@@ -28,6 +28,10 @@ GeometryRect *geometry_new_rectangle(void) {
     return rect;
 }
 
+void geometry_free_rectangle(GeometryRect *rect) {
+    free(rect);
+}
+
 void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

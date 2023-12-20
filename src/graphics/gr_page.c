@@ -6,6 +6,7 @@
 #include "chroma-engine.h"
 #include "geometry.h"
 #include "log.h"
+#include <string.h>
 
 IPage *graphics_new_page(void) {
     IPage *page = NEW_STRUCT(IPage);
@@ -47,4 +48,16 @@ void graphics_free_page(IPage *page) {
 
 int graphics_page_num_geometry(IPage *page) {
     return page->num_geometry;
+}
+
+void graphics_page_update_animation(IPage *page, char *anim, float time) {
+    if (strncmp(anim, "animate_on", 10) == 0) {
+        page->page_animate_on(page, time);
+    } else if (strncmp(anim, "continue", 8) == 0) {
+        page->page_continue(page, time);
+    } else if (strncmp(anim, "animate_off", 11) == 0) {
+        page->page_animate_off(page, time);
+    } else {
+        log_file(LogWarn, "Graphics", "Unknown animation type (%s)", anim);
+    }
 }

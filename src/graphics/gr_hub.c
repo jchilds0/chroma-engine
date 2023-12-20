@@ -67,33 +67,3 @@ void graphics_hub_set_time(IGraphics *hub, float time) {
 float graphics_hub_get_time(IGraphics *hub) {
     return hub->time;
 }
-
-void graphics_page_update_on(IGraphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
-        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
-        return;
-    }
-
-    IPage *page = hub->pages[page_num];
-    page->page_animate_on(page, hub->time);
-}
-
-void graphics_page_update_cont(IGraphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
-        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
-        return;
-    }
-
-    IPage *page = hub->pages[page_num];
-    page->page_continue(page, hub->time);
-}
-
-void graphics_page_update_off(IGraphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
-        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
-        return;
-    }
-
-    IPage *page = hub->pages[page_num];
-    page->page_animate_off(page, hub->time);
-}

@@ -2,7 +2,6 @@
 *
 */
 
-#include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -25,6 +24,10 @@ IGeometry *geometry_create_geometry(char *type) {
 
         return (IGeometry *) geometry_new_annulus();
 
+    } else if (strncmp(type, "graph", 5) == 0) {
+
+        return (IGeometry *) geometry_new_graph();
+
     } else if (strncmp(type, "text", 4) == 0) {
 
         return (IGeometry *) geometry_new_text();
@@ -39,12 +42,19 @@ IGeometry *geometry_create_geometry(char *type) {
 void geometry_free_geometry(IGeometry *geo) {
     switch (geo->geo_type) {
         case RECT:
+            geometry_free_rectangle((GeometryRect *)geo);
             break;
         case CIRCLE:
+            geometry_free_circle((GeometryCircle *)geo);
             break;
         case ANNULUS:
+            geometry_free_annulus((GeometryAnnulus *)geo);
+            break;
+        case GRAPH:
+            geometry_free_graph((GeometryGraph *)geo);
             break;
         case TEXT:
+            geometry_free_text((GeometryText *)geo);
             break;
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
@@ -78,6 +88,10 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_TEXT;
     } else if (strncmp(attr, "scale", 5) == 0) {
         g_attr = GEO_SCALE;
+    } else if (strncmp(attr, "graph_node", 10) == 0) {
+        g_attr = GEO_GRAPH_NODE;
+    } else if (strncmp(attr, "num_node", 8) == 0) {
+        g_attr = GEO_NUM_NODE;
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry attr (%s)", attr);
         return -1;
@@ -106,6 +120,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             case ANNULUS:
                 memcpy(value, "annulus", 7);
                 break;
+            case GRAPH:
+                memcpy(value, "graph", 5);
+                break;
             case TEXT:
                 memcpy(value, "text", 4);
                 break;
@@ -127,6 +144,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case ANNULUS:
             geometry_annulus_get_attr((GeometryAnnulus *)geo, g_attr, value);
+            break;
+        case GRAPH:
+            geometry_graph_get_attr((GeometryGraph *)geo, g_attr, value);
             break;
         case TEXT:
             geometry_text_get_attr((GeometryText *)geo, g_attr, value);
@@ -155,6 +175,9 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case ANNULUS:
             geometry_annulus_set_attr((GeometryAnnulus *)geo, g_attr, value);
+            break;
+        case GRAPH:
+            geometry_graph_set_attr((GeometryGraph *)geo, g_attr, value);
             break;
         case TEXT:
             geometry_text_set_attr((GeometryText *)geo, g_attr, value);

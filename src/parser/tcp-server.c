@@ -91,13 +91,13 @@ int parse_client_listen(int server_sock) {
 }
 
 ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) {
-    char server_message[MAX_BUF_SIZE];
+    char server_message[PARSE_BUF_SIZE];
 
     // clean buffers 
     memset(server_message, '\0', sizeof server_message);
 
     // recieve clients message 
-    if (recv(client_sock, client_message, MAX_BUF_SIZE, 0) < 0) {
+    if (recv(client_sock, client_message, PARSE_BUF_SIZE, 0) < 0) {
         return SERVER_TIMEOUT;
     }
 
@@ -105,7 +105,7 @@ ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) 
         log_file(LogMessage, "Parser", "Recieved %s", client_message);
 
     // respond to client 
-    strcpy(server_message, "Recieved");
+    //strcpy(server_message, "Recieved");
 
     if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
         printf("Can't send\n");

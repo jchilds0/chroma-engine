@@ -23,6 +23,10 @@ GeometryCircle *geometry_new_circle(void) {
     return circle;
 }
 
+void geometry_free_circle(GeometryCircle *circle) {
+    free(circle);
+}
+
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

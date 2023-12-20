@@ -27,6 +27,10 @@ GeometryText *geometry_new_text(void) {
     return text;
 }
 
+void geometry_free_text(GeometryText *text) {
+    free(text);
+}
+
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

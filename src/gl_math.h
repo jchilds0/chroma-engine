@@ -70,4 +70,22 @@
     A[12] * B[2] + A[13] * B[6] + A[14] * B[10] + A[15] * B[14], \
     A[12] * B[3] + A[13] * B[7] + A[14] * B[11] + A[15] * B[15]} 
 
+typedef struct {
+    int x;
+    int y;
+} vec2;
+
+typedef struct {
+    int x;
+    int y;
+    int z;
+} vec3;
+
+typedef struct {
+    int x;
+    int y;
+    int z;
+    int w;
+} vec4;
+
 #endif // !CHROMA_GL_MATH
