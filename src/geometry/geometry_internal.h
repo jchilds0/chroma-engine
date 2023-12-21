@@ -20,6 +20,7 @@ typedef enum {
     GEO_POS_Y,
     GEO_WIDTH,
     GEO_HEIGHT,
+    GEO_ROUNDING,
     GEO_CENTER_X,
     GEO_CENTER_Y,
     GEO_INNER_RADIUS,

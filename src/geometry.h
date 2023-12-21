@@ -53,6 +53,7 @@ typedef struct {
     int               pos_y;
     int               width;
     int               height;
+    int               rounding;
     GLfloat           color[4];
 } GeometryRect;
 

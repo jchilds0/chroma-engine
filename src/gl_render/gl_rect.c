@@ -20,10 +20,40 @@ static GLuint vbo;
 static GLuint ebo;
 static GLuint program;
 
+/*
+ * Rectangle vertex layout (corners 
+ * filled in by rounding)
+ *
+ *      10 --- 11 
+ *   6 - 7     8 - 9  
+ *   |             |
+ *   2 - 3     4 - 5 
+ *       0 --- 1  
+ */
+
 static unsigned int indices[] = {
-    0, 1, 3, // first triangle 
-    1, 2, 3  // second triangle
+    // bottom
+    0, 1, 3,
+    1, 4, 3,
+
+    // left 
+    2, 3, 6,
+    3, 7, 6,
+
+    // center 
+    3, 4, 7,
+    4, 8, 7,
+    
+    // right
+    4, 5, 8,
+    5, 9, 8,
+
+    // top
+    7, 8, 10,
+    8, 11, 10,
 };
+
+static GeometryCircle *circle = NULL;
 
 void gl_rectangle_init_buffers(void) {
     glGenVertexArrays(1, &vao);
@@ -35,7 +65,7 @@ void gl_rectangle_init_buffers(void) {
 
     // bind and set vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof( float ) * 4 * 3, NULL, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof( float ) * 12 * 3, NULL, GL_STATIC_DRAW);
 
     // bind and set element buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -43,6 +73,8 @@ void gl_rectangle_init_buffers(void) {
 
     // configure vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof( float ), (void *)0);
+
+    circle = (GeometryCircle *)geometry_create_geometry("circle");
 
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
@@ -65,24 +97,52 @@ void gl_rectangle_init_shaders(void) {
 }
 
 void gl_draw_rectangle(IGeometry *rect) {
-    int pos_x = geometry_get_int_attr(rect, "pos_x");
-    int pos_y = geometry_get_int_attr(rect, "pos_y");
-    int width = geometry_get_int_attr(rect, "width");
-    int height= geometry_get_int_attr(rect, "height");
-
-    char buf[100];
-    GLfloat r, g, b, a;
-
-    memset(buf, '\0', sizeof buf);
-    geometry_get_attr(rect, "color", buf);
-    sscanf(buf, "%f %f %f %f", &r, &g, &b, &a);
-
+    GeometryRect *g_rect = (GeometryRect *)rect;
+    int pos_x = g_rect->pos_x;
+    int pos_y = g_rect->pos_y;
+    int width = g_rect->width;
+    int height= g_rect->height;
+    int round = g_rect->rounding;
     GLfloat vertices[] = {
-        pos_x,         pos_y + height, 0.0f,
-        pos_x,         pos_y,          0.0f,
-        pos_x + width, pos_y,          0.0f,
-        pos_x + width, pos_y + height, 0.0f,
+        pos_x + round,         pos_y,                  0.0f,
+        pos_x + width - round, pos_y,                  0.0f,
+
+        pos_x,                 pos_y + round,          0.0f,
+        pos_x + round,         pos_y + round,          0.0f,
+        pos_x + width - round, pos_y + round,          0.0f,
+        pos_x + width,         pos_y + round,          0.0f,
+
+        pos_x,                 pos_y + height - round, 0.0f,
+        pos_x + round,         pos_y + height - round, 0.0f,
+        pos_x + width - round, pos_y + height - round, 0.0f,
+        pos_x + width,         pos_y + height - round, 0.0f,
+
+        pos_x + round,         pos_y + height,         0.0f,
+        pos_x + width - round, pos_y + height,         0.0f,
     };
+
+    int circ_v[] = {
+        pos_x + round,         pos_y + round, 
+        pos_x + width - round, pos_y + round,         
+
+        pos_x + round,         pos_y + height - round,
+        pos_x + width - round, pos_y + height - round,
+    };
+
+    // draw corners
+    circle->color[0]     = g_rect->color[0];
+    circle->color[1]     = g_rect->color[1];
+    circle->color[2]     = g_rect->color[2];
+    circle->color[3]     = g_rect->color[3];
+    circle->inner_radius = 0;
+    circle->outer_radius = g_rect->rounding;
+
+    for (int i = 0; i < 4; i++) {
+        circle->center_x = circ_v[2 * i];
+        circle->center_y = circ_v[2 * i + 1];
+
+        gl_draw_circle((IGeometry *)circle);
+    }
 
     gl_renderer_set_scale(program);
     //log_to_file(LogMessage, "Render rectangle %d %d %d %d", rect->pos_x, rect->pos_y, rect->width, rect->height)
@@ -91,13 +151,14 @@ void gl_draw_rectangle(IGeometry *rect) {
     glBindVertexArray(vao);
 
     unsigned int color_loc = glGetUniformLocation(program, "color");
-    glUniform4f(color_loc, r, g, b, a); 
+    glUniform4f(color_loc, g_rect->color[0], g_rect->color[1], 
+                g_rect->color[2], g_rect->color[3]); 
     
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof vertices, vertices);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 3 * 10, GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
     glUseProgram(0);

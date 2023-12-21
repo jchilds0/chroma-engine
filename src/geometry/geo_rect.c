@@ -27,6 +27,7 @@ GeometryRect *geometry_new_rectangle(void) {
     rect->color[1] = 0.0;
     rect->color[2] = 0.0;
     rect->color[3] = 0.0;
+    rect->rounding = 0;
 
     return rect;
 }
@@ -56,6 +57,9 @@ void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *va
         case GEO_HEIGHT:
             sprintf(value, "%d", rect->height);
             break;
+        case GEO_ROUNDING:
+            sprintf(value, "%d", rect->rounding);
+            break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not a rect attr (%d)", attr);
     }
@@ -84,6 +88,9 @@ void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *va
             break;
         case GEO_HEIGHT:
             rect->height = g_value;
+            break;
+        case GEO_ROUNDING:
+            rect->rounding = g_value;
             break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not a rect attr (%d)", attr);

@@ -78,6 +78,8 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_WIDTH;
     } else if (strncmp(attr, "height", 6) == 0) {
         g_attr = GEO_HEIGHT;
+    } else if (strncmp(attr, "rounding", 8) == 0) {
+        g_attr = GEO_ROUNDING;
     } else if (strncmp(attr, "center_x", 8) == 0) {
         g_attr = GEO_CENTER_X;
     } else if (strncmp(attr, "center_y", 8) == 0) {

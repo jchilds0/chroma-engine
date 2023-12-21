@@ -70,6 +70,7 @@ void graphics_hub_load_example(IGraphics *hub) {
     // bg
     geo = graphics_page_add_geometry(page, "rect");
     geometry_set_attr(geo, "color", "2 132 130 255");
+    geometry_set_attr(geo, "rounding", "20");
 
     // circle
     geo = graphics_page_add_geometry(page, "circle");
@@ -128,6 +129,7 @@ void graphics_hub_load_example(IGraphics *hub) {
     // bg 
     geo = graphics_page_add_geometry(page, "rect");
     geometry_set_attr(geo, "color", "2 132 130 255");
+    geometry_set_attr(geo, "rounding", "20");
 
     // graph
     geo = graphics_page_add_geometry(page, "graph");
