@@ -45,6 +45,7 @@ void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
             IPage *page = graphics_hub_get_page(eng->hub, *page_num);
             parse_page(page);
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
+            graphics_hub_set_time(eng->hub, 0.0f, 0);
 
             break;
         case SERVER_TIMEOUT:

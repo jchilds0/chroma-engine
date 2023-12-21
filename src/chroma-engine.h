@@ -19,6 +19,16 @@
 #define WITHIN(a, x, y)               ((x <= a) && (a <= y))
 
 #define CHROMA_FRAMERATE              30
+
+/*
+ * Layer categories
+ *  0: (Reserved) preview renders all graphics to this layer,
+ *  1: Top left graphics,
+ *  2: Lower frame graphics,
+ *  3: Ticker,
+ *
+ */
+
 #define CHROMA_LAYERS                 5 
 #define MAX_BUF_SIZE                  512
 
