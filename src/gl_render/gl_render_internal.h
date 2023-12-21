@@ -1,4 +1,9 @@
 /*
+ * gl_render_internal.h
+ *
+ * Header file for gl_render module source code.
+ * Should not be included by files outside the 
+ * /gl_render dir.
  *
  */
 

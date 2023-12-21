@@ -1,6 +1,17 @@
 /*
-*
-*/
+ * geometry.c
+ *
+ * Definitions for the geometry API functions
+ *
+ *    extern IGeometry *geometry_create_geometry(char *);
+ *    extern void geometry_free_geometry(IGeometry *geo);
+ *
+ *    extern void geometry_set_attr(IGeometry *geo, char *attr, char *value);
+ *    extern void geometry_set_int_attr(IGeometry *geo, char *attr, int value);
+ *    extern void geometry_get_attr(IGeometry *geo, char *attr, char *value);
+ *    extern int  geometry_get_int_attr(IGeometry *geo, char *attr);
+ *
+ */
 
 #include "geometry_internal.h"
 #include "log.h"

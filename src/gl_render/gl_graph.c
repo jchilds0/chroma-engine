@@ -1,5 +1,9 @@
 /*
- * Render a GeometryGraph to the screen.
+ * gl_graph.c
+ *
+ * Setup and render a graph described by a 
+ * GeometryGraph in a GL context.
+ *
  */
 
 #include "chroma-engine.h"

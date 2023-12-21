@@ -1,5 +1,8 @@
 /*
+ * geo_rect.c 
  *
+ * Functions for the GeometryRect struct which
+ * describes a rectangle.
  */
 
 #include "chroma-engine.h"

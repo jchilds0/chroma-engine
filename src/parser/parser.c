@@ -1,5 +1,8 @@
 /*
- * Recieve graphics request over tcp 
+ * parser.c 
+ *
+ * Recieve graphics request over tcp from Chroma-Viz.
+ *
  */
 
 #include "parser_internal.h"
@@ -13,10 +16,13 @@
 
 static int socket_client = -1;
 
-void parse_page(IPage *page);
-void parse_header(int *page_num, int *action);
-void parse_clean_buffer(void);
-Token parse_get_token(char *value);
+ServerResponse  parse_server_get_message(int socket_client);
+
+void    parse_page(IPage *page);
+void    parse_header(int *page_num, int *action, int *layer);
+Token   parse_get_token(char *value);
+char    parse_get_char(int socket_client);
+void    parse_clean_buffer(void);
 
 /*
  * Check eng->socket for a tcp connection.
@@ -27,7 +33,7 @@ Token parse_get_token(char *value);
  *    - If the client closes the connection, close on our end and cleanup buffer.
  *
  */
-void parser_read_socket(Engine *eng, int *page_num, int *action) {
+void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
     if (socket_client < 0) {
         socket_client = parse_client_listen(eng->socket);
     } else {
@@ -35,10 +41,10 @@ void parser_read_socket(Engine *eng, int *page_num, int *action) {
 
         switch (rec) {
         case SERVER_MESSAGE:
-            parse_header(page_num, action);
+            parse_header(page_num, action, layer);
             IPage *page = graphics_hub_get_page(eng->hub, *page_num);
             parse_page(page);
-            graphics_hub_set_time(eng->hub, 0.0f);
+            graphics_hub_set_time(eng->hub, 0.0f, *layer);
 
             break;
         case SERVER_TIMEOUT:
@@ -56,14 +62,14 @@ void parser_read_socket(Engine *eng, int *page_num, int *action) {
 /*
  * Parse the header of a gui request 
  */
-void parse_header(int *page_num, int *action) {
+void parse_header(int *page_num, int *action, int *layer) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
     int parsed_page_num = 0;
 
     Token tok;
-    int v_m, v_n, length;
+    int v_m, v_n;
     char attr[PARSE_BUF_SIZE];
     char value[PARSE_BUF_SIZE];
 
@@ -74,16 +80,19 @@ void parse_header(int *page_num, int *action) {
                 sscanf(value, "%d,%d", &v_m, &v_n);
                 parsed_version = 1;
                 
-                if (v_m != 1 || v_n != 3) {
-                    log_file(LogError, "Parser", "Incorrect encoding version v%d.%d, expected v1.3", v_m, v_n);
+                if (v_m != 1 || v_n != 4) {
+                    log_file(LogError, "Parser", "Incorrect encoding version v%d.%d, expected v1.4", v_m, v_n);
                 }
 
                 if (LOG_PARSER)
                     log_file(LogMessage, "Parser", "Message v%d.%d", v_m, v_n); 
                 break;
-            case LENGTH:
-                sscanf(value, "%d", &length);
+            case LAYER:
+                sscanf(value, "%d", layer);
                 parsed_length = 1;
+
+                if (LOG_PARSER)
+                    log_file(LogMessage, "Parser", "Layer %d", *layer); 
                 break;
             case ACTION:
                 sscanf(value, "%d", action);
@@ -175,8 +184,8 @@ EQUAL:
     // First check if it part of the message header
     if (strcmp(value, "ver") == 0) {
         return VERSION;
-    } else if (strcmp(value, "len") == 0) {
-        return LENGTH;
+    } else if (strcmp(value, "layer") == 0) {
+        return LAYER;
     } else if (strcmp(value, "action") == 0) {
         return ACTION;
     } else if (strcmp(value, "temp") == 0) {

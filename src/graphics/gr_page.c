@@ -1,4 +1,10 @@
 /*
+ * gr_page.c 
+ *
+ * Functions for the IPage struct, which contains
+ * the geometry of the page, how to update the 
+ * geometry when it is animated on, continued or
+ * animated off.
  *
  */
 

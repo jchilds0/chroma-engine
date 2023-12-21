@@ -24,7 +24,5 @@ typedef struct {
 } Engine;
 
 extern Engine engine;
-extern int action;
-extern int page_num;
 
 #endif // !CHROMA_TYPEDEFS

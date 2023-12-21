@@ -1,5 +1,7 @@
 /*
- * Render a circle using OpenGL
+ * geo_circle.c !! DEPRICATED !!
+ *
+ * Functions for GeometryCircle, replaced with GeometryAnnulus.
  */
 
 #include "chroma-engine.h"

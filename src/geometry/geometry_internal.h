@@ -1,4 +1,9 @@
 /*
+ * geometry_internal.h
+ *
+ * Header file for geometry module source code.
+ * Should not be included by files outside the 
+ * /geometry dir.
  *
  */
 

@@ -1,9 +1,9 @@
 /*
- * Graph geometry
+ * geo_graph.c
  *
- * Contains a collection of data points, the format
- * to draw the points in, ticks and tick size,
- * axis and axis labels.
+ * Functions for the GeometryGraph struct which
+ * describes a plot containing a collection of 
+ * points and the type of graph.
  */
 
 #include "chroma-engine.h"

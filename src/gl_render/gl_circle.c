@@ -1,4 +1,8 @@
 /*
+ * gl_circle.c !! DEPRICATED !!
+ *
+ * Setup and render a circle described by GeometryCircle.
+ * Replaced with gl_annulus.c
  *
  */
 

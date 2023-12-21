@@ -1,7 +1,10 @@
 /*
+ * gl_render.c 
+ *
  * Callbacks for GTK_GL_AREA used in preview.c and engine.c
  */
 
+#include "gl_render.h"
 #include "gl_render_internal.h"
 
 #include "chroma-engine.h"
@@ -9,8 +12,8 @@
 #include "gl_math.h"
 #include "log.h"
 
-int action = BLANK;
-int page_num = 0;
+int action[] = {BLANK, BLANK, BLANK, BLANK, BLANK};
+int page_num[] = {0, 0, 0, 0, 0};
 
 /* read shader file */
 char *gl_renderer_get_shader_file(char *filename) {
@@ -160,83 +163,84 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     IPage *page;
     IGeometry *geo;
 
-    page = graphics_hub_get_page(engine.hub, page_num);
-    num_geo = graphics_page_num_geometry(page);
-
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(0);
-    
-    switch (action) {
-        case BLANK:
-            break;
-        case ANIMATE_ON:
-            time = graphics_hub_get_time(engine.hub);
-            bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
-            graphics_page_update_animation(page, "animate_on", bezier_time);
 
-            time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
-            graphics_hub_set_time(engine.hub, time);
-            graphics_hub_set_current_page_num(engine.hub, bezier_time);
-
-            break;
-        case CONTINUE:
-            time = graphics_hub_get_time(engine.hub);
-            bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
-            graphics_page_update_animation(page, "continue", bezier_time);
-
-            time = graphics_hub_get_time(engine.hub);
-            time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
-            graphics_hub_set_time(engine.hub, time);
-
-            break;
-        case ANIMATE_OFF:
-            current_page = graphics_hub_get_current_page_num(engine.hub);
-            if (current_page != page_num) {
-                break;
-            }
-
-            time = graphics_hub_get_time(engine.hub);
-            bezier_time = gl_bezier_time_step(time, 1.1, 0.0, 3);
-            graphics_page_update_animation(page, "animate_off", bezier_time);
-
-            time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
-            graphics_hub_set_time(engine.hub, time);
-            break;
-        default:
-            log_file(LogError, "GL Render", "Unknown action %d", action);
-    }
-
-    for (int geo_num = 0; geo_num < num_geo; geo_num++) {
-        memset(geo_type, '\0', sizeof geo_type);
-        geo = graphics_page_get_geometry(page, geo_num);
-        geometry_get_attr(geo, "geo_type", geo_type);
+    for (int layer = 0; layer < CHROMA_LAYERS; layer++) {
+        page = graphics_hub_get_page(engine.hub, page_num[layer]);
+        num_geo = graphics_page_num_geometry(page);
         
-        if (strncmp(geo_type, "rect", 4) == 0) {
+        switch (action[layer]) {
+            case BLANK:
+                break;
+            case ANIMATE_ON:
+                time = graphics_hub_get_time(engine.hub, layer);
+                bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
+                graphics_page_update_animation(page, "animate_on", bezier_time);
 
-            gl_draw_rectangle(geo);
+                time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
+                graphics_hub_set_time(engine.hub, time, layer);
+                graphics_hub_set_current_page_num(engine.hub, page_num[layer], layer);
 
-        } else if (strncmp(geo_type, "circle", 5) == 0) {
+                break;
+            case CONTINUE:
+                time = graphics_hub_get_time(engine.hub, layer);
+                bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
+                graphics_page_update_animation(page, "continue", bezier_time);
 
-            gl_draw_circle(geo);
+                time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
+                graphics_hub_set_time(engine.hub, time, layer);
 
-        } else if (strncmp(geo_type, "annulus", 7) == 0) {
+                break;
+            case ANIMATE_OFF:
+                current_page = graphics_hub_get_current_page_num(engine.hub, layer);
+                if (current_page != page_num[layer]) {
+                    break;
+                }
 
-            gl_draw_annulus(geo);
+                time = graphics_hub_get_time(engine.hub, layer);
+                bezier_time = gl_bezier_time_step(time, 1.1, 0.0, 3);
+                graphics_page_update_animation(page, "animate_off", bezier_time);
 
-        } else if (strncmp(geo_type, "text", 4) == 0) {
+                time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
+                graphics_hub_set_time(engine.hub, time, layer);
+                break;
+            default:
+                log_file(LogError, "GL Render", "Unknown action %d", action);
+        }
 
-            gl_draw_text(geo);
+        for (int geo_num = 0; geo_num < num_geo; geo_num++) {
+            memset(geo_type, '\0', sizeof geo_type);
+            geo = graphics_page_get_geometry(page, geo_num);
+            geometry_get_attr(geo, "geo_type", geo_type);
+            
+            if (strncmp(geo_type, "rect", 4) == 0) {
 
-        } else if (strncmp(geo_type, "graph", 5) == 0) {
+                gl_draw_rectangle(geo);
 
-            gl_draw_graph(geo);
+            } else if (strncmp(geo_type, "circle", 5) == 0) {
 
-        } else {
+                gl_draw_circle(geo);
 
-            log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
+            } else if (strncmp(geo_type, "annulus", 7) == 0) {
 
+                gl_draw_annulus(geo);
+
+            } else if (strncmp(geo_type, "text", 4) == 0) {
+
+                gl_draw_text(geo);
+
+            } else if (strncmp(geo_type, "graph", 5) == 0) {
+
+                gl_draw_graph(geo);
+
+            } else {
+
+                log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
+
+            }
         }
     }
 

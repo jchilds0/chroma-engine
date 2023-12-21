@@ -21,6 +21,7 @@ static void close_engine(GtkWidget *widget, gpointer data) {
 
 void engine_window(void) {
     GtkWidget *window, *gl_area;
+    int e_page_num = 0, e_action = 0, layer = 0;
     gtk_init(0, NULL);
     
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -47,7 +48,10 @@ void engine_window(void) {
     while (TRUE) {
         // slow frame rate down to CHROMA_FRAMERATE
         gtk_main_iteration_do(FALSE);
-        parser_read_socket(&engine, &page_num, &action);
+        parser_read_socket(&engine, &e_page_num, &e_action, &layer);
+        
+        page_num[layer] = e_page_num;
+        action[layer] = e_action;
     }
 }
 

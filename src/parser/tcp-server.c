@@ -1,5 +1,10 @@
 /*
  * tcp_server.c 
+ *
+ * Functions for interacting with the tcp 
+ * server for the engine, which recieves 
+ * graphics requests from Chroma-Viz.
+ *
  */
 
 #include "chroma-engine.h"

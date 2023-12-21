@@ -1,3 +1,10 @@
+/*
+ * geo_annulus.c 
+ *
+ * Functions for the GeometryAnnulus struct which 
+ * describes an annulus with a given inner radius,
+ * outer radius, starting angle and end angle.
+ */
 
 #include "chroma-engine.h"
 #include "geometry_internal.h"

@@ -20,6 +20,6 @@
 #include "chroma-typedefs.h"
 
 extern int parser_tcp_start_server(char *addr, int port);
-extern void parser_read_socket(Engine *eng, int *page_num, int *action);
+extern void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer);
 
 #endif // !CHROMA_PARSER

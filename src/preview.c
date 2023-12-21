@@ -21,6 +21,7 @@ static void close_preview(GtkWidget *widget, gpointer data) {
 
 void preview_window(int wid) {
     GtkWidget *plug, *gl_area;
+    int p_page_num = 0, p_action = 0, layer = 0;
     gtk_init(0, NULL);
 
     engine.port = 6100;
@@ -41,7 +42,10 @@ void preview_window(int wid) {
 
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
-        parser_read_socket(&engine, &page_num, &action);
+        parser_read_socket(&engine, &p_page_num, &p_action, &layer);
+
+        page_num[0] = p_page_num;
+        action[0] = p_action;
     }
 }
 

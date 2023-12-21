@@ -1,5 +1,9 @@
 /*
- * Render text using OpenGL
+ * geo_text.c 
+ *
+ * Functions for the GeometryText struct which 
+ * describes text, namely the characters, scale
+ * and color.
  */
 
 #include "chroma-engine.h"

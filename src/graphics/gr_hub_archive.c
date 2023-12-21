@@ -1,4 +1,10 @@
 /*
+ * gr_hub_archive.c
+ *
+ * Temporary c file to initialise a template
+ * graphics hub. Exists in place of a file 
+ * format and parser for storing the graphics
+ * hub.
  *
  */
 
@@ -142,4 +148,24 @@ void graphics_hub_load_example(IGraphics *hub) {
     page->page_animate_on = graphics_animate_left_to_right;
     page->page_animate_off = graphics_animate_left_to_right;
 
+    /* ticker */
+    page = graphics_hub_add_page(hub);
+
+    // bg 
+    geo = graphics_page_add_geometry(page, "rect");
+    geometry_set_attr(geo, "color", "2 132 130 255");
+
+    // text 
+    geo = graphics_page_add_geometry(page, "text");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+    geometry_set_attr(geo, "scale", "1.0");
+
+    // mask 
+    geo = graphics_page_add_geometry(page, "rect");
+    geometry_set_attr(geo, "color", "0 0 0 255");
+
+    page->bg_index = 0;
+    page->mask_index = 2;
+    page->page_animate_on = graphics_animate_up;
+    page->page_animate_off = graphics_animate_up;
 }

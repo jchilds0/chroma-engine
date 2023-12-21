@@ -1,4 +1,9 @@
 /*
+ * parser_internal.h
+ *
+ * Header file for the parser module source 
+ * code. Should not be included by any source 
+ * files outside the /parser dir.
  *
  */
 
@@ -18,7 +23,7 @@ typedef enum {
 typedef enum {
     /* header tokens */
     VERSION = 0,
-    LENGTH,
+    LAYER,
     ACTION,
     TEMPID,
 
@@ -28,11 +33,8 @@ typedef enum {
     EOM,
 } Token;
 
-int parse_client_listen(int server_sock);
+int            parse_client_listen(int server_sock);
 ServerResponse parse_tcp_recieve_message(int socket_client, char *buf);
-
-ServerResponse parse_server_get_message(int socket_client);
-char parse_get_char(int socket_client);
 
 #endif // !PARSER_INTERNAL
 

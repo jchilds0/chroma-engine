@@ -1,4 +1,8 @@
 /*
+ * gl_text.c
+ *
+ * Setup and render text described by a 
+ * GeometryText in a GL context.
  *
  */
 

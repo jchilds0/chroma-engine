@@ -1,8 +1,13 @@
-
+/*
+ * gl_annulus.c
+ *
+ * Setup and render an annulus described by a 
+ * GeometryAnnulus in a GL context.
+ *
+ */
 
 #include "chroma-engine.h"
 #include "gl_render_internal.h"
-#include "gl_math.h"
 #include "geometry.h"
 #include <GL/gl.h>
 #include <stdio.h>

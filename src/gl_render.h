@@ -31,4 +31,7 @@
 extern void gl_realize(GtkWidget *);
 extern gboolean gl_render(GtkGLArea *, GdkGLContext *);
 
+extern int action[];
+extern int page_num[];
+
 #endif // !CHROMA_GL_RENDERER

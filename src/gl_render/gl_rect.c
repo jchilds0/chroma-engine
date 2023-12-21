@@ -1,4 +1,8 @@
 /*
+ * gl_rect.c
+ *
+ * Setup and render a rectangle described by a 
+ * GeometryRect in a GL context.
  *
  */
 
