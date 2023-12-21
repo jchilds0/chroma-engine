@@ -20,11 +20,12 @@ typedef enum {
     GEO_POS_Y,
     GEO_WIDTH,
     GEO_HEIGHT,
-    GEO_RADIUS,
     GEO_CENTER_X,
     GEO_CENTER_Y,
     GEO_INNER_RADIUS,
     GEO_OUTER_RADIUS,
+    GEO_START_ANGLE,
+    GEO_END_ANGLE,
     GEO_TEXT,
     GEO_SCALE,
     GEO_GRAPH_NODE,
@@ -43,12 +44,6 @@ GeometryCircle *geometry_new_circle(void);
 void geometry_free_circle(GeometryCircle *circle);
 void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *value);
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value);
-
-/* geo_annulus.c */
-GeometryAnnulus *geometry_new_annulus(void);
-void geometry_free_annulus(GeometryAnnulus *annulus);
-void geometry_annulus_set_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value);
-void geometry_annulus_get_attr(GeometryAnnulus *annulus, GeometryAttr attr, char *value);
 
 /* geo_graph.c */
 GeometryGraph *geometry_new_graph(void);

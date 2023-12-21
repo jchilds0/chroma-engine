@@ -39,7 +39,6 @@
 typedef enum {
     RECT,
     CIRCLE,
-    ANNULUS,
     GRAPH,
     TEXT,
 } GeometryType;
@@ -61,18 +60,12 @@ typedef struct {
     GeometryType      geo_type;
     int               center_x;
     int               center_y;
-    int               radius;
-    GLfloat           color[4];
-} GeometryCircle;
-
-typedef struct {
-    GeometryType      geo_type;
-    int               center_x;
-    int               center_y;
     int               inner_radius;
     int               outer_radius;
+    float             start_angle;
+    float             end_angle;
     GLfloat           color[4];
-} GeometryAnnulus;
+} GeometryCircle;
 
 typedef enum {
     LINE,

@@ -115,9 +115,6 @@ void gl_realize(GtkWidget *widget) {
     gl_circle_init_buffers();
     gl_circle_init_shaders();
 
-    gl_annulus_init_buffers();
-    gl_annulus_init_shaders();
-
     gl_graph_init_buffers();
     gl_graph_init_shaders();
 
@@ -215,31 +212,22 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             memset(geo_type, '\0', sizeof geo_type);
             geo = graphics_page_get_geometry(page, geo_num);
             geometry_get_attr(geo, "geo_type", geo_type);
-            
-            if (strncmp(geo_type, "rect", 4) == 0) {
 
-                gl_draw_rectangle(geo);
-
-            } else if (strncmp(geo_type, "circle", 5) == 0) {
-
-                gl_draw_circle(geo);
-
-            } else if (strncmp(geo_type, "annulus", 7) == 0) {
-
-                gl_draw_annulus(geo);
-
-            } else if (strncmp(geo_type, "text", 4) == 0) {
-
-                gl_draw_text(geo);
-
-            } else if (strncmp(geo_type, "graph", 5) == 0) {
-
-                gl_draw_graph(geo);
-
-            } else {
-
-                log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
-
+            switch (geo->geo_type) {
+                case RECT:
+                    gl_draw_rectangle(geo);
+                    break;
+                case CIRCLE:
+                    gl_draw_circle(geo);
+                    break;
+                case TEXT:
+                    gl_draw_text(geo);
+                    break;
+                case GRAPH:
+                    gl_draw_graph(geo);
+                    break;
+                default:
+                    log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
             }
         }
     }

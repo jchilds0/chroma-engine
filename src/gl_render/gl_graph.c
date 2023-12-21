@@ -44,9 +44,6 @@ void gl_graph_init_buffers(void) {
     glGenBuffers(1, &vbo);
     glGenBuffers(1, &ebo);
 
-    vertices = NEW_ARRAY(9, GLfloat);
-    indices = NEW_ARRAY(4, unsigned int);
-    
     // bind the vertex array object
     glBindVertexArray(vao);
     glBindVertexArray(0);

@@ -31,10 +31,6 @@ IGeometry *geometry_create_geometry(char *type) {
 
         return (IGeometry *) geometry_new_circle();
 
-    } else if (strncmp(type, "annulus", 7) == 0) {
-
-        return (IGeometry *) geometry_new_annulus();
-
     } else if (strncmp(type, "graph", 5) == 0) {
 
         return (IGeometry *) geometry_new_graph();
@@ -57,9 +53,6 @@ void geometry_free_geometry(IGeometry *geo) {
             break;
         case CIRCLE:
             geometry_free_circle((GeometryCircle *)geo);
-            break;
-        case ANNULUS:
-            geometry_free_annulus((GeometryAnnulus *)geo);
             break;
         case GRAPH:
             geometry_free_graph((GeometryGraph *)geo);
@@ -89,12 +82,14 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_CENTER_X;
     } else if (strncmp(attr, "center_y", 8) == 0) {
         g_attr = GEO_CENTER_Y;
-    } else if (strncmp(attr, "radius", 6) == 0) {
-        g_attr = GEO_RADIUS;
     } else if (strncmp(attr, "inner_radius", 12) == 0) {
         g_attr = GEO_INNER_RADIUS;
     } else if (strncmp(attr, "outer_radius", 12) == 0) {
         g_attr = GEO_OUTER_RADIUS;
+    } else if (strncmp(attr, "start_angle", 11) == 0) {
+        g_attr = GEO_START_ANGLE;
+    } else if (strncmp(attr, "end_angle", 9) == 0) {
+        g_attr = GEO_END_ANGLE;
     } else if (strncmp(attr, "string", 4) == 0) {
         g_attr = GEO_TEXT;
     } else if (strncmp(attr, "scale", 5) == 0) {
@@ -130,9 +125,6 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             case CIRCLE:
                 memcpy(value, "circle", 6);
                 break;
-            case ANNULUS:
-                memcpy(value, "annulus", 7);
-                break;
             case GRAPH:
                 memcpy(value, "graph", 5);
                 break;
@@ -154,9 +146,6 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case CIRCLE:
             geometry_circle_get_attr((GeometryCircle *)geo, g_attr, value);
-            break;
-        case ANNULUS:
-            geometry_annulus_get_attr((GeometryAnnulus *)geo, g_attr, value);
             break;
         case GRAPH:
             geometry_graph_get_attr((GeometryGraph *)geo, g_attr, value);
@@ -185,9 +174,6 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case CIRCLE:
             geometry_circle_set_attr((GeometryCircle *)geo, g_attr, value);
-            break;
-        case ANNULUS:
-            geometry_annulus_set_attr((GeometryAnnulus *)geo, g_attr, value);
             break;
         case GRAPH:
             geometry_graph_set_attr((GeometryGraph *)geo, g_attr, value);
