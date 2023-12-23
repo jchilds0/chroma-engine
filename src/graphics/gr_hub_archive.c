@@ -99,19 +99,61 @@ void graphics_hub_load_example(IGraphics *hub) {
 
     // bg
     geo = graphics_page_add_geometry(page, "rect");
-    geometry_set_attr(geo, "color", "0 0 150 255");
+    geometry_set_attr(geo, "color", "5 68 94 255");
+    geometry_set_attr(geo, "rounding", "10");
 
-    // text
+    // clock 
     geo = graphics_page_add_geometry(page, "text");
     geometry_set_attr(geo, "color", "255 255 255 255");
     geometry_set_attr(geo, "scale", "1.0");
+
+    // clock text
+    geo = graphics_page_add_geometry(page, "text");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+    geometry_set_attr(geo, "scale", "1.0");
+
+    // Team 1
+    geo = graphics_page_add_geometry(page, "text");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+    geometry_set_attr(geo, "scale", "1.0");
+
+    // Team 2
+    geo = graphics_page_add_geometry(page, "text");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+    geometry_set_attr(geo, "scale", "1.0");
+
+    // Score 1
+    geo = graphics_page_add_geometry(page, "text");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+    geometry_set_attr(geo, "scale", "1.0");
+
+    // Score 2
+    geo = graphics_page_add_geometry(page, "text");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+    geometry_set_attr(geo, "scale", "1.0");
+
+    // left split 
+    geo = graphics_page_add_geometry(page, "rect");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+
+    // mid split
+    geo = graphics_page_add_geometry(page, "rect");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+
+    // right split 
+    geo = graphics_page_add_geometry(page, "rect");
+    geometry_set_attr(geo, "color", "255 255 255 255");
+
+    // circle
+    geo = graphics_page_add_geometry(page, "circle");
+    geometry_set_attr(geo, "color", "255 255 255 255");
 
     // mask
     geo = graphics_page_add_geometry(page, "rect");
     geometry_set_attr(geo, "color", "0 0 0 255");
 
     page->bg_index = 0;
-    page->mask_index = 2;
+    page->mask_index = 11;
     page->page_animate_on = graphics_animate_left_to_right;
     page->page_continue = graphics_animate_clock_tick;
     page->page_animate_off = graphics_animate_left_to_right;
@@ -157,6 +199,11 @@ void graphics_hub_load_example(IGraphics *hub) {
     geo = graphics_page_add_geometry(page, "rect");
     geometry_set_attr(geo, "color", "2 132 130 255");
 
+    // extra box 
+    geo = graphics_page_add_geometry(page, "rect");
+    geometry_set_attr(geo, "color", "5 68 94 255");
+    geometry_set_attr(geo, "rounding", "50");
+
     // text 
     geo = graphics_page_add_geometry(page, "text");
     geometry_set_attr(geo, "color", "255 255 255 255");
@@ -167,7 +214,7 @@ void graphics_hub_load_example(IGraphics *hub) {
     geometry_set_attr(geo, "color", "0 0 0 255");
 
     page->bg_index = 0;
-    page->mask_index = 2;
+    page->mask_index = 3;
     page->page_animate_on = graphics_animate_up;
     page->page_animate_off = graphics_animate_up;
 }

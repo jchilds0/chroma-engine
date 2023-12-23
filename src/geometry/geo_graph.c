@@ -99,6 +99,7 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
             } else {
                 log_file(LogWarn, "Geometry", "Unknown graph type (%s)", value);
             }
+            break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not a graph attr (%d)", attr);
     }

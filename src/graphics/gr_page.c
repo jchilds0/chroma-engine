@@ -16,7 +16,7 @@
 
 IPage *graphics_new_page(void) {
     IPage *page = NEW_STRUCT(IPage);
-    page->len_geometry = 10;
+    page->len_geometry = 20;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
 

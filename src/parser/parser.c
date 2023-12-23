@@ -43,6 +43,18 @@ void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
         case SERVER_MESSAGE:
             parse_header(page_num, action, layer);
             IPage *page = graphics_hub_get_page(eng->hub, *page_num);
+
+            if (page == NULL) {
+                // invalid page, reset globals and clear remaining message
+                *page_num = 0;
+                *action = BLANK;
+                *layer = 0;
+
+                char attr[PARSE_BUF_SIZE];
+                while (parse_get_token(attr) != EOM);
+                return;
+            }
+
             parse_page(page);
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
             graphics_hub_set_time(eng->hub, 0.0f, 0);
@@ -151,6 +163,10 @@ void parse_page(IPage *page) {
 
         geo = graphics_page_get_geometry(page, geo_num);
         geometry_set_attr(geo, attr, value);
+
+        if (LOG_PARSER) {
+            log_file(LogMessage, "Parser", "\tGeo %d; %s = %s", geo_num, attr, value);
+        }
     }
 }
 
