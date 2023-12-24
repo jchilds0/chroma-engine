@@ -19,9 +19,8 @@ git clone https://github.com/jchilds0/chroma-engine
 cd chroma-engine
 ```
 - Update the C Macro `INSTALL_DIR` in `src/chroma-engine.h` to the absolute path of `chroma-engine`
-- Run 
+- Build chroma-engine using cmake 
 ```
-cd chroma-engine
 cmake -S . -B build/
 cmake --build build/
 ```
