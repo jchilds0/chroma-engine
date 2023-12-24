@@ -16,9 +16,12 @@
 
 GeometryText *geometry_new_text(void) {
     GeometryText *text = NEW_STRUCT(GeometryText);
-    text->geo_type = TEXT;
-    text->pos_x = 0;
-    text->pos_y = 0;
+    text->geo.geo_type = TEXT;
+    text->geo.pos.x = 0;
+    text->geo.pos.y = 0;
+    text->geo.rel.x = 0;
+    text->geo.rel.y = 0;
+
     text->scale = 0.0;
 
     memset(text->buf, '\0', GEO_BUF_SIZE);
@@ -44,12 +47,6 @@ void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) 
                     text->color[2], 
                     text->color[3]);
             break;
-        case GEO_POS_X:
-            sprintf(value, "%d", text->pos_x);
-            break;
-        case GEO_POS_Y:
-            sprintf(value, "%d", text->pos_y);
-            break;
         case GEO_TEXT:
             memcpy(value, text->buf, GEO_BUF_SIZE);
             break;
@@ -62,7 +59,6 @@ void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) 
 }
 
 void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value) {
-    int g_value = atoi(value);
     float scale;
     int r, g, b, a;
 
@@ -73,12 +69,6 @@ void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value) 
             text->color[1] = g * 1.0 / 255;
             text->color[2] = b * 1.0 / 255;
             text->color[3] = a * 1.0 / 255;
-            break;
-        case GEO_POS_X:
-            text->pos_x = g_value;
-            break;
-        case GEO_POS_Y:
-            text->pos_y = g_value;
             break;
         case GEO_TEXT:
             memmove(text->buf, value, GEO_BUF_SIZE);

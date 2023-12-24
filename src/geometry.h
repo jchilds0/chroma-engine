@@ -45,12 +45,12 @@ typedef enum {
 
 typedef struct {
     GeometryType      geo_type;
+    vec2              pos;
+    vec2              rel;
 } IGeometry;
 
 typedef struct {
-    GeometryType      geo_type;
-    int               pos_x;
-    int               pos_y;
+    IGeometry         geo;
     int               width;
     int               height;
     int               rounding;
@@ -58,9 +58,7 @@ typedef struct {
 } GeometryRect;
 
 typedef struct {
-    GeometryType      geo_type;
-    int               center_x;
-    int               center_y;
+    IGeometry         geo;
     int               inner_radius;
     int               outer_radius;
     float             start_angle;
@@ -77,9 +75,7 @@ typedef enum {
 } GraphType;
 
 typedef struct {
-    GeometryType      geo_type;
-    int               pos_x;
-    int               pos_y;
+    IGeometry         geo;
     GraphType         graph_type;
     char              x_label[GEO_BUF_SIZE];
     char              y_label[GEO_BUF_SIZE];
@@ -89,9 +85,7 @@ typedef struct {
 } GeometryGraph;
 
 typedef struct {
-    GeometryType      geo_type;
-    int               pos_x;
-    int               pos_y;
+    IGeometry         geo;
     float             scale;
     char              buf[GEO_BUF_SIZE];
     GLfloat           color[4];

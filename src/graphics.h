@@ -24,7 +24,8 @@ extern void         graphics_hub_set_current_page_num(IGraphics *hub, int page_n
 extern void         graphics_page_update_animation(IPage *page, char *anim, float time);
 
 extern IGeometry    *graphics_page_get_geometry(IPage *page, int geo_num);
-extern IGeometry    *graphics_page_add_geometry(IPage *page, char *type);
+extern IGeometry    *graphics_page_add_geometry(IPage *page, IGeometry *parent, char *type);
 extern int          graphics_page_num_geometry(IPage *page);
+extern void         graphics_page_update_geometry(IPage *page);
 
 #endif // !CHROMA_PAGE

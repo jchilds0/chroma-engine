@@ -13,9 +13,12 @@
 
 GeometryCircle *geometry_new_circle(void) {
     GeometryCircle *circle = NEW_STRUCT(GeometryCircle);
-    circle->geo_type = CIRCLE;
-    circle->center_x = 0;
-    circle->center_y = 0;
+    circle->geo.geo_type = CIRCLE;
+    circle->geo.pos.x = 0;
+    circle->geo.pos.y = 0;
+    circle->geo.rel.x = 0;
+    circle->geo.rel.y = 0;
+
     circle->inner_radius = 0;
     circle->outer_radius = 0;
     circle->start_angle = 0;
@@ -42,12 +45,6 @@ void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *v
                     circle->color[2], 
                     circle->color[3]);
             break;
-        case GEO_CENTER_X:
-            sprintf(value, "%d", circle->center_x);
-            break;
-        case GEO_CENTER_Y:
-            sprintf(value, "%d", circle->center_y);
-            break;
         case GEO_INNER_RADIUS:
             sprintf(value, "%d", circle->inner_radius);
             break;
@@ -70,12 +67,6 @@ void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *v
             circle->color[1] = g * 1.0 / 255;
             circle->color[2] = b * 1.0 / 255;
             circle->color[3] = a * 1.0 / 255;
-            break;
-        case GEO_CENTER_X:
-            circle->center_x = g_value;
-            break;
-        case GEO_CENTER_Y:
-            circle->center_y = g_value;
             break;
         case GEO_INNER_RADIUS:
             circle->inner_radius = g_value;

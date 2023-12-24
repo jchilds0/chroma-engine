@@ -15,7 +15,12 @@
 
 GeometryGraph *geometry_new_graph(void) {
     GeometryGraph *g = NEW_STRUCT(GeometryGraph);
-    g->geo_type        = GRAPH;
+    g->geo.geo_type = GRAPH;
+    g->geo.pos.x    = 0;
+    g->geo.pos.y    = 0;
+    g->geo.rel.x    = 0;
+    g->geo.rel.y    = 0;
+
     g->num_nodes       = 0;
     g->graph_type      = LINE;
 
@@ -37,12 +42,6 @@ void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
                     g->color[1], 
                     g->color[2], 
                     g->color[3]);
-            break;
-        case GEO_POS_X:
-            sprintf(value, "%u", g->pos_x);
-            break;
-        case GEO_POS_Y:
-            sprintf(value, "%u", g->pos_y);
             break;
         case GEO_NUM_NODE:
             sprintf(value, "%d", g->num_nodes);
@@ -67,12 +66,6 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
             graph->color[1] = g * 1.0 / 255;
             graph->color[2] = b * 1.0 / 255;
             graph->color[3] = a * 1.0 / 255;
-            break;
-        case GEO_POS_X:
-            graph->pos_x = g_value;
-            break;
-        case GEO_POS_Y:
-            graph->pos_y = g_value;
             break;
         case GEO_GRAPH_NODE:
             sscanf(value, "%d %d %d", &index, &x, &y);

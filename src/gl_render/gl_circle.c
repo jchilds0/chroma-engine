@@ -67,6 +67,9 @@ static int gl_circle_tri_num(int radius, float start_angle, float end_angle) {
 
 void gl_draw_circle(IGeometry *circle) {
     GeometryCircle *g_circle = (GeometryCircle *)circle;
+    int center_x = geometry_get_int_attr(circle, "pos_x");
+    int center_y = geometry_get_int_attr(circle, "pos_y");
+
     float cos_theta, sin_theta;
 
     int n = gl_circle_tri_num(g_circle->outer_radius, g_circle->start_angle, g_circle->end_angle);
@@ -97,13 +100,13 @@ void gl_draw_circle(IGeometry *circle) {
         sin_theta = sinf(theta * i + g_circle->start_angle);
 
         // inner radius point
-        vertices[6 * i]     = g_circle->inner_radius * cos_theta + g_circle->center_x;
-        vertices[6 * i + 1] = g_circle->inner_radius * sin_theta + g_circle->center_y;
+        vertices[6 * i]     = g_circle->inner_radius * cos_theta + center_x;
+        vertices[6 * i + 1] = g_circle->inner_radius * sin_theta + center_y;
         vertices[6 * i + 2] = 0.0f;
 
         // outer radius point
-        vertices[6 * i + 3] = g_circle->outer_radius * cos_theta + g_circle->center_x;
-        vertices[6 * i + 4] = g_circle->outer_radius * sin_theta + g_circle->center_y;
+        vertices[6 * i + 3] = g_circle->outer_radius * cos_theta + center_x;
+        vertices[6 * i + 4] = g_circle->outer_radius * sin_theta + center_y;
         vertices[6 * i + 5] = 0.0f;
     }
 

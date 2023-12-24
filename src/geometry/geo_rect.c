@@ -17,12 +17,14 @@
 
 GeometryRect *geometry_new_rectangle(void) {
     GeometryRect *rect = NEW_STRUCT(GeometryRect);
-    rect->geo_type = RECT;
-    rect->pos_x = 0;
-    rect->pos_y = 0;
+    rect->geo.geo_type = RECT;
+    rect->geo.pos.x = 0;
+    rect->geo.pos.y = 0;
+    rect->geo.rel.x = 0;
+    rect->geo.rel.y = 0;
+
     rect->width = 0;
     rect->height= 0;
-
     rect->color[0] = 0.0;
     rect->color[1] = 0.0;
     rect->color[2] = 0.0;
@@ -44,12 +46,6 @@ void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *va
                     rect->color[1], 
                     rect->color[2], 
                     rect->color[3]);
-            break;
-        case GEO_POS_X:
-            sprintf(value, "%d", rect->pos_x);
-            break;
-        case GEO_POS_Y:
-            sprintf(value, "%d", rect->pos_y);
             break;
         case GEO_WIDTH:
             sprintf(value, "%d", rect->width);
@@ -76,12 +72,6 @@ void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *va
             rect->color[1] = g * 1.0 / 255;
             rect->color[2] = b * 1.0 / 255;
             rect->color[3] = a * 1.0 / 255;
-            break;
-        case GEO_POS_X:
-            rect->pos_x = g_value;
-            break;
-        case GEO_POS_Y:
-            rect->pos_y = g_value;
             break;
         case GEO_WIDTH:
             rect->width = g_value;

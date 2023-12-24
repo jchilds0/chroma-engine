@@ -68,22 +68,22 @@ void geometry_free_geometry(IGeometry *geo) {
 GeometryAttr geometry_char_to_attr(char *attr) {
     GeometryAttr g_attr;
 
-    if (strncmp(attr, "color", 5) == 0) {
-        g_attr = GEO_COLOR;
-    } else if (strncmp(attr, "pos_x", 5) == 0) {
+    if (strncmp(attr, "pos_x", 5) == 0) {
         g_attr = GEO_POS_X;
     } else if (strncmp(attr, "pos_y", 5) == 0) {
         g_attr = GEO_POS_Y;
+    } else if (strncmp(attr, "rel_x", 5) == 0) {
+        g_attr = GEO_REL_X;
+    } else if (strncmp(attr, "rel_y", 5) == 0) {
+        g_attr = GEO_REL_Y;
+    } else if (strncmp(attr, "color", 5) == 0) {
+        g_attr = GEO_COLOR;
     } else if (strncmp(attr, "width", 5) == 0) {
         g_attr = GEO_WIDTH;
     } else if (strncmp(attr, "height", 6) == 0) {
         g_attr = GEO_HEIGHT;
     } else if (strncmp(attr, "rounding", 8) == 0) {
         g_attr = GEO_ROUNDING;
-    } else if (strncmp(attr, "center_x", 8) == 0) {
-        g_attr = GEO_CENTER_X;
-    } else if (strncmp(attr, "center_y", 8) == 0) {
-        g_attr = GEO_CENTER_Y;
     } else if (strncmp(attr, "inner_radius", 12) == 0) {
         g_attr = GEO_INNER_RADIUS;
     } else if (strncmp(attr, "outer_radius", 12) == 0) {
@@ -142,6 +142,23 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
 
     GeometryAttr g_attr = geometry_char_to_attr(attr);
 
+    switch (g_attr) {
+        case GEO_POS_X:
+            sprintf(value, "%d", geo->pos.x);
+            return;
+        case GEO_POS_Y:
+            sprintf(value, "%d", geo->pos.y);
+            return;
+        case GEO_REL_X:
+            sprintf(value, "%d", geo->rel.x);
+            return;
+        case GEO_REL_Y:
+            sprintf(value, "%d", geo->rel.y);
+            return;
+        default:
+            break;
+    }
+
     switch (geo->geo_type) {
         case RECT:
             geometry_rectangle_get_attr((GeometryRect *)geo, g_attr, value);
@@ -169,6 +186,23 @@ void geometry_set_int_attr(IGeometry *geo, char *attr, int value) {
 
 void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
     GeometryAttr g_attr = geometry_char_to_attr(attr);
+
+    switch (g_attr) {
+        case GEO_POS_X:
+            sscanf(value, "%d", &geo->pos.x);
+            return;
+        case GEO_POS_Y:
+            sscanf(value, "%d", &geo->pos.y);
+            return;
+        case GEO_REL_X:
+            sscanf(value, "%d", &geo->rel.x);
+            return;
+        case GEO_REL_Y:
+            sscanf(value, "%d", &geo->rel.y);
+            return;
+        default:
+            break;
+    }
 
     switch (geo->geo_type) {
         case RECT:

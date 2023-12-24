@@ -98,8 +98,9 @@ void gl_rectangle_init_shaders(void) {
 
 void gl_draw_rectangle(IGeometry *rect) {
     GeometryRect *g_rect = (GeometryRect *)rect;
-    int pos_x = g_rect->pos_x;
-    int pos_y = g_rect->pos_y;
+    int pos_x = geometry_get_int_attr(rect, "pos_x");
+    int pos_y = geometry_get_int_attr(rect, "pos_y");
+
     int width = g_rect->width;
     int height= g_rect->height;
     int round = g_rect->rounding;
@@ -138,9 +139,8 @@ void gl_draw_rectangle(IGeometry *rect) {
     circle->outer_radius = g_rect->rounding;
 
     for (int i = 0; i < 4; i++) {
-        circle->center_x = circ_v[2 * i];
-        circle->center_y = circ_v[2 * i + 1];
-
+        geometry_set_int_attr((IGeometry *)circle, "pos_x", circ_v[2 * i]);
+        geometry_set_int_attr((IGeometry *)circle, "pos_y", circ_v[2 * i + 1]);
         gl_draw_circle((IGeometry *)circle);
     }
 

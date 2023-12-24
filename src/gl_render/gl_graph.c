@@ -206,14 +206,11 @@ static void gl_graph_gen_step(GeometryGraph *g, vec2 pos, vec2 offset) {
 
 void gl_draw_graph(IGeometry *graph) {
     GeometryGraph *geo_graph = (GeometryGraph *)graph;
-    char value[GEO_BUF_SIZE];
-    GLfloat r, g, b, a;
-    vec2 pos = {geo_graph->pos_x, geo_graph->pos_y};
-    vec2 offset = {20, 20};
+    int pos_x = geometry_get_int_attr(graph, "pos_x");
+    int pos_y = geometry_get_int_attr(graph, "pos_y");
 
-    memset(value, '\0', sizeof value);
-    geometry_get_attr(graph, "color", value);
-    sscanf(value, "%f %f %f %f", &r, &g, &b, &a);
+    vec2 pos = {pos_x, pos_y};
+    vec2 offset = {20, 20};
 
     // generate vertices for the graph
     switch (geo_graph->graph_type) {
@@ -239,7 +236,8 @@ void gl_draw_graph(IGeometry *graph) {
     glBindVertexArray(vao);
 
     uint color_loc = glGetUniformLocation(program, "color");
-    glUniform4f(color_loc, r, g, b, a);
+    glUniform4f(color_loc, geo_graph->color[0], geo_graph->color[1], 
+                geo_graph->color[2], geo_graph->color[3]);
 
     gl_draw_axis(pos, offset);
 

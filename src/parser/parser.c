@@ -55,10 +55,15 @@ void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
                 return;
             }
 
+            // Read new page values
             parse_page(page);
+
+            // reset animation times
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
             graphics_hub_set_time(eng->hub, 0.0f, 0);
 
+            // rebuild relative positions
+            graphics_page_update_geometry(page);
             break;
         case SERVER_TIMEOUT:
             break;
