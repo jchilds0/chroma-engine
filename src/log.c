@@ -3,13 +3,14 @@
  */
 
 #include "log.h"
+#include "chroma-engine.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <stdarg.h>
 
-#define LOG_DIR             "/home/josh/Documents/projects/chroma-engine/log/"
+#define LOG_DIR             INSTALL_DIR "/log/"
 
 void current_time(char *, int);
 char *pad_int(int);

@@ -14,7 +14,7 @@
 #include <GL/gl.h>
 #include "geometry.h"
 
-#define SHADER_PATH       "/home/josh/Documents/projects/chroma-engine/src/gl_render/"
+#define SHADER_PATH       "src/gl_render/"
 
 /* gl_renderer.c */
 char  *gl_renderer_get_shader_file(char *filename);

@@ -6,6 +6,7 @@
  *
  */
 
+#include "chroma-engine.h"
 #include "gl_render_internal.h"
 #include "geometry.h"
 #include "log.h"
@@ -47,8 +48,8 @@ void gl_text_init_buffers(void) {
 } 
 
 void gl_text_init_shaders(void) {
-    char *vertexSource = gl_renderer_get_shader_file(SHADER_PATH "gltext-gl.vs.glsl");
-    char *fragmentSource = gl_renderer_get_shader_file(SHADER_PATH "gltext-gl.fs.glsl");
+    char *vertexSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "gltext-gl.vs.glsl");
+    char *fragmentSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "gltext-gl.fs.glsl");
 
     GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vertexSource);
     GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
