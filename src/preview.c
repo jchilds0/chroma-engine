@@ -21,7 +21,7 @@ static void close_preview(GtkWidget *widget, gpointer data) {
 
 void preview_window(int wid) {
     GtkWidget *plug, *gl_area;
-    int p_page_num = 0, p_action = 0, layer = 0;
+    int p_page_num = -1, p_action = 0, layer = 0;
     gtk_init(0, NULL);
 
     engine.server_port = 6100;

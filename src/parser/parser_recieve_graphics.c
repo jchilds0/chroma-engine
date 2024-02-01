@@ -46,7 +46,7 @@ void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer) {
 
             if (page == NULL) {
                 // invalid page, reset globals and clear remaining message
-                *page_num = 0;
+                *page_num = -1;
                 *action = BLANK;
                 *layer = 0;
 
@@ -84,7 +84,7 @@ void parser_header(int socket_client, int *page_num, int *action, int *layer) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
-    int parsed_page_num = 0;
+    int parsed_page_num = -1;
 
     Token tok;
     int v_m, v_n;

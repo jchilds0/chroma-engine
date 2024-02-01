@@ -18,10 +18,9 @@ int main(int argc, char **argv) {
     int x, wid, 
         port = 9000;
     int hflag = 0;
-    int gflag = 0;
-    int pflag = 0;
     int wflag = 0;
-    char *gval, *wval;
+    char *wval, 
+        *gval = "127.0.0.1";
     opterr = 0;
     log_start(-1);
 
@@ -29,13 +28,11 @@ int main(int argc, char **argv) {
         switch (x) {
             case 'g':
                 gval = optarg;
-                gflag = 1;
                 break;
             case 'h':
                 hflag = 1;
                 break;
             case 'p':
-                pflag = 1;
                 port = atoi(optarg);
                 break;
             case 'w':
@@ -55,14 +52,8 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (gflag) {
-        engine.hub_socket = parser_tcp_start_client(gval, port);
-        log_file(LogMessage, "Engine", "Graphics hub %s:%d", gval, port); 
-    } else {
-        engine.hub_socket = parser_tcp_start_client("127.0.0.1", port);
-        log_file(LogMessage, "Engine", "Graphics hub 127.0.0.1:%d", port); 
-    }
-
+    engine.hub_socket = parser_tcp_start_client(gval, port);
+    log_file(LogMessage, "Engine", "Graphics hub %s:%d", gval, port); 
     parser_parse_hub(&engine);
 
     if (wflag) {

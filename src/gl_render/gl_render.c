@@ -13,7 +13,7 @@
 #include "log.h"
 
 int action[] = {BLANK, BLANK, BLANK, BLANK, BLANK};
-int page_num[] = {0, 0, 0, 0, 0};
+int page_num[] = {-1, -1, -1, -1, -1};
 
 /* read shader file */
 char *gl_renderer_get_shader_file(char *filename) {
@@ -166,6 +166,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     glUseProgram(0);
 
     for (int layer = 0; layer < CHROMA_LAYERS; layer++) {
+        if (page_num[layer] < 0) {
+            continue;
+        }
+
         page = graphics_hub_get_page(engine.hub, page_num[layer]);
         num_geo = graphics_page_num_geometry(page);
         

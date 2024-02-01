@@ -21,7 +21,7 @@ static void close_engine(GtkWidget *widget, gpointer data) {
 
 void engine_window(void) {
     GtkWidget *window, *gl_area;
-    int e_page_num = 0, e_action = 0, layer = 0;
+    int e_page_num = -1, e_action = 0, layer = 0;
     gtk_init(0, NULL);
     
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
