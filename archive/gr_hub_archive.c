@@ -16,7 +16,7 @@ void graphics_hub_load_example(IGraphics *hub) {
     IGeometry *geo, *bg;
 
     /* red box */
-    page = graphics_hub_add_page(hub);
+    page = graphics_hub_add_page(hub, 5, 0);
 
     // bg
     bg = graphics_page_add_geometry(page, NULL, "rect");

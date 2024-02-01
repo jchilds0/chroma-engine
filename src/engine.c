@@ -14,7 +14,7 @@
 static void close_engine(GtkWidget *widget, gpointer data) {
     log_file(LogMessage, "Engine", "Shutdown");
 
-    shutdown(engine.socket, SHUT_RDWR);
+    shutdown(engine.server_socket, SHUT_RDWR);
     graphics_free_graphics_hub(engine.hub);
     exit(1);
 }
@@ -29,10 +29,8 @@ void engine_window(void) {
     gl_area = gtk_gl_area_new();
     gtk_container_add(GTK_CONTAINER(window), gl_area);
 
-    engine.port = 6800;
-    engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
-    engine.hub = graphics_new_graphics_hub();
-    graphics_hub_load_example(engine.hub);
+    engine.server_port = 6800;
+    engine.server_socket = parser_tcp_start_server("127.0.0.1", engine.server_port);
 
     gtk_window_set_title(GTK_WINDOW(window), "Chroma Engine");
     gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1080);
@@ -48,7 +46,7 @@ void engine_window(void) {
     while (TRUE) {
         // slow frame rate down to CHROMA_FRAMERATE
         gtk_main_iteration_do(FALSE);
-        parser_read_socket(&engine, &e_page_num, &e_action, &layer);
+        parser_parse_graphic(&engine, &e_page_num, &e_action, &layer);
         
         page_num[layer] = e_page_num;
         action[layer] = e_action;

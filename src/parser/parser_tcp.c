@@ -1,5 +1,5 @@
 /*
- * tcp_server.c 
+ * parser_tcp.c 
  *
  * Functions for interacting with the tcp 
  * server for the engine, which recieves 
@@ -12,7 +12,10 @@
 #include "log.h"
 #include "parser_internal.h"
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #define MAX_ATTEMPTS        10
 
@@ -64,7 +67,7 @@ int parser_tcp_start_server(char *addr, int port) {
     return socket_desc;
 }
 
-int parse_client_listen(int server_sock) {
+int parser_tcp_timeout_listen(int server_sock) {
     int client_sock;
     socklen_t client_size;
     struct sockaddr_in client_addr;
@@ -95,7 +98,30 @@ int parse_client_listen(int server_sock) {
     return client_sock;
 }
 
-ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) {
+int parser_tcp_start_client(char *addr, int port) {
+    int socket_desc;
+    struct sockaddr_in server_addr;
+
+    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (socket_desc < 0) {
+        log_file(LogError, "Parser", "Unable to create socket");
+        return -1;
+    }
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = inet_addr(addr);
+
+    if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof server_addr) < 0) {
+        log_file(LogError, "Parser", "Unable to connect to server");
+        return -1;
+    }
+
+    return socket_desc;
+}
+
+ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message) {
     char server_message[PARSE_BUF_SIZE];
 
     // clean buffers 
@@ -106,8 +132,8 @@ ServerResponse parse_tcp_recieve_message(int client_sock, char *client_message) 
         return SERVER_TIMEOUT;
     }
 
-    // if (LOG_PARSER)
-    //     log_file(LogMessage, "Parser", "Recieved %s", client_message);
+    if (LOG_PARSER)
+        log_file(LogMessage, "Parser", "Recieved %s", client_message);
 
     // respond to client 
     //strcpy(server_message, "Recieved");

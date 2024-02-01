@@ -14,6 +14,7 @@
 #include "geometry.h"
 
 typedef struct IPage {
+    unsigned int      temp_id;
     unsigned int      mask_index;
     unsigned int      bg_index;
     unsigned int      *parent_geo;
@@ -36,10 +37,10 @@ typedef struct {
 /* gr_hub.c */
 
 // external functions
-IGraphics    *graphics_new_graphics_hub(void);
+IGraphics    *graphics_new_graphics_hub(int num_pages);
 void         graphics_hub_load_example(IGraphics *hub);
 void         graphics_free_graphics_hub(IGraphics *hub);
-IPage        *graphics_hub_add_page(IGraphics *hub);
+IPage        *graphics_hub_add_page(IGraphics *hub, int num_geo, int temp_id);
 IPage        *graphics_hub_get_page(IGraphics *hub, int page_num);
 void         graphics_hub_set_time(IGraphics *hub, float time, int layer);
 float        graphics_hub_get_time(IGraphics *hub, int layer);
@@ -49,12 +50,12 @@ void         graphics_hub_set_current_page_num(IGraphics *hub, int page_num, int
 /* gr_page.c */
 
 // external functions
-IGeometry    *graphics_page_add_geometry(IPage *page, IGeometry *parent, char *type);
+IGeometry    *graphics_page_add_geometry(IPage *page, int id, int parent, char *type);
 IGeometry    *graphics_page_get_geometry(IPage *page, int geo_num);
 int          graphics_page_num_geometry(IPage *page);
 
 // internal functions
-IPage        *graphics_new_page(void);
+IPage        *graphics_new_page(int num_geo);
 void         graphics_free_page(IPage *);
 
 

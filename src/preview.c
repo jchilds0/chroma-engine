@@ -14,7 +14,7 @@ static void close_preview(GtkWidget *widget, gpointer data) {
     log_file(LogMessage, "Preview", "Shutdown");
     gtk_main_quit();
 
-    shutdown(engine.socket, SHUT_RDWR);
+    shutdown(engine.server_socket, SHUT_RDWR);
     graphics_free_graphics_hub(engine.hub);
     exit(1);
 }
@@ -24,10 +24,8 @@ void preview_window(int wid) {
     int p_page_num = 0, p_action = 0, layer = 0;
     gtk_init(0, NULL);
 
-    engine.port = 6100;
-    engine.socket = parser_tcp_start_server("127.0.0.1", engine.port);
-    engine.hub = graphics_new_graphics_hub();
-    graphics_hub_load_example(engine.hub);
+    engine.server_port = 6100;
+    engine.server_socket = parser_tcp_start_server("127.0.0.1", engine.server_port);
 
     plug = gtk_plug_new(wid);
     gl_area = gtk_gl_area_new();
@@ -42,7 +40,7 @@ void preview_window(int wid) {
 
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
-        parser_read_socket(&engine, &p_page_num, &p_action, &layer);
+        parser_parse_graphic(&engine, &p_page_num, &p_action, &layer);
 
         page_num[0] = p_page_num;
         action[0] = p_action;

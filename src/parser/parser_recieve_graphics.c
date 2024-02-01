@@ -1,5 +1,5 @@
 /*
- * parser.c 
+ * parser_recieve_graphics.c 
  *
  * Recieve graphics request over tcp from Chroma-Viz.
  *
@@ -16,13 +16,12 @@
 
 static int socket_client = -1;
 
-ServerResponse  parse_server_get_message(int socket_client);
+void    parser_page(IPage *page, int socket_client);
+void    parser_header(int socket_client, int *page_num, int *action, int *layer);
+Token   parser_get_token(int socket_client, char *value);
 
-void    parse_page(IPage *page);
-void    parse_header(int *page_num, int *action, int *layer);
-Token   parse_get_token(char *value);
-char    parse_get_char(int socket_client);
-void    parse_clean_buffer(void);
+static char buf[PARSE_BUF_SIZE];
+static int buf_ptr = 0;
 
 /*
  * Check eng->socket for a tcp connection.
@@ -33,15 +32,16 @@ void    parse_clean_buffer(void);
  *    - If the client closes the connection, close on our end and cleanup buffer.
  *
  */
-void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
+
+void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer) {
     if (socket_client < 0) {
-        socket_client = parse_client_listen(eng->socket);
+        socket_client = parser_tcp_timeout_listen(eng->server_socket);
     } else {
-        ServerResponse rec = parse_server_get_message(socket_client);
+        ServerResponse rec = parser_tcp_recieve_message(socket_client, buf);
 
         switch (rec) {
         case SERVER_MESSAGE:
-            parse_header(page_num, action, layer);
+            parser_header(socket_client, page_num, action, layer);
             IPage *page = graphics_hub_get_page(eng->hub, *page_num);
 
             if (page == NULL) {
@@ -51,12 +51,12 @@ void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
                 *layer = 0;
 
                 char attr[PARSE_BUF_SIZE];
-                while (parse_get_token(attr) != EOM);
+                while (parser_get_token(eng->server_socket, attr) != EOM);
                 return;
             }
 
             // Read new page values
-            parse_page(page);
+            parser_page(page, eng->server_socket);
 
             // reset animation times
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
@@ -69,7 +69,7 @@ void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
             break;
         case SERVER_CLOSE:
             shutdown(socket_client, SHUT_RDWR);
-            parse_clean_buffer();
+            parser_clean_buffer(&buf_ptr, buf);
             socket_client = -1;
 
             break;
@@ -80,7 +80,7 @@ void parser_read_socket(Engine *eng, int *page_num, int *action, int *layer) {
 /*
  * Parse the header of a gui request 
  */
-void parse_header(int *page_num, int *action, int *layer) {
+void parser_header(int socket_client, int *page_num, int *action, int *layer) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
@@ -91,8 +91,8 @@ void parse_header(int *page_num, int *action, int *layer) {
     char attr[PARSE_BUF_SIZE];
     char value[PARSE_BUF_SIZE];
 
-    while ((tok = parse_get_token(attr)) != EOM
-           && parse_get_token(value) != EOM) {
+    while ((tok = parser_get_token(socket_client, attr)) != EOM
+           && parser_get_token(socket_client, value) != EOM) {
         switch (tok) {
             case VERSION:
                 sscanf(value, "%d,%d", &v_m, &v_n);
@@ -136,21 +136,21 @@ void parse_header(int *page_num, int *action, int *layer) {
     }
 }
 
-void parse_page(IPage *page) {
+void parser_page(IPage *page, int socket_client) {
     char attr[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     Token tok;
     IGeometry *geo;
     int geo_num = -1;
 
     while (1) {
-        tok = parse_get_token(attr);
+        tok = parser_get_token(socket_client, attr);
         if (tok == EOM) {
             return;
         } else if (tok != ATTR) {
             log_file(LogWarn, "Parser", "Unexpected token %d, expected %d", tok, ATTR);
         }
         
-        tok = parse_get_token(value);
+        tok = parser_get_token(socket_client, value);
         if (tok == EOM) {
             log_file(LogWarn, "Parser", "Parsed attr without a value");
         } else if (tok != VALUE) {
@@ -175,14 +175,14 @@ void parse_page(IPage *page) {
     }
 }
 
-Token parse_get_token(char *value) {
+Token parser_get_token(int socket_client, char *value) {
     char c;
     int i = 0;
     memset(value, '\0', PARSE_BUF_SIZE);
 
     // read chars until we get a '#', '=' or end of message
     while (1) {
-        c = parse_get_char(socket_client);
+        c = parser_get_char(socket_client, &buf_ptr, buf);
 
         switch (c) {
             case '=':
@@ -222,30 +222,5 @@ HASH:
     // We found a value
     return VALUE;
 
-}
-
-static char buf[PARSE_BUF_SIZE];
-static int buf_ptr = 0;
-
-char parse_get_char(int socket_client) {
-    if (parse_server_get_message(socket_client) != SERVER_MESSAGE) {
-        log_file(LogWarn, "Parser", "Tried to get char, but didn't have any remaining");
-    }
-
-    return buf[buf_ptr++];
-}
-
-void parse_clean_buffer(void) {
-    buf_ptr = 0;
-    memset(buf, '\0', sizeof buf);
-}
-
-ServerResponse parse_server_get_message(int socket_client) {
-    if (buf_ptr < PARSE_BUF_SIZE && buf[buf_ptr] != '\0') {
-        return SERVER_MESSAGE;
-    }
-
-    parse_clean_buffer();
-    return parse_tcp_recieve_message(socket_client, buf);
 }
 

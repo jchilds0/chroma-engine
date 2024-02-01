@@ -14,15 +14,12 @@
 #include "log.h"
 #include <string.h>
 
-IPage *graphics_new_page(void) {
+IPage *graphics_new_page(int num_geo) {
     IPage *page = NEW_STRUCT(IPage);
-    page->len_geometry = 20;
+    page->len_geometry = num_geo;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
     page->parent_geo = NEW_ARRAY(page->len_geometry, unsigned int);
-
-    // base rect for relative coords
-    graphics_page_add_geometry(page, NULL, "rect");
 
     page->page_animate_on = graphics_animate_none;
     page->page_continue = graphics_animate_none;
@@ -30,25 +27,15 @@ IPage *graphics_new_page(void) {
     return page;
 }
 
-IGeometry *graphics_page_add_geometry(IPage *page, IGeometry *parent, char *type) {
-    if (page->num_geometry == page->len_geometry) {
-        log_file(LogWarn, "Graphics", "Can't add geometry to page, out of memory");
+IGeometry *graphics_page_add_geometry(IPage *page, int id, int parent, char *type) {
+    if (id < 0 || id >= page->len_geometry) {
+        log_file(LogWarn, "Graphics", "Can't add geometry to page, id %d out of range", id);
         return NULL;
     }
 
     IGeometry *geo = geometry_create_geometry(type);
-    page->geometry[page->num_geometry] = geo;
-
-    if (parent == NULL) {
-        page->parent_geo[page->num_geometry] = 0;
-    } else {
-        for (int i = 0; i < page->num_geometry; i++) {
-            if (parent == page->geometry[i]) {
-                page->parent_geo[page->num_geometry] = i;
-            }
-        }
-    }
-
+    page->geometry[id] = geo;
+    page->parent_geo[id] = parent;
     page->num_geometry++;
     return geo;
 }

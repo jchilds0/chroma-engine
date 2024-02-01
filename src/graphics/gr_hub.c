@@ -14,16 +14,15 @@
 #include "graphics_internal.h"
 #include "log.h"
 #include <stdio.h>
+#include <string.h>
 
-IGraphics *graphics_new_graphics_hub(void) {
+IGraphics *graphics_new_graphics_hub(int num_pages) {
     IGraphics *hub = NEW_STRUCT(IGraphics);
-    hub->len_pages = 10;
+    hub->len_pages = num_pages;
     hub->num_pages = 0;
 
     hub->pages = NEW_ARRAY(hub->len_pages, IPage *);
-
-    // blank page
-    graphics_hub_add_page(hub);
+    memset(hub->pages, 0, hub->len_pages);
 
     for (int i = 0; i < CHROMA_LAYERS; i++) {
         hub->time[i] = 0.0f;
@@ -42,14 +41,15 @@ void graphics_free_graphics_hub(IGraphics *hub) {
     free(hub);
 }
 
-IPage *graphics_hub_add_page(IGraphics *hub) {
-    if (hub->len_pages == hub->num_pages) {
+IPage *graphics_hub_add_page(IGraphics *hub, int num_geo, int id) {
+    if (id < 0 || id >= hub->len_pages) {
         log_file(LogWarn, "Graphics", "Graphics hub out of memory");
         return 0;
     }
 
-    IPage *page = graphics_new_page();
-    hub->pages[hub->num_pages] = page;
+    IPage *page = graphics_new_page(num_geo);
+    page->temp_id = id;
+    hub->pages[id] = page;
     hub->num_pages++;
 
     return page;

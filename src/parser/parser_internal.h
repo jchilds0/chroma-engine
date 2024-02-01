@@ -11,7 +11,7 @@
 #define PARSER_INTERNAL
 
 #define PARSE_BUF_SIZE      100
-#define LOG_PARSER          0
+#define LOG_PARSER          1
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
 typedef enum {
@@ -31,10 +31,18 @@ typedef enum {
     ATTR,
     VALUE,
     EOM,
+
+    /* hub */ 
+    STRING, 
+    INT,
 } Token;
 
-int            parse_client_listen(int server_sock);
-ServerResponse parse_tcp_recieve_message(int socket_client, char *buf);
+int             parser_tcp_timeout_listen(int server_sock);
+ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
+
+char            parser_get_char(int socket_client, int *buf_ptr, char *buf);
+void            parser_clean_buffer(int *buf_ptr, char *buf);
+ServerResponse  parser_get_message(int socket_client, int *buf_ptr, char *buf);
 
 #endif // !PARSER_INTERNAL
 

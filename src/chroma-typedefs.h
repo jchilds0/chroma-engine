@@ -18,8 +18,10 @@ typedef enum {
 
 /* graphics structs */
 typedef struct {
-    int         socket;
-    int         port;
+    int         server_socket;
+    int         server_port;
+    int         hub_socket;
+    int         hub_port;
     IGraphics   *hub;
 } Engine;
 
