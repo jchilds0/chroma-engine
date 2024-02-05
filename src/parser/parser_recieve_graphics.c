@@ -16,9 +16,9 @@
 
 static int socket_client = -1;
 
-void    parser_page(IPage *page, int socket_client);
-void    parser_header(int socket_client, int *temp_id, int *action, int *layer);
-Token   parser_get_token(int socket_client, char *value);
+void    parser_page(IPage *page);
+void    parser_header(int *temp_id, int *action, int *layer);
+Token   parser_get_token(char *value);
 
 static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
@@ -41,7 +41,7 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
 
         switch (rec) {
         case SERVER_MESSAGE:
-            parser_header(socket_client, temp_id, action, layer);
+            parser_header(temp_id, action, layer);
             IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
 
             if (page == NULL) {
@@ -51,12 +51,12 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
                 *layer = 0;
 
                 char attr[PARSE_BUF_SIZE];
-                while (parser_get_token(eng->server_socket, attr) != EOM);
+                while (parser_get_token(attr) != EOM);
                 return;
             }
 
             // Read new page values
-            parser_page(page, eng->server_socket);
+            parser_page(page);
 
             // reset animation times
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
@@ -80,7 +80,7 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
 /*
  * Parse the header of a gui request 
  */
-void parser_header(int socket_client, int *temp_id, int *action, int *layer) {
+void parser_header(int *temp_id, int *action, int *layer) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
@@ -91,8 +91,8 @@ void parser_header(int socket_client, int *temp_id, int *action, int *layer) {
     char attr[PARSE_BUF_SIZE];
     char value[PARSE_BUF_SIZE];
 
-    while ((tok = parser_get_token(socket_client, attr)) != EOM
-           && parser_get_token(socket_client, value) != EOM) {
+    while ((tok = parser_get_token(attr)) != EOM
+           && parser_get_token(value) != EOM) {
         switch (tok) {
             case VERSION:
                 sscanf(value, "%d,%d", &v_m, &v_n);
@@ -136,21 +136,21 @@ void parser_header(int socket_client, int *temp_id, int *action, int *layer) {
     }
 }
 
-void parser_page(IPage *page, int socket_client) {
+void parser_page(IPage *page) {
     char attr[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     Token tok;
     IGeometry *geo;
     int geo_num = -1;
 
     while (1) {
-        tok = parser_get_token(socket_client, attr);
+        tok = parser_get_token(attr);
         if (tok == EOM) {
             return;
         } else if (tok != ATTR) {
             log_file(LogWarn, "Parser", "Unexpected token %d, expected %d", tok, ATTR);
         }
         
-        tok = parser_get_token(socket_client, value);
+        tok = parser_get_token(value);
         if (tok == EOM) {
             log_file(LogWarn, "Parser", "Parsed attr without a value");
         } else if (tok != VALUE) {
@@ -175,7 +175,7 @@ void parser_page(IPage *page, int socket_client) {
     }
 }
 
-Token parser_get_token(int socket_client, char *value) {
+Token parser_get_token(char *value) {
     char c;
     int i = 0;
     memset(value, '\0', PARSE_BUF_SIZE);
