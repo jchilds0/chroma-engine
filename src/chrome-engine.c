@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     opterr = 0;
     log_start(-1);
 
-    while ((x = getopt(argc, argv, "ghw")) != -1) {
+    while ((x = getopt(argc, argv, "g:hw:")) != -1) {
         switch (x) {
             case 'g':
                 gval = optarg;

@@ -17,7 +17,7 @@
 static int socket_client = -1;
 
 void    parser_page(IPage *page, int socket_client);
-void    parser_header(int socket_client, int *page_num, int *action, int *layer);
+void    parser_header(int socket_client, int *temp_id, int *action, int *layer);
 Token   parser_get_token(int socket_client, char *value);
 
 static char buf[PARSE_BUF_SIZE];
@@ -33,7 +33,7 @@ static int buf_ptr = 0;
  *
  */
 
-void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer) {
+void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
     if (socket_client < 0) {
         socket_client = parser_tcp_timeout_listen(eng->server_socket);
     } else {
@@ -41,12 +41,12 @@ void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer) {
 
         switch (rec) {
         case SERVER_MESSAGE:
-            parser_header(socket_client, page_num, action, layer);
-            IPage *page = graphics_hub_get_page(eng->hub, *page_num);
+            parser_header(socket_client, temp_id, action, layer);
+            IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
 
             if (page == NULL) {
                 // invalid page, reset globals and clear remaining message
-                *page_num = -1;
+                *temp_id = -1;
                 *action = BLANK;
                 *layer = 0;
 
@@ -80,11 +80,11 @@ void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer) {
 /*
  * Parse the header of a gui request 
  */
-void parser_header(int socket_client, int *page_num, int *action, int *layer) {
+void parser_header(int socket_client, int *temp_id, int *action, int *layer) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
-    int parsed_page_num = -1;
+    int parsed_temp_id = 0;
 
     Token tok;
     int v_m, v_n;
@@ -120,17 +120,17 @@ void parser_header(int socket_client, int *page_num, int *action, int *layer) {
                     log_file(LogMessage, "Parser", "Action %d", *action); 
                 break;
             case TEMPID:
-                sscanf(value, "%d", page_num);
-                parsed_page_num = 1;
+                sscanf(value, "%d", temp_id);
+                parsed_temp_id = 1;
 
                 if (LOG_PARSER)
-                    log_file(LogMessage, "Parser", "Template id %d", *page_num); 
+                    log_file(LogMessage, "Parser", "Template id %d", *temp_id); 
                 break;
             default:
                 log_file(LogWarn, "Parser", "Missing header tokens");
         }
 
-        if (parsed_version && parsed_length && parsed_action && parsed_page_num) {
+        if (parsed_version && parsed_length && parsed_action && parsed_temp_id) {
             return;
         }
     }
@@ -170,7 +170,7 @@ void parser_page(IPage *page, int socket_client) {
         geometry_set_attr(geo, attr, value);
 
         if (LOG_PARSER) {
-            log_file(LogMessage, "Parser", "\tGeo %d; %s = %s", geo_num, attr, value);
+            log_file(LogMessage, "Parser", "\tgeo %d; %s = %s", geo_num, attr, value);
         }
     }
 }

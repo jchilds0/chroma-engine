@@ -30,27 +30,36 @@ void parser_parse_hub(Engine *eng) {
     parser_next_token(eng->hub_socket);
     parser_match_token('{', eng->hub_socket);
 
-    // 'num_temp': 1234...
-    if (c_token == STRING && strcmp(c_value, "num_temp") == 0) {
-        parser_match_token(STRING, eng->hub_socket);
-        parser_match_token(':', eng->hub_socket);
-        int n = atoi(c_value);
+    while (c_token == STRING) {
+        if (strcmp(c_value, "num_temp") == 0) {
+            // 'num_temp': 1234...
+            parser_match_token(STRING, eng->hub_socket);
+            parser_match_token(':', eng->hub_socket);
+            int n = atoi(c_value);
 
-        parser_match_token(INT, eng->hub_socket);
-        eng->hub = graphics_new_graphics_hub(n);
+            parser_match_token(INT, eng->hub_socket);
+            eng->hub = graphics_new_graphics_hub(n);
 
-        parser_match_token(',', eng->hub_socket);
-    }
+            parser_match_token(',', eng->hub_socket);
+        } else if (strcmp(c_value, "templates") == 0) {
+            // 'templates': [...]
+            parser_match_token(STRING, eng->hub_socket);
+            parser_match_token(':', eng->hub_socket);
+            parser_match_token('[', eng->hub_socket);
 
-    // 'templates': [...]
-    if (c_token == STRING && strcmp(c_value, "templates") == 0) {
-        parser_match_token(STRING, eng->hub_socket);
-        parser_match_token(':', eng->hub_socket);
-        parser_match_token('[', eng->hub_socket);
+            parser_parse_template(eng->hub, eng->hub_socket);
 
-        parser_parse_template(eng->hub, eng->hub_socket);
+            parser_match_token(']', eng->hub_socket);
+        } else {
+            log_file(LogWarn, "Parser", "Unknown template attribute %s", c_value);
+            parser_match_token(STRING, eng->hub_socket);
+            parser_match_token(':', eng->hub_socket);
+            parser_next_token(eng->hub_socket);
+        }
 
-        parser_match_token(']', eng->hub_socket);
+        if (c_token == ',') {
+            parser_match_token(',', eng->hub_socket);
+        }
     }
 
     if (c_token != '}') {
@@ -58,7 +67,7 @@ void parser_parse_hub(Engine *eng) {
     }
 }
 
-// T -> {'id': num, 'num_geo': num, 'geo': [G]} | T, T
+// T -> {'id': num, 'num_geo': num, 'geometry': [G]} | T, T
 void parser_parse_template(IGraphics *hub, int socket_client) {
     IPage *page;
     int num_geo = -1, 
@@ -84,9 +93,23 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
         } else if (strcmp(c_value, "geometry") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
-            break;
+            if (temp_id == -1 || num_geo == -1) {
+                log_file(LogError, "Parser", "Template ID or num of geom not specific");
+            }
+
+            page = graphics_hub_add_page(hub, num_geo, temp_id);
+
+            // 'geometry': [...]
+            parser_match_token('[', socket_client);
+
+            parser_parse_geometry(page, socket_client);
+
+            parser_match_token(']', socket_client);
         } else {
             log_file(LogWarn, "Parser", "Unknown template attribute %s", c_value);
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_next_token(socket_client);
         }
 
         if (c_token == ',') {
@@ -94,18 +117,6 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
         }
     }
 
-    if (temp_id == -1 || num_geo == -1) {
-        log_file(LogError, "Parser", "Template ID or num of geom not specific");
-    }
-
-    page = graphics_hub_add_page(hub, num_geo, temp_id);
-
-    // 'geometry': [...]
-    parser_match_token('[', socket_client);
-
-    parser_parse_geometry(page, socket_client);
-
-    parser_match_token(']', socket_client);
     parser_match_token('}', socket_client);
 
     if (c_token == ',') {
@@ -150,9 +161,23 @@ void parser_parse_geometry(IPage *page, int socket_client) {
         } else if (strcmp(c_value, "attr") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
-            break;
+
+            if (!(got_parent && got_type && got_id)) {
+                log_file(LogWarn, "Parser", "Missing geometry attributes");
+                return;
+            }
+
+            parser_match_token('[', socket_client);
+
+            geo = graphics_page_add_geometry(page, id, parent, geo_type);
+            parser_parse_attribute(geo, socket_client);
+
+            parser_match_token(']', socket_client);
         } else {
             log_file(LogWarn, "Parser", "Unknown geometry attribute %s", c_value);
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_next_token(socket_client);
         }
 
         if (c_token == ',') {
@@ -160,19 +185,6 @@ void parser_parse_geometry(IPage *page, int socket_client) {
         }
     }
 
-    if (!(got_parent && got_type && got_id)) {
-        log_file(LogWarn, "Parser", "Missing geometry attributes");
-        return;
-    }
-
-    geo = graphics_page_add_geometry(page, id, parent, geo_type);
-
-    // 'attr': [...]
-    parser_match_token('[', socket_client);
-
-    parser_parse_attribute(geo, socket_client);
-
-    parser_match_token(']', socket_client);
     parser_match_token('}', socket_client);
 
     if (c_token == ',') {
@@ -262,7 +274,7 @@ void parser_next_token(int socket_client) {
 
         c = -1;
         c_token = STRING;
-        log_file(LogMessage, "Parser", "String: %s", c_value);
+        //log_file(LogMessage, "Parser", "String: %s", c_value);
         return;
     } else if (c >= '0' && c <= '9') {
         // number
@@ -272,7 +284,7 @@ void parser_next_token(int socket_client) {
 
             if (c < '0' || c > '9') {
                 c_token = INT;
-                log_file(LogMessage, "Parser", "Int: %s", c_value);
+                //log_file(LogMessage, "Parser", "Int: %s", c_value);
                 return;
             }
         }
@@ -280,6 +292,6 @@ void parser_next_token(int socket_client) {
 
     c_token = c;
     c = -1;
-    log_file(LogMessage, "Parser", "Token: %d", c_token);
+    //log_file(LogMessage, "Parser", "Token: %d", c_token);
 }
 
