@@ -144,7 +144,7 @@ void parser_parse_geometry(IPage *page, int socket_client) {
 
             parser_match_token(INT, socket_client);
             got_id = 1;
-        } else if (strcmp(c_value, "type") == 0) {
+        } else if (strcmp(c_value, "geo_type") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             memcpy(geo_type, c_value, PARSE_BUF_SIZE);

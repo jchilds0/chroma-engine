@@ -89,6 +89,13 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
 }
 
 void graphics_page_update_geometry(IPage *page) {
+    IGeometry *root = graphics_page_get_geometry(page, 0);
+    int x = geometry_get_int_attr(root, "rel_x");
+    int y = geometry_get_int_attr(root, "rel_y");
+
+    geometry_set_int_attr(root, "pos_x", x);
+    geometry_set_int_attr(root, "pos_y", y);
+
     for (int i = 1; i < page->num_geometry; i++) {
         if (page->parent_geo[i] == 0) {
             graphics_page_update_child_geometry(page, i);
