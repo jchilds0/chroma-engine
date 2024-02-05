@@ -12,10 +12,6 @@
 #include "log.h"
 #include "parser_internal.h"
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
 
 #define MAX_ATTEMPTS        10
 

@@ -37,7 +37,7 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
     if (socket_client < 0) {
         socket_client = parser_tcp_timeout_listen(eng->server_socket);
     } else {
-        ServerResponse rec = parser_tcp_recieve_message(socket_client, buf);
+        ServerResponse rec = parser_get_message(socket_client, &buf_ptr, buf);
 
         switch (rec) {
         case SERVER_MESSAGE:
