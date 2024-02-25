@@ -69,7 +69,7 @@ void parser_parse_hub(Engine *eng) {
 
 // T -> {'id': num, 'num_geo': num, 'geometry': [G]} | T, T
 void parser_parse_template(IGraphics *hub, int socket_client) {
-    IPage *page;
+    IPage *page = NULL;
     int num_geo = -1, 
         temp_id = -1;
 
@@ -90,14 +90,31 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
 
             temp_id = atoi(c_value);
             parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "anim_on") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            graphics_page_set_animation(page, "anim_on", c_value);
+            parser_match_token(STRING, socket_client);
+        } else if (strcmp(c_value, "anim_cont") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            graphics_page_set_animation(page, "anim_cont", c_value);
+            parser_match_token(STRING, socket_client);
+        } else if (strcmp(c_value, "anim_off") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            graphics_page_set_animation(page, "anim_off", c_value);
+            parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "geometry") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
-            if (temp_id == -1 || num_geo == -1) {
+            
+            if (page == NULL) {
                 log_file(LogError, "Parser", "Template ID or num of geom not specific");
             }
-
-            page = graphics_hub_add_page(hub, num_geo, temp_id);
 
             // 'geometry': [...]
             parser_match_token('[', socket_client);
@@ -110,6 +127,10 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             parser_next_token(socket_client);
+        }
+
+        if (temp_id != -1 && num_geo != -1 && page == NULL) {
+            page = graphics_hub_add_page(hub, num_geo, temp_id);
         }
 
         if (c_token == ',') {

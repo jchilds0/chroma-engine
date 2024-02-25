@@ -16,7 +16,7 @@
 
 IPage *graphics_new_page(int num_geo) {
     IPage *page = NEW_STRUCT(IPage);
-    page->len_geometry = num_geo;
+    page->len_geometry = num_geo + 1;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
     page->parent_geo = NEW_ARRAY(page->len_geometry, unsigned int);
@@ -24,6 +24,13 @@ IPage *graphics_new_page(int num_geo) {
     page->page_animate_on = graphics_animate_none;
     page->page_continue = graphics_animate_none;
     page->page_animate_off = graphics_animate_none;
+
+    // mask
+    IGeometry *geo = graphics_page_add_geometry(page, num_geo, 0, "rect");
+    geometry_set_attr(geo, "color", "0 0 0 255");
+    page->mask_index = num_geo;
+    page->bg_index = 0;
+
     return page;
 }
 
@@ -55,6 +62,36 @@ void graphics_free_page(IPage *page) {
 
 int graphics_page_num_geometry(IPage *page) {
     return page->num_geometry;
+}
+
+void graphics_page_set_animation(IPage *page, char *name, char *anim) {
+    int (*anim_func)(IPage *, float);
+    if (page == NULL) {
+        log_file(LogError, "Graphics", "Trying to set %s to %s on null page", name, anim);
+    }
+
+    if (strcmp(anim, "left_to_right") == 0) {
+        anim_func = graphics_animate_left_to_right;
+    } else if (strcmp(anim, "right_to_left") == 0) {
+        anim_func = graphics_animate_right_to_left;
+    } else if (strcmp(anim, "up") == 0) {
+        anim_func = graphics_animate_up;
+    } else if (strcmp(anim, "clock_tick") == 0) {
+        anim_func = graphics_animate_clock_tick;
+    } else {
+        log_file(LogWarn, "Graphics", "Unknown animation function %s", anim);
+        anim_func = graphics_animate_none;
+    }
+
+    if (strcmp(name, "anim_on") == 0) {
+        page->page_animate_on = anim_func;
+    } else if (strcmp(name, "anim_cont") == 0) {
+        page->page_continue = anim_func;
+    } else if (strcmp(name, "anim_off") == 0) {
+        page->page_animate_off = anim_func;
+    } else {
+        log_file(LogWarn, "Graphics", "Unknown animation type %s", name);
+    }
 }
 
 void graphics_page_update_animation(IPage *page, char *anim, float time) {
