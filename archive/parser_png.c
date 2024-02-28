@@ -127,7 +127,7 @@ static void parser_png_read_iend(FILE *f, unsigned int length, IEND *iend) {
 
 // TODO: Transparency chunk parsing
 
-unsigned char *gl_image_loag_png(char *filename, int *w, int *h) {
+unsigned char *gl_image_load_png(char *filename, int *w, int *h) {
     char file_path[1024];
     memset(file_path, '\0', sizeof file_path);
     memcpy(file_path, INSTALL_DIR, strlen( INSTALL_DIR ));

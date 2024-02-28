@@ -53,4 +53,8 @@ void gl_image_init_buffers(void);
 void gl_image_init_shaders(void);
 void gl_draw_image(IGeometry *image);
 
+/* gl_video.c */
+void gl_video_init_buffers(void);
+void gl_video_init_shaders(void);
+
 #endif // !GL_RENDER_INTERNAL
