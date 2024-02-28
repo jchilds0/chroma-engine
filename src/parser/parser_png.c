@@ -10,6 +10,7 @@
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static int parser_png_read_file(char *filename, int *w, int *h, 
             png_byte *color_type, png_byte *bit_depth, png_bytep **row_pointers) {
@@ -111,17 +112,7 @@ unsigned char *parser_load_png(char *filename, int *w, int *h) {
     unsigned char *data = NEW_ARRAY((*w) * (*h) * 4, unsigned char);
 
     for (int y = 0; y < *h; y++) {
-        png_bytep row = row_pointers[*h - y - 1];
-
-        for (int x = 0; x < *w; x++) {
-            png_bytep px = &(row[x * 4]);
-            int col_index = 4 * (y * (*w) + x);
-
-            data[col_index + 0] = px[0];
-            data[col_index + 1] = px[1];
-            data[col_index + 2] = px[2];
-            data[col_index + 3] = px[3];
-        }
+        memcpy(&data[4 * (*w) * y], row_pointers[*h - y - 1], 4 * (*w) * sizeof( unsigned char ));
     }
 
     free_row_pointers(*h, row_pointers);
