@@ -1,0 +1,148 @@
+/*
+ * gl_image.c
+ *
+ * Setup and render an image described by a 
+ * GeometryImage in a GL context.
+ *
+ */
+
+#include "chroma-engine.h"
+#include "geometry.h"
+#include "gl_render_internal.h"
+#include "parser.h"
+
+#include <GL/glew.h>
+#include <GL/gl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static GLuint vao;
+static GLuint vbo;
+static GLuint ebo;
+static GLuint texture;
+static GLuint program;
+
+static GLuint indices[] = {
+    0, 1, 3, // first triangle 
+    1, 2, 3, // second triangle
+};
+
+void gl_image_init_buffers(void) {
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
+
+    glBindVertexArray(vao);
+
+    // bind buffer arrays 
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof( float ) * 4 * 8, NULL, GL_STATIC_DRAW);
+
+    // bind and set element buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof indices, indices, GL_STATIC_DRAW);
+
+    // position attribute 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof( float ), (void *)(0));
+    glEnableVertexAttribArray(0);
+
+    // color attribute 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof( float ), (void *)(3 * sizeof( float )));
+    glEnableVertexAttribArray(1);
+
+    // texture coord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof( float ), (void *)(6 * sizeof( float )));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+}
+
+void gl_image_init_shaders(void) {
+    char *vertexSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "glimage-gl.vs.glsl");
+    char *fragmentSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "glimage-gl.fs.glsl");
+
+    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vertexSource);
+    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
+
+    program = gl_renderer_create_program(vertex, fragment);
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // texture wrapping
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    // texture filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    free(vertexSource);
+    free(fragmentSource);
+
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+}
+
+static char path[1024] = "";
+static unsigned char *data;
+static int w, h;
+
+void gl_draw_image(IGeometry *geo) {
+    int pos_x = geometry_get_int_attr(geo, "pos_x");
+    int pos_y = geometry_get_int_attr(geo, "pos_y");
+    char img_path[1024];
+
+    memset(img_path, '\0', sizeof img_path);
+    geometry_get_attr(geo, "string", img_path);
+
+    // update data if img has changed 
+    if (strcmp(path, img_path) != 0) { 
+        free(data);
+        strcpy(path, img_path);
+
+        data = parser_load_png(&img_path[0], &w, &h);
+    }
+
+    if (data == NULL) {
+        return;
+    }
+
+    char buf[100];
+    memset(buf, '\0', sizeof( buf ));
+    geometry_get_attr(geo, "scale", buf);
+    float scale = atof(buf);
+
+    GLfloat vertices[] = {
+        // positions                                  // colors           // texture coords
+        pos_x + w * scale, pos_y + h * scale, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+        pos_x + w * scale, pos_y,             0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+        pos_x,             pos_y,             0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom right
+        pos_x,             pos_y + h * scale, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f, // bottom right
+    };
+
+    gl_renderer_set_scale(program);
+
+    glUseProgram(program);
+    glBindVertexArray(vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof vertices, vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+}

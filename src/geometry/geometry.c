@@ -13,6 +13,7 @@
  *
  */
 
+#include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -23,21 +24,25 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value);
 void geometry_set_attr(IGeometry *geo, char *attr, char *value);
 
 IGeometry *geometry_create_geometry(char *type) {
-    if (strncmp(type, "rect", 4) == 0) {
+    if (strcmp(type, "rect") == 0) {
 
         return (IGeometry *) geometry_new_rectangle();
 
-    } else if (strncmp(type, "circle", 6) == 0) {
+    } else if (strcmp(type, "circle") == 0) {
 
         return (IGeometry *) geometry_new_circle();
 
-    } else if (strncmp(type, "graph", 5) == 0) {
+    } else if (strcmp(type, "graph") == 0) {
 
         return (IGeometry *) geometry_new_graph();
 
-    } else if (strncmp(type, "text", 4) == 0) {
+    } else if (strcmp(type, "text") == 0) {
 
         return (IGeometry *) geometry_new_text();
+    
+    } else if (strcmp(type, "image") == 0) {
+
+        return (IGeometry *) geometry_new_image();
 
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry type (%s)", type);
@@ -59,6 +64,9 @@ void geometry_free_geometry(IGeometry *geo) {
             break;
         case TEXT:
             geometry_free_text((GeometryText *)geo);
+            break;
+        case IMAGE:
+            geometry_free_image((GeometryImage *)geo);
             break;
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
@@ -133,6 +141,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             case TEXT:
                 memcpy(value, "text", 4);
                 break;
+            case IMAGE:
+                memcpy(value, "image", 5);
+                break;
             default:
                 log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
         }
@@ -171,6 +182,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case TEXT:
             geometry_text_get_attr((GeometryText *)geo, g_attr, value);
+            break;
+        case IMAGE:
+            geometry_image_get_attr((GeometryImage *)geo, g_attr, value);
             break;
         default:
             log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
@@ -216,6 +230,9 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case TEXT:
             geometry_text_set_attr((GeometryText *)geo, g_attr, value);
+            break;
+        case IMAGE:
+            geometry_image_set_attr((GeometryImage *)geo, g_attr, value);
             break;
         default:
             log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);

@@ -41,6 +41,7 @@ typedef enum {
     CIRCLE,
     GRAPH,
     TEXT,
+    IMAGE,
 } GeometryType;
 
 typedef struct {
@@ -90,6 +91,12 @@ typedef struct {
     char              buf[GEO_BUF_SIZE];
     GLfloat           color[4];
 } GeometryText;
+
+typedef struct {
+    IGeometry         geo;
+    float             scale;
+    char              path[GEO_BUF_SIZE];
+} GeometryImage;
 
 extern IGeometry *geometry_create_geometry(char *);
 extern void geometry_free_geometry(IGeometry *geo);

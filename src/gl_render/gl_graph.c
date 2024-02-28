@@ -7,18 +7,11 @@
  */
 
 #include "chroma-engine.h"
-#include "gl_math.h"
 #include "gl_render_internal.h"
-#include "geometry.h"
 #include "log.h"
 
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <X11/Xutil.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static GLuint vao;
 static GLuint vbo;

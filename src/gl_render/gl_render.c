@@ -5,6 +5,7 @@
  */
 
 #include "gl_render.h"
+#include "geometry.h"
 #include "gl_render_internal.h"
 
 #include "chroma-engine.h"
@@ -121,6 +122,9 @@ void gl_realize(GtkWidget *widget) {
     gl_text_init_buffers();
     gl_text_init_shaders();
     gl_text_cache_characters();
+
+    gl_image_init_buffers();
+    gl_image_init_shaders();
 }
 
 void gl_renderer_set_scale(GLuint program) {
@@ -229,6 +233,9 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                     break;
                 case GRAPH:
                     gl_draw_graph(geo);
+                    break;
+                case IMAGE:
+                    gl_draw_image(geo);
                     break;
                 default:
                     log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);

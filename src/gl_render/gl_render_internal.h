@@ -48,4 +48,9 @@ void gl_text_init_shaders(void);
 void gl_text_cache_characters(void);
 void gl_draw_text(IGeometry *text);
 
+/* gl_image.c */
+void gl_image_init_buffers(void);
+void gl_image_init_shaders(void);
+void gl_draw_image(IGeometry *image);
+
 #endif // !GL_RENDER_INTERNAL

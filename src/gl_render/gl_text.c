@@ -11,6 +11,7 @@
 #include "geometry.h"
 #include "log.h"
 
+#include <GL/gl.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -32,19 +33,15 @@ void gl_text_init_buffers(void) {
     glGenBuffers(1, &vbo);
 
     glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof( float ) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
 
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof( float ), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 
-    glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
 } 
 
 void gl_text_init_shaders(void) {
@@ -147,9 +144,11 @@ void gl_draw_text(IGeometry *text) {
 
     GLint color_loc = glGetUniformLocation(program, "color");
     glUniform3f(color_loc, r, g, b);
-
-    glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(vao);
+
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     for (int i = 0; buf[i] != '\0'; i++) {
         struct Character ch = Characters[(unsigned char)buf[i]];
@@ -185,6 +184,9 @@ void gl_draw_text(IGeometry *text) {
         // advance cursors for next glyph
         text_x += (ch.Advance >> 6) * scale;
     }
+
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
     
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

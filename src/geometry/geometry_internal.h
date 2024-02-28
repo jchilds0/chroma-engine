@@ -58,4 +58,10 @@ void geometry_free_text(GeometryText *text);
 void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value);
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value);
 
+/* geo_image.c */
+GeometryImage *geometry_new_image(void);
+void geometry_free_image(GeometryImage *image);
+void geometry_image_set_attr(GeometryImage *image, GeometryAttr attr, char *value);
+void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *value);
+
 #endif // !GEOMETRY_INTERNAL
