@@ -227,6 +227,7 @@ unsigned char *gl_video_read_frame(AVFormatContext *format_ctx, int video_stream
     AVPacket packet;
     int frame_finished;
     int ret;
+    unsigned char *data;
 
     if (av_read_frame(format_ctx, &packet) < 0) {
         return NULL;
@@ -246,14 +247,16 @@ unsigned char *gl_video_read_frame(AVFormatContext *format_ctx, int video_stream
     while (ret >= 0) {
         ret = avcodec_receive_frame(codec_ctx, frame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-            continue;
+            return NULL;
         } else if (ret < 0) {
             log_file(LogWarn, "GL Render", "Error during decoding video stream");
-            continue;
+            return NULL;
         }
 
         // process frame
+        frame->width = 1;
     }
 
     av_packet_unref(&packet);
+    return data;
 }
