@@ -9,12 +9,7 @@
 #include "geometry.h"
 #include "gl_render_internal.h"
 #include "log.h"
-#include <libavcodec/codec.h>
-#include <libavcodec/packet.h>
-#include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
-#include <libavutil/frame.h>
-#include <libavutil/imgutils.h>
 
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -34,9 +29,10 @@ static GLuint indices[] = {
     1, 2, 3, // second triangle
 };
 
+#define INBUF_SIZE 4096
+
 int gl_video_load_mp4(char *filename);
-unsigned char *gl_video_read_frame(AVFormatContext *format_ctx, int video_stream_idx, 
-                                   AVCodecContext *codec_ctx, AVFrame *frame);
+void gl_video_read_frame(AVCodecContext *codec_ctx, AVFrame *frame, AVPacket *packet); 
 
 void gl_video_init_buffers(void) {
     glGenVertexArrays(1, &vao);
@@ -157,106 +153,113 @@ void gl_draw_video(IGeometry *geo) {
 
 
 int gl_video_load_mp4(char *filename) {
-    AVFormatContext *format_ctx = NULL;
-
+    int eof, ret;
+    size_t data_size;
+    uint8_t *data;
+    uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
     char file_path[1024];
     memset(file_path, '\0', sizeof file_path);
     memcpy(file_path, INSTALL_DIR, strlen( INSTALL_DIR ));
     memcpy(&file_path[strlen(INSTALL_DIR)], filename, strlen(filename));
 
-    if (avformat_open_input(&format_ctx, file_path, NULL, NULL) < 0) {
-        log_file(LogWarn, "GL Render", "Error opening video %s", file_path); 
+    AVPacket *packet = av_packet_alloc();
+    if (!packet) {
+        log_file(LogWarn, "GL Render", "Error creating packet"); 
         return -1;
     }
 
-    if (avformat_find_stream_info(format_ctx, NULL) < 0) {
-        log_file(LogWarn, "GL Render", "Error finding %s video stream information", file_path);
-        return -1;
-    }
-
-    int video_stream_idx = -1;
-    for (int i = 0; i < format_ctx->nb_streams; i++) {
-        if (format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            video_stream_idx = i;
-            break;
-        }
-    }
-
-    if (video_stream_idx == -1) {
-        log_file(LogWarn, "GL Render", "Error finding %s video stream", file_path);
-        avformat_close_input(&format_ctx);
-        return -1;
-    }
-
-    AVCodecParameters *codec_params = format_ctx->streams[video_stream_idx]->codecpar;
-    const AVCodec *codec = avcodec_find_decoder(codec_params->codec_id);
+    const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MPEG4);
     if (!codec) {
         log_file(LogWarn, "GL Render", "Error %s unsupported codec", file_path);
-        avformat_close_input(&format_ctx);
+        return -1;
+    }
+
+    AVCodecParserContext *parser = av_parser_init(codec->id);
+    if (!parser) {
+        log_file(LogWarn, "GL Render", "Error %s parser not found", file_path);
         return -1;
     }
 
     AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
     if (!codec_ctx) {
-        log_file(LogWarn, "GL Render", "Failed to copy codec params to context (%s)", file_path);
-        avcodec_free_context(&codec_ctx);
-        avformat_close_input(&format_ctx);
+        log_file(LogWarn, "GL Render", "Error %s couldn't allocate video codec context", file_path);
+        av_parser_close(parser);
         return -1;
     }
 
     if (avcodec_open2(codec_ctx, codec, NULL) < 0) {
         log_file(LogWarn, "GL Render", "Failed to open codec (%s)", file_path);
         avcodec_free_context(&codec_ctx);
-        avformat_close_input(&format_ctx);
+        av_parser_close(parser);
+        return -1;
+    }
+
+    FILE *f = fopen(file_path, "rb");
+    if (!f) {
+        log_file(LogWarn, "GL Render", "Failed to file %s", file_path);
+        avcodec_free_context(&codec_ctx);
+        av_parser_close(parser);
         return -1;
     }
 
     AVFrame *frame = av_frame_alloc();
     if (!frame) {
-        log_file(LogWarn, "GL Render", "Failed to allocate frame (%s)", file_path);
+        log_file(LogWarn, "GL Render", "Couldn't allocate video frame");
         avcodec_free_context(&codec_ctx);
-        avformat_close_input(&format_ctx);
+        av_parser_close(parser);
+        fclose(f);
         return -1;
     }
+
+    do {
+        data_size = fread(inbuf, 1, INBUF_SIZE, f);
+        if (ferror(f)) {
+            break;
+        }
+        eof = !data_size;
+        data = inbuf;
+        while (data_size > 0 || eof) {
+            ret = av_parser_parse2(parser, codec_ctx, &packet->data, &packet->size, 
+                                   data, data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+            if (ret < 0) {
+                log_file(LogWarn, "GL Render", "Error while parsing %s", file_path);
+                avcodec_free_context(&codec_ctx);
+                av_parser_close(parser);
+                fclose(f);
+                return -1;
+            }
+
+            data += ret;
+            data_size += ret;
+            if (packet->size) {
+                gl_video_read_frame(codec_ctx, frame, packet);
+            } else if (eof) {
+                break;
+            }
+        }
+    } while (!eof);
 
     return 0;
 }
 
-unsigned char *gl_video_read_frame(AVFormatContext *format_ctx, int video_stream_idx, 
-            AVCodecContext *codec_ctx, AVFrame *frame) {
-    AVPacket packet;
-    int frame_finished;
+void gl_video_read_frame(AVCodecContext *codec_ctx, AVFrame *frame, AVPacket *packet) {
     int ret;
-    unsigned char *data;
 
-    if (av_read_frame(format_ctx, &packet) < 0) {
-        return NULL;
-    }
-
-    if (packet.stream_index != video_stream_idx) {
-        av_packet_unref(&packet);
-        return NULL;
-    }
-
-    ret = avcodec_send_packet(codec_ctx, &packet);
+    ret = avcodec_send_packet(codec_ctx, packet);
     if (ret < 0) {
-        log_file(LogWarn, "GL Render", "Error sending a packet for decoding");
-        return NULL;
+        log_file(LogWarn, "GL Render", "Error while sending a packet for decoding");
+        return ;
     }
 
     while (ret >= 0) {
         ret = avcodec_receive_frame(codec_ctx, frame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-            return NULL;
+            return ;
         } else if (ret < 0) {
-            log_file(LogWarn, "GL Render", "Error during decoding video stream");
-            return NULL;
+            log_file(LogWarn, "GL Render", "Error during decoding %d", ret);
+            return ;
         }
 
-        // process frame
-        frame->width = 1;
+        log_file(LogMessage, "GL Render", "Decoded Frame %s", codec_ctx->frame_num);
     }
-
-    av_packet_unref(&packet);
-    return data;
 }

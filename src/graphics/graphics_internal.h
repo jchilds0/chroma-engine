@@ -58,7 +58,6 @@ int          graphics_page_num_geometry(IPage *page);
 IPage        *graphics_new_page(int num_geo);
 void         graphics_free_page(IPage *);
 
-
 /* gr_animation.c */
 int graphics_animate_left_to_right(IPage *page, float time);
 int graphics_animate_right_to_left(IPage *page, float time);

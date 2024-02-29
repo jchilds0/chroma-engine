@@ -44,6 +44,10 @@ IGeometry *geometry_create_geometry(char *type) {
 
         return (IGeometry *) geometry_new_image();
 
+    } else if (strcmp(type, "video") == 0) {
+
+        return (IGeometry *) geometry_new_video();
+
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry type (%s)", type);
         return NULL;
@@ -67,6 +71,9 @@ void geometry_free_geometry(IGeometry *geo) {
             break;
         case IMAGE:
             geometry_free_image((GeometryImage *)geo);
+            break;
+        case VIDEO:
+            geometry_free_video((GeometryVideo *)geo);
             break;
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
@@ -126,6 +133,14 @@ int geometry_get_int_attr(IGeometry *geo, char *attr) {
     return atoi(buf);
 }
 
+float geometry_get_float_attr(IGeometry *geo, char *attr) {
+    char buf[GEO_BUF_SIZE];
+    memset(buf, '\0', GEO_BUF_SIZE);
+    geometry_get_attr(geo, attr, buf);
+
+    return atof(buf);
+}
+
 void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
     if (strncmp(attr, "geo_type", 8) == 0) {
         switch (geo->geo_type) {
@@ -143,6 +158,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
                 break;
             case IMAGE:
                 memcpy(value, "image", 5);
+                break;
+            case VIDEO:
+                memcpy(value, "video", 5);
                 break;
             default:
                 log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
@@ -186,6 +204,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
         case IMAGE:
             geometry_image_get_attr((GeometryImage *)geo, g_attr, value);
             break;
+        case VIDEO:
+            geometry_video_get_attr((GeometryVideo *)geo, g_attr, value);
+            break;
         default:
             log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
     }
@@ -195,6 +216,13 @@ void geometry_set_int_attr(IGeometry *geo, char *attr, int value) {
     char buf[GEO_BUF_SIZE];
     memset(buf, '\0', GEO_BUF_SIZE);
     sprintf(buf, "%d", value);
+    geometry_set_attr(geo, attr, buf);
+}
+
+void geometry_set_float_attr(IGeometry *geo, char *attr, float value) {
+    char buf[GEO_BUF_SIZE];
+    memset(buf, '\0', GEO_BUF_SIZE);
+    sprintf(buf, "%f", value);
     geometry_set_attr(geo, attr, buf);
 }
 
@@ -233,6 +261,9 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
             break;
         case IMAGE:
             geometry_image_set_attr((GeometryImage *)geo, g_attr, value);
+            break;
+        case VIDEO:
+            geometry_video_set_attr((GeometryVideo *)geo, g_attr, value);
             break;
         default:
             log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);

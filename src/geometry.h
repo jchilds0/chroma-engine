@@ -42,6 +42,7 @@ typedef enum {
     GRAPH,
     TEXT,
     IMAGE,
+    VIDEO,
 } GeometryType;
 
 typedef struct {
@@ -98,12 +99,21 @@ typedef struct {
     char              path[GEO_BUF_SIZE];
 } GeometryImage;
 
-extern IGeometry *geometry_create_geometry(char *);
-extern void geometry_free_geometry(IGeometry *geo);
+typedef struct {
+    IGeometry         geo;
+    float             scale;
+    char              path[GEO_BUF_SIZE];
+} GeometryVideo;
 
-extern void geometry_set_attr(IGeometry *geo, char *attr, char *value);
-extern void geometry_set_int_attr(IGeometry *geo, char *attr, int value);
-extern void geometry_get_attr(IGeometry *geo, char *attr, char *value);
-extern int  geometry_get_int_attr(IGeometry *geo, char *attr);
+extern IGeometry *geometry_create_geometry(char *);
+extern void   geometry_free_geometry(IGeometry *geo);
+
+extern void   geometry_set_attr(IGeometry *geo, char *attr, char *value);
+extern void   geometry_set_int_attr(IGeometry *geo, char *attr, int value);
+extern void   geometry_set_float_attr(IGeometry *geo, char *attr, float value);
+
+extern void   geometry_get_attr(IGeometry *geo, char *attr, char *value);
+extern int    geometry_get_int_attr(IGeometry *geo, char *attr);
+extern float  geometry_get_float_attr(IGeometry *geo, char *attr);
 
 #endif // !CHROMA_GEOMETRY
