@@ -125,9 +125,6 @@ void gl_realize(GtkWidget *widget) {
 
     gl_image_init_buffers();
     gl_image_init_shaders();
-
-    gl_video_init_buffers();
-    gl_video_init_shaders();
 }
 
 void gl_renderer_set_scale(GLuint program) {
