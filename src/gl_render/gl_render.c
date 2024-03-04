@@ -240,9 +240,6 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 case IMAGE:
                     gl_draw_image(geo);
                     break;
-                case VIDEO:
-                    gl_draw_video(geo);
-                    break;
                 default:
                     log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
             }

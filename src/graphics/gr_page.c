@@ -19,22 +19,23 @@ IPage *graphics_new_page(int num_geo) {
     page->len_geometry = num_geo + 1;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
-    page->parent_geo = NEW_ARRAY(page->len_geometry, unsigned int);
 
     page->page_animate_on = graphics_animate_none;
     page->page_continue = graphics_animate_none;
     page->page_animate_off = graphics_animate_none;
 
     // mask
-    IGeometry *geo = graphics_page_add_geometry(page, num_geo, 0, "rect");
+    IGeometry *geo = graphics_page_add_geometry(page, num_geo, "rect");
+    geometry_set_attr(geo, "parent", "0");
     geometry_set_attr(geo, "color", "0 0 0 255");
+
     page->mask_index = num_geo;
     page->bg_index = 0;
 
     return page;
 }
 
-IGeometry *graphics_page_add_geometry(IPage *page, int id, int parent, char *type) {
+IGeometry *graphics_page_add_geometry(IPage *page, int id, char *type) {
     if (id < 0 || id >= page->len_geometry) {
         log_file(LogWarn, "Graphics", "Can't add geometry to page, id %d out of range", id);
         return NULL;
@@ -42,7 +43,6 @@ IGeometry *graphics_page_add_geometry(IPage *page, int id, int parent, char *typ
 
     IGeometry *geo = geometry_create_geometry(type);
     page->geometry[id] = geo;
-    page->parent_geo[id] = parent;
     page->num_geometry++;
     return geo;
 }
@@ -107,8 +107,12 @@ void graphics_page_update_animation(IPage *page, char *anim, float time) {
 }
 
 static void graphics_page_update_child_geometry(IPage *page, unsigned int node) {
-    IGeometry *parent = page->geometry[page->parent_geo[node]];
-    IGeometry *child = page->geometry[node];
+    IGeometry *parent, *child;
+    int child_num, parent_num;
+
+    child = page->geometry[node];
+    parent_num = geometry_get_int_attr(child, "parent");
+    parent = page->geometry[parent_num];
 
     int parent_x = geometry_get_int_attr(parent, "pos_x");
     int parent_y = geometry_get_int_attr(parent, "pos_y");
@@ -119,9 +123,13 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
     geometry_set_int_attr(child, "pos_y", parent_y + rel_y);
 
     for (int i = 0; i < page->num_geometry; i++) {
-        if (page->parent_geo[i] == node) {
-            graphics_page_update_child_geometry(page, i);
+        child_num = geometry_get_int_attr(page->geometry[i], "parent");
+        if (child_num != node) {
+            // geo is not a child of the current child
+            continue;
         }
+
+        graphics_page_update_child_geometry(page, i);
     }
 }
 
@@ -129,12 +137,14 @@ void graphics_page_update_geometry(IPage *page) {
     IGeometry *root = graphics_page_get_geometry(page, 0);
     int x = geometry_get_int_attr(root, "rel_x");
     int y = geometry_get_int_attr(root, "rel_y");
+    int parent_num;
 
     geometry_set_int_attr(root, "pos_x", x);
     geometry_set_int_attr(root, "pos_y", y);
 
     for (int i = 1; i < page->num_geometry; i++) {
-        if (page->parent_geo[i] == 0) {
+        parent_num = geometry_get_int_attr(page->geometry[i], "parent");
+        if (parent_num == 0) {
             graphics_page_update_child_geometry(page, i);
         }
     }

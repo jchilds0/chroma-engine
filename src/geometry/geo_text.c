@@ -22,8 +22,7 @@ GeometryText *geometry_new_text(void) {
     text->geo.rel.x = 0;
     text->geo.rel.y = 0;
 
-    text->scale = 0.0;
-
+    text->scale = 1.0;
     memset(text->buf, '\0', GEO_BUF_SIZE);
 
     text->color[0] = 0.0;

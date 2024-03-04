@@ -91,6 +91,8 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_REL_X;
     } else if (strncmp(attr, "rel_y", 5) == 0) {
         g_attr = GEO_REL_Y;
+    } else if (strncmp(attr, "parent", 6) == 0) {
+        g_attr = GEO_PARENT;
     } else if (strncmp(attr, "color", 5) == 0) {
         g_attr = GEO_COLOR;
     } else if (strncmp(attr, "width", 5) == 0) {
@@ -184,6 +186,9 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
         case GEO_REL_Y:
             sprintf(value, "%d", geo->rel.y);
             return;
+        case GEO_PARENT:
+            sprintf(value, "%d", geo->parent);
+            return;
         default:
             break;
     }
@@ -241,6 +246,9 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
             return;
         case GEO_REL_Y:
             sscanf(value, "%d", &geo->rel.y);
+            return;
+        case GEO_PARENT:
+            sscanf(value, "%d", &geo->parent);
             return;
         default:
             break;

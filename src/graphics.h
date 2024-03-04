@@ -25,7 +25,7 @@ extern void         graphics_page_set_animation(IPage *, char *name, char *anim)
 extern void         graphics_page_update_animation(IPage *page, char *anim, float time);
 
 extern IGeometry    *graphics_page_get_geometry(IPage *page, int geo_num);
-extern IGeometry    *graphics_page_add_geometry(IPage *page, int id, int parent, char *type);
+extern IGeometry    *graphics_page_add_geometry(IPage *page, int id, char *type);
 extern int          graphics_page_num_geometry(IPage *page);
 extern void         graphics_page_update_geometry(IPage *page);
 

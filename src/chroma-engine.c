@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     opterr = 0;
     log_start(-1);
 
-    while ((x = getopt(argc, argv, "g:hw:")) != -1) {
+    while ((x = getopt(argc, argv, "g:hw:p:")) != -1) {
         switch (x) {
             case 'g':
                 gval = optarg;
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
                 wflag = 1;
                 break;
             default:
-                log_file(LogError, "Engine", "Invalid Args");
+                log_file(LogError, "Engine", "Invalid Args %d", x);
         }
     }
 

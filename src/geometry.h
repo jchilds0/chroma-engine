@@ -47,6 +47,7 @@ typedef enum {
 
 typedef struct {
     GeometryType      geo_type;
+    int               parent;
     vec2              pos;
     vec2              rel;
 } IGeometry;

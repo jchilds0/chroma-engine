@@ -76,19 +76,29 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
     parser_match_token('{', socket_client);
 
     while (c_token == STRING) {
-        if (strcmp(c_value, "num_geo") == 0) {
+        if (strcmp(c_value, "id") == 0) {
             // 'num_geo': 1234..
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
-            num_geo = atoi(c_value);
+            temp_id = atoi(c_value);
             parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "id") == 0) {
+        } else if (strcmp(c_value, "name") == 0) {
+            // skip attr
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_match_token(STRING, socket_client);
+        } else if (strcmp(c_value, "layer") == 0) {
+            // skip attr
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "num_geo") == 0) {
             // 'id': 1234..
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
-            temp_id = atoi(c_value);
+            num_geo = atoi(c_value);
             parser_match_token(INT, socket_client);
         } else if (strcmp(c_value, "anim_on") == 0) {
             parser_match_token(STRING, socket_client);
@@ -146,12 +156,11 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
     }
 }
 
-// G -> {'id': num, 'type': string, 'parent': num, 'attr': [A]} | G, G
+// G -> {'id': num, 'type': string, 'attr': [A]} | G, G
 void parser_parse_geometry(IPage *page, int socket_client) {
     IGeometry *geo;
-    int parent, id;
-    int got_parent = 0,
-        got_id = 0,
+    int id;
+    int got_id = 0,
         got_type = 0;
     char geo_type[PARSE_BUF_SIZE];
 
@@ -165,6 +174,11 @@ void parser_parse_geometry(IPage *page, int socket_client) {
 
             parser_match_token(INT, socket_client);
             got_id = 1;
+        } else if (strcmp(c_value, "name") == 0) {
+            // skip attr
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "geo_type") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
@@ -172,25 +186,23 @@ void parser_parse_geometry(IPage *page, int socket_client) {
 
             parser_match_token(STRING, socket_client);
             got_type = 1;
-        } else if (strcmp(c_value, "parent") == 0) {
+        } else if (strcmp(c_value, "prop_type") == 0) {
+            // skip attr
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
-            parent = atoi(c_value);
-
-            parser_match_token(INT, socket_client);
-            got_parent = 1;
+            parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "attr") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
-            if (!(got_parent && got_type && got_id)) {
+            if (!(got_type && got_id)) {
                 log_file(LogWarn, "Parser", "Missing geometry attributes");
                 return;
             }
 
             parser_match_token('[', socket_client);
 
-            geo = graphics_page_add_geometry(page, id, parent, geo_type);
+            geo = graphics_page_add_geometry(page, id, geo_type);
             parser_parse_attribute(geo, socket_client);
 
             parser_match_token(']', socket_client);
@@ -239,6 +251,11 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             parser_match_token(STRING, socket_client);
 
             got_value = 1;
+        } else if (strcmp(c_value, "visible") == 0) {
+            // skip attr
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_match_token(INT, socket_client);
         }
 
         if (c_token == ',') {
