@@ -59,15 +59,14 @@ void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) 
 
 void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value) {
     float scale;
-    int r, g, b, a;
 
     switch (attr) {
         case GEO_COLOR:
-            sscanf(value, "%d %d %d %d", &r, &g, &b, &a);
-            text->color[0] = r * 1.0 / 255;
-            text->color[1] = g * 1.0 / 255;
-            text->color[2] = b * 1.0 / 255;
-            text->color[3] = a * 1.0 / 255;
+            sscanf(value, "%f %f %f %f", 
+                   &text->color[0],
+                   &text->color[1],
+                   &text->color[2],
+                   &text->color[3]);
             break;
         case GEO_TEXT:
             memmove(text->buf, value, GEO_BUF_SIZE);

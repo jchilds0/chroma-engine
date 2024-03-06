@@ -58,15 +58,14 @@ void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *v
 
 void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *value) {
     int g_value = atoi(value);
-    int r, g, b, a;
 
     switch (attr) {
         case GEO_COLOR:
-            sscanf(value, "%d %d %d %d", &r, &g, &b, &a);
-            circle->color[0] = r * 1.0 / 255;
-            circle->color[1] = g * 1.0 / 255;
-            circle->color[2] = b * 1.0 / 255;
-            circle->color[3] = a * 1.0 / 255;
+            sscanf(value, "%f %f %f %f", 
+                   &circle->color[0],
+                   &circle->color[1],
+                   &circle->color[2],
+                   &circle->color[3]);
             break;
         case GEO_INNER_RADIUS:
             circle->inner_radius = g_value;

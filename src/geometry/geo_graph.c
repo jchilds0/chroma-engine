@@ -22,6 +22,7 @@ GeometryGraph *geometry_new_graph(void) {
     g->geo.rel.y    = 0;
 
     g->num_nodes       = 0;
+    g->node_count      = 0;
     g->graph_type      = LINE;
 
     memset(g->nodes, 0, sizeof g->nodes);
@@ -56,26 +57,26 @@ void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
 
 void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *value) {
     int g_value = atoi(value);
-    int r, g, b, a;
-    int x, y, index;
+    int x, y;
 
     switch (attr) {
         case GEO_COLOR:
-            sscanf(value, "%d %d %d %d", &r, &g, &b, &a);
-            graph->color[0] = r * 1.0 / 255;
-            graph->color[1] = g * 1.0 / 255;
-            graph->color[2] = b * 1.0 / 255;
-            graph->color[3] = a * 1.0 / 255;
+            sscanf(value, "%f %f %f %f", 
+                   &graph->color[0],
+                   &graph->color[1],
+                   &graph->color[2],
+                   &graph->color[3]);
             break;
         case GEO_GRAPH_NODE:
-            sscanf(value, "%d %d %d", &index, &x, &y);
-            graph->nodes[index].x = x;
-            graph->nodes[index].y = y;
-            graph->num_nodes = MAX(index + 1, graph->num_nodes);
+            sscanf(value, "%d %d", &x, &y);
+            graph->nodes[graph->node_count].x = x;
+            graph->nodes[graph->node_count].y = y;
+            graph->node_count++;
 
             break;
         case GEO_NUM_NODE:
             graph->num_nodes = g_value;
+            graph->node_count = 0;
             memset(graph->nodes, 0, sizeof graph->nodes);
             break;
         case GEO_GRAPH_TYPE:

@@ -42,7 +42,6 @@ typedef enum {
     GRAPH,
     TEXT,
     IMAGE,
-    VIDEO,
 } GeometryType;
 
 typedef struct {
@@ -82,6 +81,7 @@ typedef struct {
     GraphType         graph_type;
     char              x_label[GEO_BUF_SIZE];
     char              y_label[GEO_BUF_SIZE];
+    int               node_count;
     int               num_nodes;
     GLfloat           color[4];
     vec2              nodes[MAX_NODES];
@@ -99,12 +99,6 @@ typedef struct {
     float             scale;
     char              path[GEO_BUF_SIZE];
 } GeometryImage;
-
-typedef struct {
-    IGeometry         geo;
-    float             scale;
-    char              path[GEO_BUF_SIZE];
-} GeometryVideo;
 
 extern IGeometry *geometry_create_geometry(char *);
 extern void   geometry_free_geometry(IGeometry *geo);

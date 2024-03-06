@@ -65,10 +65,4 @@ void geometry_free_image(GeometryImage *image);
 void geometry_image_set_attr(GeometryImage *image, GeometryAttr attr, char *value);
 void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *value);
 
-/* geo_video.c */
-GeometryVideo *geometry_new_video(void);
-void geometry_free_video(GeometryVideo *video);
-void geometry_video_set_attr(GeometryVideo *video, GeometryAttr attr, char *value);
-void geometry_video_get_attr(GeometryVideo *video, GeometryAttr attr, char *value);
-
 #endif // !GEOMETRY_INTERNAL
