@@ -60,7 +60,7 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
 
             // reset animation times
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
-            graphics_hub_set_time(eng->hub, 0.0f, 0);
+            //graphics_hub_set_time(eng->hub, 0.0f, 0);
 
             // rebuild relative positions
             graphics_page_update_geometry(page);
