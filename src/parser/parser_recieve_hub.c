@@ -39,6 +39,10 @@ void parser_parse_hub(Engine *eng) {
 
             parser_match_token(INT, eng->hub_socket);
             eng->hub = graphics_new_graphics_hub(n);
+            
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "Num Templates: %d", n);
+            }
 
             parser_match_token(',', eng->hub_socket);
         } else if (strcmp(c_value, "templates") == 0) {
@@ -82,16 +86,28 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_match_token(':', socket_client);
 
             temp_id = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\ttemplate id: %d", temp_id);
+            }
+
             parser_match_token(INT, socket_client);
         } else if (strcmp(c_value, "name") == 0) {
             // skip attr
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tname: %s", c_value);
+            }
+
             parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "layer") == 0) {
             // skip attr
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tlayer: %s", c_value);
+            }
+
             parser_match_token(INT, socket_client);
         } else if (strcmp(c_value, "num_geo") == 0) {
             // 'id': 1234..
@@ -99,24 +115,40 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_match_token(':', socket_client);
 
             num_geo = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tnum geometery: %d", num_geo);
+            }
+
             parser_match_token(INT, socket_client);
         } else if (strcmp(c_value, "anim_on") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
             graphics_page_set_animation(page, "anim_on", c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tanimate on: %s", c_value);
+            }
+
             parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "anim_cont") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
             graphics_page_set_animation(page, "anim_cont", c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tanimate continue: %s", c_value);
+            }
+
             parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "anim_off") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
             graphics_page_set_animation(page, "anim_off", c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tanimate off: %s", c_value);
+            }
+
             parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "geometry") == 0) {
             parser_match_token(STRING, socket_client);
@@ -171,6 +203,9 @@ void parser_parse_geometry(IPage *page, int socket_client) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             id = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\tgeometry id: %d", id);
+            }
 
             parser_match_token(INT, socket_client);
             got_id = 1;
@@ -178,11 +213,18 @@ void parser_parse_geometry(IPage *page, int socket_client) {
             // skip attr
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tname: %s", c_value);
+            }
+
             parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "geo_type") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             memcpy(geo_type, c_value, PARSE_BUF_SIZE);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tgeo type: %s", geo_type);
+            }
 
             parser_match_token(STRING, socket_client);
             got_type = 1;
@@ -190,6 +232,10 @@ void parser_parse_geometry(IPage *page, int socket_client) {
             // skip attr
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tprop type: %s", c_value);
+            }
+
             parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "attr") == 0) {
             parser_match_token(STRING, socket_client);
@@ -241,6 +287,10 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             memcpy(name, c_value, PARSE_BUF_SIZE);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\t\tname: %s", name);
+            }
+
             parser_match_token(STRING, socket_client);
 
             got_name = 1;
@@ -248,6 +298,10 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             memcpy(value, c_value, PARSE_BUF_SIZE);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\t\tvalue: %s", value);
+            }
+            
             parser_match_token(STRING, socket_client);
 
             got_value = 1;
@@ -255,6 +309,10 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             // skip attr
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\t\tvisible: %s", c_value);
+            }
+
             parser_match_token(INT, socket_client);
         }
 

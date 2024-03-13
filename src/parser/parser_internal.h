@@ -11,7 +11,7 @@
 #define PARSER_INTERNAL
 
 #define PARSE_BUF_SIZE      100
-#define LOG_PARSER          0
+#define LOG_PARSER          1
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
 typedef enum {
