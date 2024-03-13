@@ -313,7 +313,7 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
                 log_file(LogMessage, "Parser", "\t\t\tvisible: %s", c_value);
             }
 
-            parser_match_token(INT, socket_client);
+            parser_match_token(STRING, socket_client);
         }
 
         if (c_token == ',') {
