@@ -237,6 +237,22 @@ void parser_parse_geometry(IPage *page, int socket_client) {
             }
 
             parser_match_token(STRING, socket_client);
+        } else if (strcmp(c_value, "visible") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+            parser_match_token('[', socket_client);
+
+            while (c_token == STRING) {
+                parser_match_token(STRING, socket_client);
+                parser_match_token(':', socket_client);
+                parser_match_token(STRING, socket_client);
+
+                if (c_token == ',') {
+                    parser_match_token(',', socket_client);
+                }
+            }
+
+            parser_match_token(']', socket_client);
         } else if (strcmp(c_value, "attr") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
