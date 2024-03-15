@@ -321,15 +321,6 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             parser_match_token(STRING, socket_client);
 
             got_value = 1;
-        } else if (strcmp(c_value, "visible") == 0) {
-            // skip attr
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            if (LOG_PARSER) {
-                log_file(LogMessage, "Parser", "\t\t\tvisible: %s", c_value);
-            }
-
-            parser_match_token(STRING, socket_client);
         }
 
         if (c_token == ',') {

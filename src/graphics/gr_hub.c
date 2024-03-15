@@ -56,7 +56,7 @@ IPage *graphics_hub_add_page(IGraphics *hub, int num_geo, int id) {
 }
 
 IPage *graphics_hub_get_page(IGraphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->num_pages - 1)) {
+    if (!WITHIN(page_num, 0, hub->len_pages - 1)) {
         log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
         return NULL;
     }
