@@ -16,20 +16,26 @@
 
 IPage *graphics_new_page(int num_geo) {
     IPage *page = NEW_STRUCT(IPage);
-    page->len_geometry = num_geo + 1;
+    page->len_geometry = num_geo + 2;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
+    memset(page->geometry, 0, page->len_geometry);
 
     page->page_animate_on = graphics_animate_none;
     page->page_continue = graphics_animate_none;
     page->page_animate_off = graphics_animate_none;
 
+    // root 
+    IGeometry *geo = graphics_page_add_geometry(page, 0, "rect");
+    geometry_set_int_attr(geo, "pos_x", 0);
+    geometry_set_int_attr(geo, "pos_y", 0);
+
     // mask
-    IGeometry *geo = graphics_page_add_geometry(page, num_geo, "rect");
+    page->mask_index = num_geo + 1;
+    geo = graphics_page_add_geometry(page, page->mask_index, "rect");
     geometry_set_attr(geo, "parent", "0");
     geometry_set_attr(geo, "color", "0 0 0 255");
 
-    page->mask_index = num_geo;
     page->bg_index = 0;
 
     return page;
@@ -45,6 +51,22 @@ IGeometry *graphics_page_add_geometry(IPage *page, int id, char *type) {
     page->geometry[id] = geo;
     page->num_geometry++;
     return geo;
+}
+
+void graphics_page_set_bg_index(IPage *page, int index) {
+    if (index < 0 || index >= page->len_geometry) {
+        log_file(LogWarn, "Graphics", "Background index %d may be out of range", index);
+    } 
+
+    page->bg_index = index;
+}
+
+void graphics_page_set_mask_index(IPage *page, int index) {
+    if (index < 0 || index >= page->len_geometry) {
+        log_file(LogWarn, "Graphics", "Mask index %d may be out of range", index);
+    } 
+
+    page->mask_index = index;
 }
 
 IGeometry *graphics_page_get_geometry(IPage *page, int geo_num) {
@@ -76,8 +98,6 @@ void graphics_page_set_animation(IPage *page, char *name, char *anim) {
         anim_func = graphics_animate_right_to_left;
     } else if (strcmp(anim, "up") == 0) {
         anim_func = graphics_animate_up;
-    } else if (strcmp(anim, "clock_tick") == 0) {
-        anim_func = graphics_animate_clock_tick;
     } else {
         log_file(LogWarn, "Graphics", "Unknown animation function %s", anim);
         anim_func = graphics_animate_none;
@@ -122,7 +142,11 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
     geometry_set_int_attr(child, "pos_x", parent_x + rel_x);
     geometry_set_int_attr(child, "pos_y", parent_y + rel_y);
 
-    for (int i = 0; i < page->num_geometry; i++) {
+    for (int i = 1; i < page->num_geometry; i++) {
+        if (page->geometry[i] == NULL) {
+            continue ;
+        }
+
         child_num = geometry_get_int_attr(page->geometry[i], "parent");
         if (child_num != node) {
             // geo is not a child of the current child
@@ -134,16 +158,11 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
 }
 
 void graphics_page_update_geometry(IPage *page) {
-    IGeometry *root = graphics_page_get_geometry(page, 0);
-    int x = geometry_get_int_attr(root, "rel_x");
-    int y = geometry_get_int_attr(root, "rel_y");
     int parent_num;
-
-    geometry_set_int_attr(root, "pos_x", x);
-    geometry_set_int_attr(root, "pos_y", y);
 
     for (int i = 1; i < page->num_geometry; i++) {
         parent_num = geometry_get_int_attr(page->geometry[i], "parent");
+
         if (parent_num == 0) {
             graphics_page_update_child_geometry(page, i);
         }

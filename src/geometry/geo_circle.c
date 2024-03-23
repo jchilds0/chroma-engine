@@ -14,6 +14,7 @@
 GeometryCircle *geometry_new_circle(void) {
     GeometryCircle *circle = NEW_STRUCT(GeometryCircle);
     circle->geo.geo_type = CIRCLE;
+    circle->geo.parent = 0;
     circle->geo.pos.x = 0;
     circle->geo.pos.y = 0;
     circle->geo.rel.x = 0;

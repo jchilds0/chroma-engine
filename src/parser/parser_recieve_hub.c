@@ -267,6 +267,14 @@ void parser_parse_geometry(IPage *page, int socket_client) {
             geo = graphics_page_add_geometry(page, id, geo_type);
             parser_parse_attribute(geo, socket_client);
 
+            if (strcmp(geo_type, "rect") == 0 && geometry_get_int_attr(geo, "parent") == 0) {
+                graphics_page_set_bg_index(page, id);
+
+                if (LOG_PARSER) {
+                    log_file(LogMessage, "Parser", "BG Index = %d", id);
+                }
+            }
+
             parser_match_token(']', socket_client);
         } else {
             log_file(LogWarn, "Parser", "Unknown geometry attribute %s", c_value);

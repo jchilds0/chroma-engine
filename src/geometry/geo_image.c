@@ -20,6 +20,7 @@
 GeometryImage *geometry_new_image(void) {
     GeometryImage *image = NEW_STRUCT(GeometryImage);
     image->geo.geo_type = IMAGE;
+    image->geo.parent = 0;
     image->geo.pos.x = 0;
     image->geo.pos.y = 0;
     image->geo.rel.x = 0;

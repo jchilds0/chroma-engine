@@ -52,6 +52,11 @@ IGeometry *geometry_create_geometry(char *type) {
 }
 
 void geometry_free_geometry(IGeometry *geo) {
+    if (geo == NULL) {
+        log_file(LogWarn, "Geometry", "Geometry is NULL");
+        return;
+    }
+
     switch (geo->geo_type) {
         case RECT:
             geometry_free_rectangle((GeometryRect *)geo);
@@ -137,6 +142,11 @@ float geometry_get_float_attr(IGeometry *geo, char *attr) {
 }
 
 void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
+    if (geo == NULL) {
+        log_file(LogWarn, "Geometry", "Geometry is NULL");
+        return;
+    }
+
     if (strncmp(attr, "geo_type", 8) == 0) {
         switch (geo->geo_type) {
             case RECT:
@@ -155,7 +165,7 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
                 memcpy(value, "image", 5);
                 break;
             default:
-                log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
+                log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
         }
 
         return;
@@ -200,7 +210,7 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             geometry_image_get_attr((GeometryImage *)geo, g_attr, value);
             break;
         default:
-            log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
+            log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
 }
 
@@ -220,6 +230,11 @@ void geometry_set_float_attr(IGeometry *geo, char *attr, float value) {
 
 void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
     GeometryAttr g_attr = geometry_char_to_attr(attr);
+
+    if (geo == NULL) {
+        log_file(LogWarn, "Geometry", "Geometry is NULL");
+        return;
+    }
 
     switch (g_attr) {
         case GEO_POS_X:
@@ -258,7 +273,7 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
             geometry_image_set_attr((GeometryImage *)geo, g_attr, value);
             break;
         default:
-            log_file(LogWarn, "[Geometry]", "Unknown geo type %d", geo->geo_type);
+            log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
 }
 

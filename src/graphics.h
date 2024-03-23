@@ -26,6 +26,8 @@ extern void         graphics_page_update_animation(IPage *page, char *anim, floa
 
 extern IGeometry    *graphics_page_get_geometry(IPage *page, int geo_num);
 extern IGeometry    *graphics_page_add_geometry(IPage *page, int id, char *type);
+extern void         graphics_page_set_bg_index(IPage *page, int index);
+extern void         graphics_page_set_mask_index(IPage *page, int index);
 extern int          graphics_page_num_geometry(IPage *page);
 extern void         graphics_page_update_geometry(IPage *page);
 

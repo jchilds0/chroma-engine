@@ -17,6 +17,7 @@
 GeometryText *geometry_new_text(void) {
     GeometryText *text = NEW_STRUCT(GeometryText);
     text->geo.geo_type = TEXT;
+    text->geo.parent = 0;
     text->geo.pos.x = 0;
     text->geo.pos.y = 0;
     text->geo.rel.x = 0;

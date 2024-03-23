@@ -61,7 +61,6 @@ void         graphics_free_page(IPage *);
 int graphics_animate_left_to_right(IPage *page, float time);
 int graphics_animate_right_to_left(IPage *page, float time);
 int graphics_animate_up(IPage *page, float time);
-int graphics_animate_clock_tick(IPage *page, float time);
 int graphics_animate_none(IPage *page, float time);
 
 #endif // !PAGE_INTERNAL

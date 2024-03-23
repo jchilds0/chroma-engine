@@ -16,6 +16,7 @@
 GeometryGraph *geometry_new_graph(void) {
     GeometryGraph *g = NEW_STRUCT(GeometryGraph);
     g->geo.geo_type = GRAPH;
+    g->geo.parent   = 0;
     g->geo.pos.x    = 0;
     g->geo.pos.y    = 0;
     g->geo.rel.x    = 0;

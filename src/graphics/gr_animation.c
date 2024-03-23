@@ -49,10 +49,6 @@ int graphics_animate_up(IPage *page, float time) {
     return 1;
 }
 
-int graphics_animate_clock_tick(IPage *page, float time) {
-    return 1;
-}
-
 int graphics_animate_none(IPage *page, float time) {
     return 1;
 }
