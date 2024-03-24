@@ -19,7 +19,10 @@ IPage *graphics_new_page(int num_geo) {
     page->len_geometry = num_geo + 2;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
-    memset(page->geometry, 0, page->len_geometry);
+
+    for (int i = 0; i < page->len_geometry; i++) {
+        page->geometry[i] = NULL;
+    }
 
     page->page_animate_on = graphics_animate_none;
     page->page_continue = graphics_animate_none;
@@ -161,6 +164,10 @@ void graphics_page_update_geometry(IPage *page) {
     int parent_num;
 
     for (int i = 1; i < page->num_geometry; i++) {
+        if (page->geometry[i] == NULL) {
+            continue;
+        }
+
         parent_num = geometry_get_int_attr(page->geometry[i], "parent");
 
         if (parent_num == 0) {

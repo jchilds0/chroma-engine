@@ -53,8 +53,7 @@ IGeometry *geometry_create_geometry(char *type) {
 
 void geometry_free_geometry(IGeometry *geo) {
     if (geo == NULL) {
-        log_file(LogWarn, "Geometry", "Geometry is NULL");
-        return;
+        log_file(LogError, "Geometry", "Geometry is NULL");
     }
 
     switch (geo->geo_type) {
@@ -143,8 +142,7 @@ float geometry_get_float_attr(IGeometry *geo, char *attr) {
 
 void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
     if (geo == NULL) {
-        log_file(LogWarn, "Geometry", "Geometry is NULL");
-        return;
+        log_file(LogError, "Geometry", "Geometry is NULL");
     }
 
     if (strncmp(attr, "geo_type", 8) == 0) {
@@ -232,8 +230,7 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
     GeometryAttr g_attr = geometry_char_to_attr(attr);
 
     if (geo == NULL) {
-        log_file(LogWarn, "Geometry", "Geometry is NULL");
-        return;
+        log_file(LogError, "Geometry", "Geometry is NULL");
     }
 
     switch (g_attr) {

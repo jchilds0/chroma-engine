@@ -219,6 +219,11 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         for (int geo_num = 0; geo_num < num_geo; geo_num++) {
             memset(geo_type, '\0', sizeof geo_type);
             geo = graphics_page_get_geometry(page, geo_num);
+
+            if (geo == NULL) {
+                continue;
+            }
+
             geometry_get_attr(geo, "geo_type", geo_type);
 
             switch (geo->geo_type) {
