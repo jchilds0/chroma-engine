@@ -174,7 +174,7 @@ static int gl_image_read_png(char *filename, int *w, int *h,
     }
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        log_file(LogWarn, "GL Render", "Error during png reading");
+        //log_file(LogWarn, "GL Render", "Error during png reading");
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         fclose(fp);
         return -1;
@@ -241,11 +241,11 @@ unsigned char *gl_image_load_png(char *filename, int *w, int *h) {
     png_bytep *row_pointers = NULL;
 
     if (gl_image_read_png(file_path, w, h, &color_type, &bit_depth, &row_pointers) < 0) {
-        log_file(LogWarn, "GL Render", "Error reading png");
+        //log_file(LogWarn, "GL Render", "Error reading png");
         return NULL;
     }
 
-    log_file(LogMessage, "GL Render", "Color Type %d, Bit Depth %d", color_type, bit_depth);
+    //log_file(LogMessage, "GL Render", "Color Type %d, Bit Depth %d", color_type, bit_depth);
 
     unsigned char *data = NEW_ARRAY((*w) * (*h) * 4, unsigned char);
 
