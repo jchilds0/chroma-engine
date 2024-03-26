@@ -53,7 +53,7 @@ IGeometry *geometry_create_geometry(char *type) {
 
 void geometry_free_geometry(IGeometry *geo) {
     if (geo == NULL) {
-        log_file(LogError, "Geometry", "Geometry is NULL");
+        return;
     }
 
     switch (geo->geo_type) {

@@ -77,6 +77,10 @@ IGeometry *graphics_page_get_geometry(IPage *page, int geo_num) {
 }
 
 void graphics_free_page(IPage *page) {
+    if (page == NULL) {
+        return;
+    }
+
     for (int i = 0; i < page->num_geometry; i++) {
         geometry_free_geometry(page->geometry[i]);
     }

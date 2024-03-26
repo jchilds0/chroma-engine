@@ -22,7 +22,9 @@ IGraphics *graphics_new_graphics_hub(int num_pages) {
     hub->num_pages = 0;
 
     hub->pages = NEW_ARRAY(hub->len_pages, IPage *);
-    memset(hub->pages, 0, hub->len_pages);
+    for (int i = 0; i < hub->len_pages; i++) {
+        hub->pages[i] = NULL;
+    }
 
     for (int i = 0; i < CHROMA_LAYERS; i++) {
         hub->time[i] = 0.0f;
