@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 
 Engine engine;
 
@@ -56,11 +57,18 @@ int main(int argc, char **argv) {
     engine.hub_socket = parser_tcp_start_client(gval, port);
     log_file(LogMessage, "Engine", "Graphics hub %s:%d", gval, port); 
 
+    clock_t start, end;
+    start = clock();
+
     char *msg = "ver 0 1 full;";
     if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
         log_file(LogError, "Parser", "Error requesting graphics hub"); 
     }
+
     parser_parse_hub(&engine);
+    end = clock();
+
+    log_file(LogMessage, "Parser", "Imported Chroma Hub in %f s", ((double) (end - start)) / CLOCKS_PER_SEC);
 
     if (wflag) {
         // Preview process

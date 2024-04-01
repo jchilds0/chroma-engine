@@ -106,7 +106,7 @@ void graphics_page_set_animation(IPage *page, char *name, char *anim) {
     } else if (strcmp(anim, "up") == 0) {
         anim_func = graphics_animate_up;
     } else {
-        log_file(LogWarn, "Graphics", "Unknown animation function %s", anim);
+        //log_file(LogWarn, "Graphics", "Unknown animation function %s", anim);
         anim_func = graphics_animate_none;
     }
 
