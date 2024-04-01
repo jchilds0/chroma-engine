@@ -10,6 +10,7 @@
 #include <bits/getopt_core.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 
 Engine engine;
@@ -54,6 +55,11 @@ int main(int argc, char **argv) {
 
     engine.hub_socket = parser_tcp_start_client(gval, port);
     log_file(LogMessage, "Engine", "Graphics hub %s:%d", gval, port); 
+
+    char *msg = "ver 0 1 full;";
+    if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
+        log_file(LogError, "Parser", "Error requesting graphics hub"); 
+    }
     parser_parse_hub(&engine);
 
     if (wflag) {
