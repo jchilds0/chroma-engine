@@ -5,6 +5,7 @@
  *
  */
 
+#include "geometry.h"
 #include "parser_internal.h"
 #include "chroma-typedefs.h"
 #include "log.h"
@@ -57,13 +58,21 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
 
             // Read new page values
             parser_page(page);
-
-            // reset animation times
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
-            //graphics_hub_set_time(eng->hub, 0.0f, 0);
-
-            // rebuild relative positions
             graphics_page_update_geometry(page);
+
+            int num_geo = graphics_page_num_geometry(page);
+            for (int i = 0; i < num_geo; i++) {
+                IGeometry *geo = graphics_page_get_geometry(page, i);
+
+                if (geo->geo_type != IMAGE) {
+                    continue;
+                }
+
+                if (parser_recieve_image(eng->hub_socket, (GeometryImage *)geo) != SERVER_MESSAGE) {
+                    log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
+                }
+            }
             break;
         case SERVER_TIMEOUT:
             break;

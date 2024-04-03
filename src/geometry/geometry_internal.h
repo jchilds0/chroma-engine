@@ -33,6 +33,7 @@ typedef enum {
     GEO_GRAPH_NODE,
     GEO_NUM_NODE,
     GEO_GRAPH_TYPE,
+    GEO_IMAGE_ID,
 } GeometryAttr;
 
 /* geo_rect.c */

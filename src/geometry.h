@@ -97,7 +97,11 @@ typedef struct {
 typedef struct {
     IGeometry         geo;
     float             scale;
-    char              path[GEO_BUF_SIZE];
+    int               w;
+    int               h;
+    int               image_id;
+    int               cur_image_id;
+    unsigned char     *data;
 } GeometryImage;
 
 extern IGeometry *geometry_create_geometry(char *);

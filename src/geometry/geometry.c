@@ -116,6 +116,8 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_NUM_NODE;
     } else if (strncmp(attr, "graph_type", 10) == 0) {
         g_attr = GEO_GRAPH_TYPE;
+    } else if (strncmp(attr, "image_id", 8) == 0) {
+        g_attr = GEO_IMAGE_ID;
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry attr (%s)", attr);
         return -1;

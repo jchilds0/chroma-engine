@@ -27,7 +27,7 @@ GeometryImage *geometry_new_image(void) {
     image->geo.rel.y = 0;
 
     image->scale = 1.0;
-    memset(image->path, '\0', GEO_BUF_SIZE);
+    image->data = NULL;
 
     return image;
 }
@@ -41,8 +41,14 @@ void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *valu
         case GEO_SCALE:
             sprintf(value, "%f", image->scale);
             break;
-        case GEO_TEXT:
-            memcpy(value, image->path, GEO_BUF_SIZE);
+        case GEO_WIDTH:
+            sprintf(value, "%d", image->w);
+            break;
+        case GEO_HEIGHT:
+            sprintf(value, "%d", image->h);
+            break;
+        case GEO_IMAGE_ID:
+            sprintf(value, "%d", image->image_id);
             break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not an image attr (%d)", attr);
@@ -54,8 +60,14 @@ void geometry_image_set_attr(GeometryImage *image, GeometryAttr attr, char *valu
         case GEO_SCALE:
             image->scale = atof(value);
             break;
-        case GEO_TEXT:
-            memcpy(image->path, value, GEO_BUF_SIZE);
+        case GEO_WIDTH:
+            image->w = atoi(value);
+            break;
+        case GEO_HEIGHT:
+            image->h = atoi(value);
+            break;
+        case GEO_IMAGE_ID:
+            image->image_id = atoi(value);
             break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not an image attr (%d)", attr);

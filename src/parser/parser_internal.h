@@ -10,6 +10,8 @@
 #ifndef PARSER_INTERNAL
 #define PARSER_INTERNAL
 
+#include "geometry.h"
+
 #define PARSE_BUF_SIZE      100
 #define LOG_PARSER          0
 
@@ -39,6 +41,7 @@ typedef enum {
 
 int             parser_tcp_timeout_listen(int server_sock);
 ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
+ServerResponse  parser_recieve_image(int hub_socket, GeometryImage *img);
 
 char            parser_get_char(int socket_client, int *buf_ptr, char *buf);
 void            parser_clean_buffer(int *buf_ptr, char *buf);
