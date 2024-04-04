@@ -12,8 +12,7 @@
 #include <sys/socket.h>
 
 static int socket_client = 0;
-static int buf_ptr = 0;
-static char buf[PARSE_BUF_SIZE];
+static int img_length = 0;
 
 void free_row_pointers(int, png_bytep *);
 int parser_read_image(int *, int *, png_byte *, png_byte *, png_bytep **);
@@ -39,6 +38,21 @@ ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
     png_byte color_type, bit_depth;
     png_bytep *row_pointers = NULL;
 
+    char ver[4] = {0, 0, 0, 0};
+    if (recv(hub_socket, ver, sizeof ver, 0) < 0) {
+        log_file(LogWarn, "Parser", "Error receiving image %d version", img->image_id);
+    }
+
+    if (ver[0] != 0 || ver[1] != 1) {
+        log_file(LogError, "Parser", "Incorrect image parser version", img->image_id);
+    }
+
+    char length[4] = {0, 0, 0, 0};
+    if (recv(hub_socket, length, sizeof length, 0) < 0) {
+        log_file(LogWarn, "Parser", "Error receiving image %d length", img->image_id);
+    }
+
+    img_length = (length[0] << 3) + (length[1] << 2) + (length[2] << 1) + (length[3]);
     if (parser_read_image(&img->w, &img->h, &color_type, &bit_depth, &row_pointers) < 0) {
         //log_file(LogWarn, "GL Render", "Error reading png");
         return SERVER_TIMEOUT;
@@ -125,12 +139,24 @@ void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length) {
         return;
     }
 
-    for (int i = 0; i < length; i++) {
-        data[i] = parser_get_char(socket_client, &buf_ptr, buf);
-        log_file(LogMessage, "Parser", "%d %c", data[i], data[i]); 
-        // if (data[i] == 0) {
-        //     png_error(png_ptr, "Read Error");
-        // }
+    if (socket_client == 0) {
+        png_error(png_ptr, "Hub not connected");
+    }
+
+    int len, idx = 0;
+    while (length != 0) {
+        len = recv(socket_client, &data[idx], length, 0);
+        if (len < 0) {
+            log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
+            continue;
+        }
+
+        idx += len;
+        length -= len;
+        img_length -= len;
+        if (img_length == 0) {
+            png_error(png_ptr, "Finished reading image");
+        }
     }
 }
 
