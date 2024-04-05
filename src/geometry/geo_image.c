@@ -28,6 +28,8 @@ GeometryImage *geometry_new_image(void) {
 
     image->scale = 1.0;
     image->data = NULL;
+    image->image_id = 0;
+    image->cur_image_id = -1;
 
     return image;
 }

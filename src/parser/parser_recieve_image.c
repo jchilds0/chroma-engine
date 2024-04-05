@@ -8,6 +8,7 @@
 #include "parser/parser_internal.h"
 #include <png.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
@@ -47,19 +48,27 @@ ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
         log_file(LogError, "Parser", "Incorrect image parser version", img->image_id);
     }
 
-    char length[4] = {0, 0, 0, 0};
+    unsigned char length[4] = {0, 0, 0, 0};
     if (recv(hub_socket, length, sizeof length, 0) < 0) {
         log_file(LogWarn, "Parser", "Error receiving image %d length", img->image_id);
     }
 
-    img_length = (length[0] << 3) + (length[1] << 2) + (length[2] << 1) + (length[3]);
+    img_length = (length[0] << 24) + (length[1] << 16) + (length[2] << 8) + (length[3]);
+    if (img_length == 0) {
+        free(img->data);
+        img->data = NULL;
+        return SERVER_MESSAGE;
+    }
+
     if (parser_read_image(&img->w, &img->h, &color_type, &bit_depth, &row_pointers) < 0) {
         //log_file(LogWarn, "GL Render", "Error reading png");
         return SERVER_TIMEOUT;
     }
 
     //log_file(LogMessage, "GL Render", "Color Type %d, Bit Depth %d", color_type, bit_depth);
-
+    if (img->data != NULL) {
+        free(img->data);
+    }
     img->data = NEW_ARRAY(img->w * img->h * 4, unsigned char);
 
     for (int y = 0; y < img->h; y++) {
@@ -87,7 +96,7 @@ int parser_read_image(int *w, int *h, png_byte *color_type,
     }
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        //log_file(LogWarn, "GL Render", "Error during png reading");
+        log_file(LogWarn, "GL Render", "Error during png reading");
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return -1;
     }
@@ -154,9 +163,6 @@ void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length) {
         idx += len;
         length -= len;
         img_length -= len;
-        if (img_length == 0) {
-            png_error(png_ptr, "Finished reading image");
-        }
     }
 }
 
