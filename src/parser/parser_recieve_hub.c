@@ -50,6 +50,10 @@ void parser_parse_hub(Engine *eng) {
             parser_match_token(STRING, eng->hub_socket);
             parser_match_token(':', eng->hub_socket);
             parser_match_token('[', eng->hub_socket);
+            if (c_token == ']') {
+                parser_match_token(']', eng->hub_socket);
+                break;
+            }
 
             parser_parse_template(eng->hub, eng->hub_socket);
 

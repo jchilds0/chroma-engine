@@ -66,9 +66,7 @@ ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
     }
 
     //log_file(LogMessage, "GL Render", "Color Type %d, Bit Depth %d", color_type, bit_depth);
-    if (img->data != NULL) {
-        free(img->data);
-    }
+    free(img->data);
     img->data = NEW_ARRAY(img->w * img->h * 4, unsigned char);
 
     for (int y = 0; y < img->h; y++) {
