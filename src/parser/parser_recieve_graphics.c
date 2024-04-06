@@ -64,6 +64,9 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
             int num_geo = graphics_page_num_geometry(page);
             for (int i = 0; i < num_geo; i++) {
                 IGeometry *geo = graphics_page_get_geometry(page, i);
+                if (geo == NULL) {
+                    continue;
+                }
 
                 if (geo->geo_type != IMAGE) {
                     continue;

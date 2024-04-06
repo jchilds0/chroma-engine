@@ -32,6 +32,10 @@ ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
     memset(msg, '\0', sizeof msg);
     sprintf(msg, "ver 0 1 img %d;", img->image_id);
 
+    if (LOG_PARSER) {
+        log_file(LogMessage, "Parser", "Request image %d", img->image_id);
+    }
+
     if (send(hub_socket, msg, sizeof( msg ), 0) < 0) {
         log_file(LogError, "Parser", "Error requesting image %d from hub", img->image_id); 
     }
@@ -57,6 +61,10 @@ ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
     if (img_length == 0) {
         free(img->data);
         img->data = NULL;
+        if (LOG_PARSER) {
+            log_file(LogMessage, "Parser", "Image %d does not exist", img->image_id);
+        }
+
         return SERVER_MESSAGE;
     }
 
