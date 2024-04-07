@@ -128,8 +128,9 @@ ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message)
         return SERVER_TIMEOUT;
     }
 
-    if (LOG_PARSER)
+    if (LOG_PARSER) {
         log_file(LogMessage, "Parser", "Recieved %s", client_message);
+    }
 
     // respond to client 
     //strcpy(server_message, "Recieved");

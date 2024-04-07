@@ -37,6 +37,18 @@ void geometry_free_circle(GeometryCircle *circle) {
     free(circle);
 }
 
+void geometry_clean_circle(GeometryCircle *circle) {
+    circle->inner_radius = 0;
+    circle->outer_radius = 0;
+    circle->start_angle = 0;
+    circle->end_angle = 2 * M_PI;
+
+    circle->color[0] = 0.0;
+    circle->color[1] = 0.0;
+    circle->color[2] = 0.0;
+    circle->color[3] = 0.0;
+}
+
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

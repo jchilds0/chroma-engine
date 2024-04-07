@@ -36,6 +36,16 @@ void geometry_free_graph(GeometryGraph *g) {
     free(g);
 }
 
+void geometry_clean_graph(GeometryGraph *g) {
+    g->num_nodes       = 0;
+    g->node_count      = 0;
+    g->graph_type      = LINE;
+
+    memset(g->nodes, 0, sizeof g->nodes);
+    memset(g->x_label, '\0', GEO_BUF_SIZE);
+    memset(g->y_label, '\0', GEO_BUF_SIZE);
+}
+
 void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

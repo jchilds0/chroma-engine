@@ -77,6 +77,28 @@ void geometry_free_geometry(IGeometry *geo) {
     }
 }
 
+void geometry_clean_geo(IGeometry *geo) {
+    switch (geo->geo_type) {
+        case RECT:
+            geometry_clean_rect((GeometryRect *)geo);
+            break;
+        case CIRCLE:
+            geometry_clean_circle((GeometryCircle *)geo);
+            break;
+        case GRAPH:
+            geometry_clean_graph((GeometryGraph *)geo);
+            break;
+        case TEXT:
+            geometry_clean_text((GeometryText *)geo);
+            break;
+        case IMAGE:
+            geometry_clean_image((GeometryImage *)geo);
+            break;
+        default:
+            log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
+    }
+}
+
 GeometryAttr geometry_char_to_attr(char *attr) {
     GeometryAttr g_attr;
 

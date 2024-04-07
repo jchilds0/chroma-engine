@@ -38,6 +38,16 @@ void geometry_free_text(GeometryText *text) {
     free(text);
 }
 
+void geometry_clean_text(GeometryText *text) {
+    text->scale = 1.0;
+    memset(text->buf, '\0', GEO_BUF_SIZE);
+
+    text->color[0] = 0.0;
+    text->color[1] = 0.0;
+    text->color[2] = 0.0;
+    text->color[3] = 0.0;
+}
+
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

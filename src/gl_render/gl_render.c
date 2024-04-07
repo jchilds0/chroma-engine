@@ -212,6 +212,9 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
                 break;
+            case CLEAN:
+                graphics_page_clean_page(page);
+                break;
             default:
                 log_file(LogError, "GL Render", "Unknown action %d", action);
         }

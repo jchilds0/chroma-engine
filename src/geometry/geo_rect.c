@@ -39,6 +39,17 @@ void geometry_free_rectangle(GeometryRect *rect) {
     free(rect);
 }
 
+void geometry_clean_rect(GeometryRect *rect) {
+    rect->width = 0;
+    rect->height = 0;
+
+    rect->color[0] = 0.0;
+    rect->color[1] = 0.0;
+    rect->color[2] = 0.0;
+    rect->color[3] = 0.0;
+    rect->rounding = 0;
+}
+
 void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:

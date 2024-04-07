@@ -24,6 +24,7 @@ extern void         graphics_hub_set_current_page_num(IGraphics *hub, int page_n
 extern void         graphics_page_set_animation(IPage *, char *name, char *anim);
 extern void         graphics_page_update_animation(IPage *page, char *anim, float time);
 
+extern void         graphics_page_clean_page(IPage *page);
 extern IGeometry    *graphics_page_get_geometry(IPage *page, int geo_num);
 extern IGeometry    *graphics_page_add_geometry(IPage *page, int id, char *type);
 extern void         graphics_page_set_bg_index(IPage *page, int index);

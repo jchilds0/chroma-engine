@@ -106,6 +106,7 @@ typedef struct {
 
 extern IGeometry *geometry_create_geometry(char *);
 extern void   geometry_free_geometry(IGeometry *geo);
+extern void   geometry_clean_geo(IGeometry *geo);
 
 extern void   geometry_set_attr(IGeometry *geo, char *attr, char *value);
 extern void   geometry_set_int_attr(IGeometry *geo, char *attr, int value);

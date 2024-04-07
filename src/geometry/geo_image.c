@@ -38,6 +38,13 @@ void geometry_free_image(GeometryImage *image) {
     free(image);
 }
 
+void geometry_clean_image(GeometryImage *image) {
+    image->scale = 1.0;
+    image->data = NULL;
+    image->image_id = 0;
+    image->cur_image_id = -1;
+}
+
 void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_SCALE:
