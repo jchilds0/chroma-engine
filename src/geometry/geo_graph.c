@@ -16,19 +16,8 @@
 GeometryGraph *geometry_new_graph(void) {
     GeometryGraph *g = NEW_STRUCT(GeometryGraph);
     g->geo.geo_type = GRAPH;
-    g->geo.parent   = 0;
-    g->geo.pos.x    = 0;
-    g->geo.pos.y    = 0;
-    g->geo.rel.x    = 0;
-    g->geo.rel.y    = 0;
+    geometry_clean_graph(g);
 
-    g->num_nodes       = 0;
-    g->node_count      = 0;
-    g->graph_type      = LINE;
-
-    memset(g->nodes, 0, sizeof g->nodes);
-    memset(g->x_label, '\0', GEO_BUF_SIZE);
-    memset(g->y_label, '\0', GEO_BUF_SIZE);
     return g;
 }
 

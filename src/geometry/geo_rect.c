@@ -18,19 +18,7 @@
 GeometryRect *geometry_new_rectangle(void) {
     GeometryRect *rect = NEW_STRUCT(GeometryRect);
     rect->geo.geo_type = RECT;
-    rect->geo.parent = 0;
-    rect->geo.pos.x = 0;
-    rect->geo.pos.y = 0;
-    rect->geo.rel.x = 0;
-    rect->geo.rel.y = 0;
-
-    rect->width = 0;
-    rect->height= 0;
-    rect->color[0] = 0.0;
-    rect->color[1] = 0.0;
-    rect->color[2] = 0.0;
-    rect->color[3] = 0.0;
-    rect->rounding = 0;
+    geometry_clean_rect(rect);
 
     return rect;
 }

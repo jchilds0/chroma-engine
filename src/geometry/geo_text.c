@@ -17,19 +17,7 @@
 GeometryText *geometry_new_text(void) {
     GeometryText *text = NEW_STRUCT(GeometryText);
     text->geo.geo_type = TEXT;
-    text->geo.parent = 0;
-    text->geo.pos.x = 0;
-    text->geo.pos.y = 0;
-    text->geo.rel.x = 0;
-    text->geo.rel.y = 0;
-
-    text->scale = 1.0;
-    memset(text->buf, '\0', GEO_BUF_SIZE);
-
-    text->color[0] = 0.0;
-    text->color[1] = 0.0;
-    text->color[2] = 0.0;
-    text->color[3] = 0.0;
+    geometry_clean_text(text);
 
     return text;
 }

@@ -24,31 +24,39 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value);
 void geometry_set_attr(IGeometry *geo, char *attr, char *value);
 
 IGeometry *geometry_create_geometry(char *type) {
+    IGeometry *geo;
     if (strcmp(type, "rect") == 0) {
 
-        return (IGeometry *) geometry_new_rectangle();
+        geo = (IGeometry *) geometry_new_rectangle();
 
     } else if (strcmp(type, "circle") == 0) {
 
-        return (IGeometry *) geometry_new_circle();
+        geo = (IGeometry *) geometry_new_circle();
 
     } else if (strcmp(type, "graph") == 0) {
 
-        return (IGeometry *) geometry_new_graph();
+        geo = (IGeometry *) geometry_new_graph();
 
     } else if (strcmp(type, "text") == 0) {
 
-        return (IGeometry *) geometry_new_text();
+        geo = (IGeometry *) geometry_new_text();
     
     } else if (strcmp(type, "image") == 0) {
 
-        return (IGeometry *) geometry_new_image();
+        geo = (IGeometry *) geometry_new_image();
 
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry type (%s)", type);
         return NULL;
     }
 
+    geo->parent = 0;
+    geo->pos.x = 0;
+    geo->pos.y = 0;
+    geo->rel.x = 0;
+    geo->rel.y = 0;
+
+    return geo;
 }
 
 void geometry_free_geometry(IGeometry *geo) {

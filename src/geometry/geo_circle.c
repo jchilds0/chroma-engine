@@ -14,21 +14,7 @@
 GeometryCircle *geometry_new_circle(void) {
     GeometryCircle *circle = NEW_STRUCT(GeometryCircle);
     circle->geo.geo_type = CIRCLE;
-    circle->geo.parent = 0;
-    circle->geo.pos.x = 0;
-    circle->geo.pos.y = 0;
-    circle->geo.rel.x = 0;
-    circle->geo.rel.y = 0;
-
-    circle->inner_radius = 0;
-    circle->outer_radius = 0;
-    circle->start_angle = 0;
-    circle->end_angle = 2 * M_PI;
-
-    circle->color[0] = 0.0;
-    circle->color[1] = 0.0;
-    circle->color[2] = 0.0;
-    circle->color[3] = 0.0;
+    geometry_clean_circle(circle);
 
     return circle;
 }
