@@ -104,7 +104,7 @@ void gl_draw_rectangle(IGeometry *rect) {
 
     int width = g_rect->width;
     int height= g_rect->height;
-    int round = g_rect->rounding;
+    int round = MIN(g_rect->rounding, MIN(width / 2, height / 2));
     GLfloat vertices[] = {
         pos_x + round,         pos_y,                  0.0f,
         pos_x + width - round, pos_y,                  0.0f,
@@ -137,7 +137,7 @@ void gl_draw_rectangle(IGeometry *rect) {
     circle->color[2]     = g_rect->color[2];
     circle->color[3]     = g_rect->color[3];
     circle->inner_radius = 0;
-    circle->outer_radius = g_rect->rounding;
+    circle->outer_radius = round;
 
     for (int i = 0; i < 4; i++) {
         geometry_set_int_attr((IGeometry *)circle, "pos_x", circ_v[2 * i]);
