@@ -18,7 +18,7 @@ extern float        graphics_hub_get_time(IGraphics *hub, int layer);
 typedef void IPage;
 
 extern IPage        *graphics_hub_get_page(IGraphics *hub, int page_num);
-extern IPage        *graphics_hub_add_page(IGraphics *hub, int num_geo, int temp_id);
+extern IPage        *graphics_hub_add_page(IGraphics *hub, int num_geo, int num_keyframe, int temp_id);
 extern int          graphics_hub_get_current_page_num(IGraphics *hub, int layer);
 extern void         graphics_hub_set_current_page_num(IGraphics *hub, int page_num, int layer);
 extern void         graphics_page_set_animation(IPage *, char *name, char *anim);

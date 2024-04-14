@@ -43,13 +43,13 @@ void graphics_free_graphics_hub(IGraphics *hub) {
     free(hub);
 }
 
-IPage *graphics_hub_add_page(IGraphics *hub, int num_geo, int id) {
+IPage *graphics_hub_add_page(IGraphics *hub, int num_geo, int num_keyframe, int id) {
     if (id < 0 || id >= hub->len_pages) {
         log_file(LogWarn, "Graphics", "Graphics hub out of memory");
         return 0;
     }
 
-    IPage *page = graphics_new_page(num_geo);
+    IPage *page = graphics_new_page(num_geo, num_keyframe);
     page->temp_id = id;
     hub->pages[id] = page;
     hub->num_pages++;

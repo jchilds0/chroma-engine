@@ -19,6 +19,7 @@ static int c_token;
 static char c_value[PARSE_BUF_SIZE];
 
 void parser_parse_template(IGraphics *hub, int socket_client);
+void parser_parse_keyframe(IPage *page, int socket_client);
 void parser_parse_geometry(IPage *page, int socket_client);
 void parser_parse_attribute(IGeometry *geo, int socket_client);
 
@@ -79,6 +80,7 @@ void parser_parse_hub(Engine *eng) {
 void parser_parse_template(IGraphics *hub, int socket_client) {
     IPage *page = NULL;
     int num_geo = -1, 
+        num_keyframe = -1,
         temp_id = -1;
 
     parser_match_token('{', socket_client);
@@ -114,7 +116,7 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
 
             parser_match_token(INT, socket_client);
         } else if (strcmp(c_value, "num_geo") == 0) {
-            // 'id': 1234..
+            // 'num_geo': 1234..
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
@@ -124,42 +126,37 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             }
 
             parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "anim_on") == 0) {
+        } else if (strcmp(c_value, "num_keyframe") == 0) {
+            // 'num_keyframe': 1234
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
-            graphics_page_set_animation(page, "anim_on", c_value);
+            num_keyframe = atoi(c_value);
             if (LOG_PARSER) {
-                log_file(LogMessage, "Parser", "\tanimate on: %s", c_value);
+                log_file(LogMessage, "Parser", "\tnum keyframe: %d", num_keyframe);
             }
 
-            parser_match_token(STRING, socket_client);
-        } else if (strcmp(c_value, "anim_cont") == 0) {
+            parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "keyframe") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
-            graphics_page_set_animation(page, "anim_cont", c_value);
-            if (LOG_PARSER) {
-                log_file(LogMessage, "Parser", "\tanimate continue: %s", c_value);
+            if (page == NULL) {
+                log_file(LogError, "Parser", "Template ID, num of geom or keyframes not specific");
             }
 
-            parser_match_token(STRING, socket_client);
-        } else if (strcmp(c_value, "anim_off") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
+            // 'keyframe': [...]
+            parser_match_token('[', socket_client);
 
-            graphics_page_set_animation(page, "anim_off", c_value);
-            if (LOG_PARSER) {
-                log_file(LogMessage, "Parser", "\tanimate off: %s", c_value);
-            }
+            parser_parse_keyframe(page, socket_client);
 
-            parser_match_token(STRING, socket_client);
+            parser_match_token(']', socket_client);
         } else if (strcmp(c_value, "geometry") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             
             if (page == NULL) {
-                log_file(LogError, "Parser", "Template ID or num of geom not specific");
+                log_file(LogError, "Parser", "Template ID, num of geom or keyframes not specific");
             }
 
             // 'geometry': [...]
@@ -175,8 +172,8 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_next_token(socket_client);
         }
 
-        if (temp_id != -1 && num_geo != -1 && page == NULL) {
-            page = graphics_hub_add_page(hub, num_geo, temp_id);
+        if (temp_id != -1 && num_geo != -1 && num_keyframe != -1 && page == NULL) {
+            page = graphics_hub_add_page(hub, num_geo, num_keyframe, temp_id);
         }
 
         if (c_token == ',') {
@@ -189,6 +186,76 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
     if (c_token == ',') {
         parser_match_token(',', socket_client);
         parser_parse_template(hub, socket_client);
+    }
+}
+
+// K -> {'frame_num': num, ...
+void parser_parse_keyframe(IPage *page, int socket_client) {
+    int frame_num = -1,
+        frame_geo = -1,
+        bind_frame = -1,
+        bind_geo = -1;
+
+    parser_match_token('{', socket_client);
+
+    while (c_token == STRING) {
+        if (strcmp(c_value, "frame_num") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            frame_num = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tframe num: %d", frame_num);
+            }
+
+            parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "frame_geo") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            frame_num = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tframe num: %d", frame_num);
+            }
+
+            parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "frame_attr") == 0) {
+        } else if (strcmp(c_value, "value") == 0) {
+        } else if (strcmp(c_value, "user_frame") == 0) {
+        } else if (strcmp(c_value, "bind_frame") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            bind_frame = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tbind frame: %d", bind_frame);
+            }
+
+            parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "bind_geo") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            bind_geo = atoi(c_value);
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "\t\tbind geo: %d", bind_geo);
+            }
+
+            parser_match_token(INT, socket_client);
+        } else if (strcmp(c_value, "bind_attr") == 0) {
+        } else {
+        }
+
+        if (c_token == ',') {
+            parser_match_token(',', socket_client);
+        }
+    }
+
+    parser_match_token('}', socket_client);
+
+    if (c_token == ',') {
+        parser_match_token(',', socket_client);
+        parser_parse_geometry(page, socket_client);
     }
 }
 
