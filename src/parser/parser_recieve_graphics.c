@@ -6,6 +6,7 @@
  */
 
 #include "geometry.h"
+#include "graphics.h"
 #include "parser_internal.h"
 #include "chroma-typedefs.h"
 #include "log.h"
@@ -59,6 +60,7 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
             // Read new page values
             parser_page(page);
             graphics_hub_set_time(eng->hub, 0.0f, *layer);
+            graphics_page_calculate_keyframes(page);
             graphics_page_update_geometry(page);
 
             int num_geo = graphics_page_num_geometry(page);

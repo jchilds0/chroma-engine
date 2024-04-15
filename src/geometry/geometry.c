@@ -13,7 +13,6 @@
  *
  */
 
-#include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -58,6 +57,36 @@ IGeometry *geometry_create_geometry(char *type) {
 
     return geo;
 }
+
+IGeometry *geometry_create_copy(IGeometry *geo) {
+    IGeometry *new_geo;
+
+    new_geo->geo_type = geo->geo_type;
+    new_geo->pos.x = geo->pos.x;
+    new_geo->pos.y = geo->pos.y;
+    new_geo->rel.x = geo->rel.x;
+    new_geo->rel.y = geo->rel.y;
+
+    switch (geo->geo_type) {
+    case RECT:
+        new_geo = (IGeometry *) geometry_copy_rectangle((GeometryRect *) geo);
+        break;
+    case CIRCLE:
+        new_geo = (IGeometry *) geometry_copy_circle((GeometryCircle *) geo);
+    case GRAPH:
+        new_geo = (IGeometry *) geometry_copy_graph((GeometryGraph *) geo);
+    case TEXT:
+        new_geo = (IGeometry *) geometry_copy_text((GeometryText *) geo);
+    case IMAGE:
+        new_geo = (IGeometry *) geometry_copy_image((GeometryImage*) geo);
+    default:
+        log_file(LogWarn, "Geometry", "Unknown geometry type (%s)", type);
+        return NULL;
+    }
+
+    return new_geo;
+}
+
 
 void geometry_free_geometry(IGeometry *geo) {
     if (geo == NULL) {

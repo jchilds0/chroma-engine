@@ -105,6 +105,7 @@ typedef struct {
 } GeometryImage;
 
 extern IGeometry *geometry_create_geometry(char *);
+extern IGeometry *geometry_create_copy(IGeometry *);
 extern void   geometry_free_geometry(IGeometry *geo);
 extern void   geometry_clean_geo(IGeometry *geo);
 

@@ -32,4 +32,11 @@ extern void         graphics_page_set_mask_index(IPage *page, int index);
 extern int          graphics_page_num_geometry(IPage *page);
 extern void         graphics_page_update_geometry(IPage *page);
 
+extern void         graphics_page_keyframe(IPage *page);
+extern void         graphics_page_add_keyframe_value(IPage *page, int frame_num, int frame_geo, char frame_attr[GEO_BUF_SIZE], int value);
+extern void         graphics_page_add_keyframe_user(IPage *page, int frame_num, int frame_geo, char frame_attr[GEO_BUF_SIZE]);
+extern void         graphics_page_add_keyframe_bind(IPage *page, int frame_num, int frame_geo, char frame_attr[GEO_BUF_SIZE], 
+                                                    int bind_frame, int bind_geo, char bind_attr[GEO_BUF_SIZE]);
+extern void         graphics_page_calculate_keyframes(IPage *page);
+
 #endif // !CHROMA_PAGE

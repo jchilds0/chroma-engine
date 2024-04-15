@@ -183,7 +183,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             case ANIMATE_ON:
                 time = graphics_hub_get_time(engine.hub, layer);
                 bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
-                graphics_page_update_animation(page, "animate_on", bezier_time);
+                //graphics_page_update_animation(page, "animate_on", bezier_time);
 
                 time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
@@ -193,7 +193,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             case CONTINUE:
                 time = graphics_hub_get_time(engine.hub, layer);
                 bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
-                graphics_page_update_animation(page, "continue", bezier_time);
+                //graphics_page_update_animation(page, "continue", bezier_time);
 
                 time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
@@ -207,7 +207,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
                 time = graphics_hub_get_time(engine.hub, layer);
                 bezier_time = gl_bezier_time_step(time, 1.1, 0.0, 3);
-                graphics_page_update_animation(page, "animate_off", bezier_time);
+                //graphics_page_update_animation(page, "animate_off", bezier_time);
 
                 time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
