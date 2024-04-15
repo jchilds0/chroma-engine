@@ -38,5 +38,6 @@ extern void         graphics_page_add_keyframe_user(IPage *page, int frame_num, 
 extern void         graphics_page_add_keyframe_bind(IPage *page, int frame_num, int frame_geo, char frame_attr[GEO_BUF_SIZE], 
                                                     int bind_frame, int bind_geo, char bind_attr[GEO_BUF_SIZE]);
 extern void         graphics_page_calculate_keyframes(IPage *page);
+extern void         graphics_page_interpolate_geometry(IPage *page, int index, int width);
 
 #endif // !CHROMA_PAGE

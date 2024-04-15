@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef PAGE_INTERNAL
-#define PAGE_INTERNAL
+#ifndef GRAPHICS_INTERNAL
+#define GRAPHICS_INTERNAL
 
 #include "chroma-engine.h"
 #include "geometry.h"
@@ -29,7 +29,7 @@ typedef enum {
     NUM_ATTR
 } FRAME_ATTR;
 
-char *ATTR[] = { 
+static char *ATTR[] = { 
     "pos_x", 
     "pos_y", 
     "rel_x", 
@@ -73,6 +73,7 @@ typedef struct IPage {
     unsigned int      num_keyframe;
     unsigned int      len_keyframe;
     unsigned int      max_keyframe;
+    unsigned char     *attr_keyframe;
     int               *k_value;
     Keyframe          *keyframe;
 } IPage;
@@ -115,4 +116,7 @@ int graphics_animate_right_to_left(IPage *page, float time);
 int graphics_animate_up(IPage *page, float time);
 int graphics_animate_none(IPage *page, float time);
 
-#endif // !PAGE_INTERNAL
+/* gr_keyframe.c */
+int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width);
+
+#endif // !GRAPHICS_INTERNAL

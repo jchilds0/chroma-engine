@@ -27,7 +27,7 @@ IGraphics *graphics_new_graphics_hub(int num_pages) {
     }
 
     for (int i = 0; i < CHROMA_LAYERS; i++) {
-        hub->time[i] = 0.0f;
+        hub->time[i] = 0;
         hub->current_page[i] = 0;
     }
 

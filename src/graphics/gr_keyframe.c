@@ -11,6 +11,7 @@
 #include <string.h>
 
 FRAME_ATTR graphics_keyframe_attr(char *attr);
+void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
 
 void graphics_page_add_keyframe_value(IPage *page, int frame_num, 
     int frame_geo, char frame_attr[GEO_BUF_SIZE], int value) {
@@ -128,20 +129,21 @@ void graphics_page_calculate_keyframes(IPage *page) {
     IGeometry *geo;
     int frame_index;
 
-    unsigned char *have_keyframe = NEW_ARRAY(page->len_keyframe * page->len_geometry * NUM_ATTR, unsigned char);
+    unsigned char *have_keyframe = NEW_ARRAY(page->max_keyframe * page->len_geometry * NUM_ATTR, unsigned char);
 
-    for (int i = 0; i < NUM_ATTR * page->len_geometry * page->len_keyframe; i++) {
+    for (int i = 0; i < NUM_ATTR * page->len_geometry * page->max_keyframe; i++) {
         have_keyframe[i] = 0;
     }
 
     // store keyframe value
     for (int i = 0; i < page->len_keyframe; i++) {
         Keyframe *frame = &page->keyframe[i];
-        FRAME_ATTR attr = graphics_keyframe_attr(frame->attr);
+        FRAME_ATTR attr = graphics_keyframe_attr_int(frame->attr);
 
-        frame_index = frame->geo_id * (page->len_keyframe * NUM_ATTR) 
-            + attr * page->len_keyframe + frame->frame_num;
+        frame_index = frame->geo_id * (page->max_keyframe * NUM_ATTR) 
+            + attr * page->max_keyframe + frame->frame_num;
         have_keyframe[frame_index] = 1;
+        page->attr_keyframe[frame->geo_id * NUM_ATTR + attr] = 1;
 
         switch (frame->type) {
             case USER_VALUE:
@@ -163,14 +165,57 @@ void graphics_page_calculate_keyframes(IPage *page) {
     
     for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
         for (int attr = 0; attr < NUM_ATTR; attr++) {
-            int frame_start = geo_id * (page->num_keyframe * NUM_ATTR) + attr * page->len_keyframe;
+            int frame_start = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe;
 
-            if (!graphics_keyframe_exists(&have_keyframe[frame_start], page->len_keyframe)) {
+            if (!graphics_keyframe_exists(&have_keyframe[frame_start], page->max_keyframe)) {
                 continue;
             }
 
-
+            graphics_keyframe_interpolate_frames(
+                &page->k_value[frame_start], 
+                &have_keyframe[frame_start], 
+                page->max_keyframe
+            );
         }
+    }
+}
+
+int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width) {
+    if (width == 0) {
+        log_file(LogWarn, "Graphics", "Interpolating over an interval of length 0");
+        return v_start;
+    }
+
+    return (v_end - v_start) * index / width;
+}
+
+void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames) {
+    int start = 0;
+    int end;
+
+    while (start < num_frames) { 
+        if (!frames[start]) {
+            start++;
+            continue;
+        }
+
+        for (end = start + 1; end < num_frames; end++) {
+            if (!frames[end]) {
+                continue;
+            }
+
+            break;
+        }
+
+        if (!frames[end]) {
+            break;
+        }
+
+        for (int i = start; i < end; i++) {
+            values[i] = graphics_keyframe_interpolate_int(values[start], values[end], i, end - start);
+        }
+
+        start = end;
     }
 }
 

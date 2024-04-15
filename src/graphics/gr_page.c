@@ -16,7 +16,7 @@
 
 IPage *graphics_new_page(int num_geo, int num_keyframe) {
     IPage *page = NEW_STRUCT(IPage);
-    page->len_geometry = num_geo + 2;
+    page->len_geometry = num_geo + 1;
     page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
 
@@ -28,6 +28,9 @@ IPage *graphics_new_page(int num_geo, int num_keyframe) {
     page->num_keyframe = 0;
     page->keyframe = NEW_ARRAY(page->len_keyframe, Keyframe);
     page->k_value = NULL;
+    page->attr_keyframe = NEW_ARRAY(page->len_geometry * NUM_ATTR, unsigned char);
+
+    memset(page->attr_keyframe, 0, page->len_geometry * NUM_ATTR);
 
     // root 
     IGeometry *geo = graphics_page_add_geometry(page, 0, "rect");
@@ -146,3 +149,37 @@ void graphics_page_update_geometry(IPage *page) {
     }
 }
 
+void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
+    IGeometry *geo;
+    int next_value, k_index;
+    int frame_width = width / page->max_keyframe;
+    int frame_start = index / frame_width;
+    int frame_index = index % frame_width;
+
+    //log_file(LogMessage, "Graphics", "Interpolating page %d at keyframe %d and index %d", page->temp_id, frame_start, frame_index);
+
+    for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+        for (int attr = 0; attr < NUM_ATTR; attr++) {
+            if (!page->attr_keyframe[geo_id * NUM_ATTR + attr]) {
+                continue;
+            }
+
+            k_index = geo_id * (page->max_keyframe * NUM_ATTR) 
+                + attr * page->max_keyframe + frame_start;
+
+            if (frame_start == page->max_keyframe) {
+                continue;
+            }
+
+            geo = page->geometry[geo_id];
+            next_value = graphics_keyframe_interpolate_int(
+                page->k_value[k_index],
+                page->k_value[k_index + 1], 
+                frame_index,
+                frame_width
+            );
+            geometry_set_int_attr(geo, ATTR[attr], next_value);
+            //log_file(LogMessage, "Graphics", "Set geo %d attr %s to %d", geo_id, ATTR[attr], next_value);
+        }
+    }
+}

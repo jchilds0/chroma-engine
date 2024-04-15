@@ -13,6 +13,8 @@
 #include "gl_math.h"
 #include "log.h"
 
+#define ANIM_LENGTH     60
+
 int action[] = {BLANK, BLANK, BLANK, BLANK, BLANK};
 int page_num[] = {-1, -1, -1, -1, -1};
 
@@ -159,8 +161,8 @@ static float gl_bezier_time_step(float time, float start, float end, int order) 
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     int current_page, num_geo;
-    char geo_type[20];
     float time, bezier_time;
+    char geo_type[20];
     IPage *page;
     IGeometry *geo;
 
@@ -182,20 +184,24 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 break;
             case ANIMATE_ON:
                 time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
-                //graphics_page_update_animation(page, "animate_on", bezier_time);
+                bezier_time = gl_bezier_time_step(time, 0, 1.0, 3);
+                if (time == 1.0f) {
+                    break;
+                }
 
-                time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
+                graphics_page_interpolate_geometry(page, bezier_time * ANIM_LENGTH, ANIM_LENGTH);
+
+                time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
                 graphics_hub_set_current_page_num(engine.hub, page_num[layer], layer);
 
                 break;
             case CONTINUE:
                 time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, 0.0, 1.1, 3);
+                bezier_time = gl_bezier_time_step(time, 0, ANIM_LENGTH, 3);
                 //graphics_page_update_animation(page, "continue", bezier_time);
 
-                time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
+                time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
 
                 break;
@@ -206,10 +212,9 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 }
 
                 time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, 1.1, 0.0, 3);
-                //graphics_page_update_animation(page, "animate_off", bezier_time);
+                bezier_time = gl_bezier_time_step(time, ANIM_LENGTH, 0, 3);
 
-                time = MIN(time + 1.0 / CHROMA_FRAMERATE, 1.0); 
+                time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
                 break;
             case CLEAN:
