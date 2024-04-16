@@ -149,7 +149,7 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_match_token('[', socket_client);
 
             parser_parse_keyframe(page, socket_client);
-            graphics_page_keyframe(page);
+            graphics_page_init_keyframe(page);
 
             parser_match_token(']', socket_client);
         } else if (strcmp(c_value, "geometry") == 0) {
@@ -192,124 +192,33 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
 
 // K -> {'frame_num': num, ...
 void parser_parse_keyframe(IPage *page, int socket_client) {
-    char buf[GEO_BUF_SIZE];
-    int frame_num, frame_geo, bind_frame, bind_geo, keyframe;
-
+    char name[GEO_BUF_SIZE];
+    int value;
+    unsigned int keyframe_index;
 
     while (c_token == '{') {
         parser_match_token('{', socket_client);
 
-        frame_num  = -1;
-        frame_geo  = -1;
-        bind_frame = -1;
-        bind_geo   = -1;
-        keyframe   = 0;
+        keyframe_index = graphics_page_add_keyframe(page);
 
         while (c_token == STRING) {
-            if (strcmp(c_value, "frame_num") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
+            memcpy(name, c_value, sizeof name);
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
 
-                frame_num = atoi(c_value);
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tframe num: %d", frame_num);
-                }
+            if (LOG_PARSER) {
+                log_file(LogMessage, "Parser", "keyframe %d: %s = %s", keyframe_index, name, c_value);
+            }
 
+            if (c_token == INT) {
+                value = atoi(c_value);
+                graphics_page_set_keyframe_int(page, keyframe_index, name, value);
                 parser_match_token(INT, socket_client);
-            } else if (strcmp(c_value, "frame_geo") == 0) {
+            } else if (c_token == STRING) {
+                graphics_page_set_keyframe_attr(page, keyframe_index, name, c_value);
                 parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                frame_geo = atoi(c_value);
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tframe geo: %d", frame_geo);
-                }
-
-                parser_match_token(INT, socket_client);
-            } else if (strcmp(c_value, "frame_attr") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                memcpy(buf, c_value, sizeof buf);
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tframe attr: %s", buf);
-                }
-
-                parser_match_token(STRING, socket_client);
-            } else if (strcmp(c_value, "value") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                if (keyframe) {
-                    log_file(LogWarn, "Parser", "Keyframe has multiple types");
-                }
-
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tkey frame set value: %s", c_value);
-                }
-
-                int value = atoi(c_value);
-                graphics_page_add_keyframe_value(page, frame_num, frame_geo, buf, value);
-                keyframe = 1;
-
-                parser_match_token(INT, socket_client);
-            } else if (strcmp(c_value, "user_frame") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                if (keyframe) {
-                    log_file(LogWarn, "Parser", "Keyframe has multiple types");
-                }
-
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tkey frame user value: %s", c_value);
-                }
-
-                graphics_page_add_keyframe_user(page, frame_num, frame_geo, buf);
-                keyframe = 1;
-
-                parser_match_token(STRING, socket_client);
-            } else if (strcmp(c_value, "bind_frame") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                bind_frame = atoi(c_value);
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tbind frame: %d", bind_frame);
-                }
-
-                parser_match_token(INT, socket_client);
-            } else if (strcmp(c_value, "bind_geo") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                bind_geo = atoi(c_value);
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tbind geo: %d", bind_geo);
-                }
-
-                parser_match_token(INT, socket_client);
-            } else if (strcmp(c_value, "bind_attr") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
-
-                if (keyframe) {
-                    log_file(LogWarn, "Parser", "Keyframe has multiple types");
-                } else if (bind_frame == -1 || bind_geo == -1) {
-                    log_file(LogWarn, "Parser", "Keyframe bind missing attrs");
-                }
-
-                keyframe = 1;
-
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "\t\tkeyframe bind to frame %d geo %d attr %s", bind_frame, bind_geo, c_value);
-                }
-
-                graphics_page_add_keyframe_bind(page, frame_num, frame_geo, buf, bind_frame, bind_geo, c_value);
             } else {
-                log_file(LogWarn, "Parser", "Unknown keyframe attribute %s", c_value);
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
+                log_file(LogWarn, "Parser", "Unknown value type %d", c_token);
                 parser_next_token(socket_client);
             }
 
@@ -404,14 +313,6 @@ void parser_parse_geometry(IPage *page, int socket_client) {
 
             geo = graphics_page_add_geometry(page, id, geo_type);
             parser_parse_attribute(geo, socket_client);
-
-            if (strcmp(geo_type, "rect") == 0 && geometry_get_int_attr(geo, "parent") == 0) {
-                graphics_page_set_bg_index(page, id);
-
-                if (LOG_PARSER) {
-                    log_file(LogMessage, "Parser", "BG Index = %d", id);
-                }
-            }
 
             parser_match_token(']', socket_client);
         } else {

@@ -150,6 +150,11 @@ void graphics_page_update_geometry(IPage *page) {
 }
 
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
+    if (page->max_keyframe == 0) {
+        log_file(LogMessage, "Graphics", "No keyframes, skipping interpolation");
+        return;
+    }
+
     IGeometry *geo;
     int next_value, k_index;
     int frame_width = width / page->max_keyframe;

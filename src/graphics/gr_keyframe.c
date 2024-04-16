@@ -13,63 +13,17 @@
 FRAME_ATTR graphics_keyframe_attr(char *attr);
 void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
 
-void graphics_page_add_keyframe_value(IPage *page, int frame_num, 
-    int frame_geo, char frame_attr[GEO_BUF_SIZE], int value) {
+unsigned int graphics_page_add_keyframe(IPage *page) {
     if (page->num_keyframe == page->len_keyframe) {
         log_file(LogWarn, "Graphics", "Out of keyframe memory");
-        return;
+        return -1;
     }
 
-    Keyframe *frame = &page->keyframe[page->num_keyframe];
-
-    frame->frame_num = frame_num;
-    frame->geo_id = frame_geo;
-    memcpy(frame->attr, frame_attr, GEO_BUF_SIZE);
-    frame->type = SET_VALUE;
-
-    frame->value = value;
     page->num_keyframe++;
+    return page->num_keyframe - 1;
 }
 
-void graphics_page_add_keyframe_user(IPage *page, int frame_num, 
-    int frame_geo, char frame_attr[GEO_BUF_SIZE]) {
-    if (page->num_keyframe == page->len_keyframe) {
-        log_file(LogWarn, "Graphics", "Out of keyframe memory");
-        return;
-    }
-
-    Keyframe *frame = &page->keyframe[page->num_keyframe];
-
-    frame->frame_num = frame_num;
-    frame->geo_id = frame_geo;
-    memcpy(frame->attr, frame_attr, GEO_BUF_SIZE);
-    frame->type = USER_VALUE;
-
-    page->num_keyframe++;
-}
-
-void graphics_page_add_keyframe_bind(IPage *page, int frame_num, int frame_geo, 
-     char frame_attr[GEO_BUF_SIZE], int bind_frame, int bind_geo, char bind_attr[GEO_BUF_SIZE]) {
-    if (page->num_keyframe == page->len_keyframe) {
-        log_file(LogWarn, "Graphics", "Out of keyframe memory");
-        return;
-    }
-
-    Keyframe *frame = &page->keyframe[page->num_keyframe];
-
-    frame->frame_num = frame_num;
-    frame->geo_id = frame_geo;
-    memcpy(frame->attr, frame_attr, GEO_BUF_SIZE);
-    frame->type = BIND_VALUE;
-
-    frame->bind_frame_num = bind_frame;
-    frame->bind_geo_id = bind_geo;
-    memcpy(frame->bind_attr, bind_attr, GEO_BUF_SIZE);
-    
-    page->num_keyframe++;
-}
-
-void graphics_page_keyframe(IPage *page) {
+void graphics_page_init_keyframe(IPage *page) {
     page->max_keyframe = 0;
 
     for (int i = 0; i < page->len_keyframe; i++) {
@@ -78,6 +32,63 @@ void graphics_page_keyframe(IPage *page) {
 
     free(page->k_value);
     page->k_value = NEW_ARRAY(page->max_keyframe * page->len_geometry * NUM_ATTR, int);
+}
+
+void graphics_page_set_keyframe_int(IPage *page, int keyframe_index, char *name, int value) {
+    if (keyframe_index < 0 || keyframe_index >= page->num_keyframe) {
+        log_file(LogError, "Graphics", "Keyframe index %d out of range", keyframe_index);
+        return;
+    }
+
+    Keyframe *frame = &page->keyframe[keyframe_index];
+
+    if (strcmp(name, "frame_num") == 0) {
+        frame->frame_num = value;
+    } else if (strcmp(name, "frame_geo") == 0) {
+        frame->geo_id = value;
+    } else if (strcmp(name, "value") == 0) {
+        frame->type = SET_VALUE;
+        frame->value = value;
+    } else if (strcmp(name, "bind_frame") == 0) {
+        frame->type = BIND_VALUE;
+        frame->bind_frame_num = value;
+    } else if (strcmp(name, "bind_geo") == 0) {
+        frame->bind_geo_id = value;
+    } else {
+        log_file(LogWarn, "Graphics", "Keyframe attr %s is not an int attr", name);
+    }
+}
+
+void graphics_page_set_keyframe_attr(IPage *page, int keyframe_index, char *name, char *value) {
+    if (keyframe_index < 0 || keyframe_index >= page->num_keyframe) {
+        log_file(LogError, "Graphics", "Keyframe index %d out of range", keyframe_index);
+        return;
+    }
+
+    Keyframe *frame = &page->keyframe[keyframe_index];
+
+    if (strcmp(name, "frame_attr") == 0) {
+        memcpy(frame->attr, value, GEO_BUF_SIZE);
+    } else if (strcmp(name, "mask") == 0) {
+        if (strcmp(value, "true") == 0) {
+            frame->mask = 1;
+        } else {
+            frame->mask = 0;
+        }
+    } else if (strcmp(name, "expand") == 0) {
+        if (strcmp(value, "true") == 0) {
+            frame->expand = 1;
+        } else {
+            frame->expand = 0;
+        }
+    } else if (strcmp(name, "user_frame") == 0) {
+        frame->type = USER_VALUE;
+    } else if (strcmp(name, "bind_attr") == 0) {
+        memcpy(frame->bind_attr, value, GEO_BUF_SIZE);
+    } else {
+        log_file(LogWarn, "Graphics", "Keyframe attr %s is not a string attr", name);
+    }
+
 }
 
 FRAME_ATTR graphics_keyframe_attr_int(char *attr) {

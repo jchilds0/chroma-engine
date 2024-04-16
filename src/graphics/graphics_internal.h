@@ -56,6 +56,8 @@ typedef struct {
     char              attr[GEO_BUF_SIZE];
     FRAME_TYPE        type;
     int               value;
+    unsigned char     mask;
+    unsigned char     expand;
     unsigned int      bind_frame_num;
     unsigned int      bind_geo_id;
     char              bind_attr[GEO_BUF_SIZE];
