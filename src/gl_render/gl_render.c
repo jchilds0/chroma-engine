@@ -224,6 +224,8 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 log_file(LogError, "GL Render", "Unknown action %d", action);
         }
 
+        graphics_page_update_geometry(page);
+
         for (int geo_num = 0; geo_num < num_geo; geo_num++) {
             memset(geo_type, '\0', sizeof geo_type);
             geo = graphics_page_get_geometry(page, geo_num);

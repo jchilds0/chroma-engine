@@ -161,7 +161,7 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
     int frame_start = index / frame_width;
     int frame_index = index % frame_width;
 
-    //log_file(LogMessage, "Graphics", "Interpolating page %d at keyframe %d and index %d", page->temp_id, frame_start, frame_index);
+    log_file(LogMessage, "Graphics", "Interpolating page %d at keyframe %d and index %d", page->temp_id, frame_start, frame_index);
 
     for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
         for (int attr = 0; attr < NUM_ATTR; attr++) {
@@ -184,7 +184,7 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
                 frame_width
             );
             geometry_set_int_attr(geo, ATTR[attr], next_value);
-            //log_file(LogMessage, "Graphics", "Set geo %d attr %s to %d", geo_id, ATTR[attr], next_value);
+            log_file(LogMessage, "Graphics", "Set geo %d attr %s to %d", geo_id, ATTR[attr], next_value);
         }
     }
 }

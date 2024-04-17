@@ -32,6 +32,9 @@ void graphics_page_init_keyframe(IPage *page) {
 
     free(page->k_value);
     page->k_value = NEW_ARRAY(page->max_keyframe * page->len_geometry * NUM_ATTR, int);
+    for (int i = 0; i < page->max_keyframe * page->len_geometry * NUM_ATTR; i++) {
+        page->k_value[i] = -1;
+    }
 }
 
 void graphics_page_set_keyframe_int(IPage *page, int keyframe_index, char *name, int value) {
@@ -173,7 +176,6 @@ void graphics_page_calculate_keyframes(IPage *page) {
     }
 
     // interpolate between frames
-    
     for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
         for (int attr = 0; attr < NUM_ATTR; attr++) {
             int frame_start = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe;
@@ -189,6 +191,27 @@ void graphics_page_calculate_keyframes(IPage *page) {
             );
         }
     }
+
+    // print keyframes
+    log_file(LogMessage, "Graphics", "Calculating Keyframes");
+
+    for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+        log_file(LogMessage, "Graphics", "Geo ID %d: ", geo_id); 
+
+        for (int attr = 0; attr < NUM_ATTR; attr++) {
+            if (!page->attr_keyframe[geo_id * NUM_ATTR + attr]) {
+                continue;
+            }
+
+            log_file(LogMessage, "Graphics", "\tAttr %s: ", ATTR[attr]);
+
+            for (int frame_index = 0; frame_index <= page->max_keyframe; frame_index++) {
+                int i = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe + frame_index;
+
+                log_file(LogMessage, "Graphics", "\t\tFrame %d: %d", frame_index, page->k_value[i]); 
+            }
+        }
+    }
 }
 
 int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width) {
@@ -197,7 +220,7 @@ int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int wid
         return v_start;
     }
 
-    return (v_end - v_start) * index / width;
+    return (v_end - v_start) * index / width + v_start;
 }
 
 void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames) {
@@ -222,7 +245,7 @@ void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, in
             break;
         }
 
-        for (int i = start; i < end; i++) {
+        for (int i = start + 1; i < end; i++) {
             values[i] = graphics_keyframe_interpolate_int(values[start], values[end], i, end - start);
         }
 
