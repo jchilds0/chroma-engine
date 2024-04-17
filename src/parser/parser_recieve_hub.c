@@ -426,7 +426,7 @@ void parser_next_token(int socket_client) {
         c_token = STRING;
         //log_file(LogMessage, "Parser", "String: %s", c_value);
         return;
-    } else if (c >= '0' && c <= '9') {
+    } else if ((c >= '0' && c <= '9') || c == '-') {
         // number
         while (1) {
             c_value[i++] = c;
