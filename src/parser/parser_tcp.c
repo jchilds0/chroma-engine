@@ -60,38 +60,22 @@ int parser_tcp_start_server(char *addr, int port) {
     }
 
     log_file(LogMessage, "Parser", "Done with binding");
-    return socket_desc;
-}
 
-int parser_tcp_timeout_listen(int server_sock) {
-    int client_sock;
-    socklen_t client_size;
-    struct sockaddr_in client_addr;
     struct timeval tv;
     tv.tv_sec = 0;
-    tv.tv_usec = 1000 / CHROMA_FRAMERATE;
+    tv.tv_usec = 100 / CHROMA_FRAMERATE;
 
-    setsockopt(server_sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
     // listen for clients 
-    if (listen(server_sock, 1) < 0) {
+    if (listen(socket_desc, MAX_CONNECTIONS) < 0) {
         //log_file(LogWarn, "Parser", "Error while listening");
         return SERVER_TIMEOUT;
     }
 
-    //log_to_file(LogMessage, "Listening for incoming connection....");
+    log_file(LogMessage, "Parser", "Listening for incoming connection....");
 
-    client_size = sizeof client_addr;
-    client_sock = accept(server_sock, (struct sockaddr*) &client_addr, &client_size);
-
-    if (client_sock < 0) {
-        //log_file(LogWarn, "Can't accept connection");
-        return SERVER_TIMEOUT;
-    }
-
-    log_file(LogMessage, "Parser", "Client connected at IP: %s and port %i", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-
-    return client_sock;
+    return socket_desc;
 }
 
 int parser_tcp_start_client(char *addr, int port) {

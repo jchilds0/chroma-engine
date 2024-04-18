@@ -11,11 +11,13 @@
 #include "chroma-typedefs.h"
 #include "log.h"
 
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
+static int clients[MAX_CONNECTIONS];
 static int socket_client = -1;
 
 void    parser_page(IPage *page);
@@ -25,67 +27,120 @@ Token   parser_get_token(char *value);
 static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
 
+void parser_init_sockets(void) {
+    for (int i = 0; i < MAX_CONNECTIONS; i++) {
+        clients[i] = -1;
+    }
+}
+
+void parser_check_socket(int server_socket) {
+    int client_sock;
+    socklen_t client_size;
+    struct sockaddr_in client_addr;
+
+    client_size = sizeof client_addr;
+    client_sock = accept(server_socket, (struct sockaddr *) &client_addr, &client_size);
+
+    if (client_sock < 0) {
+        // no new clients
+        return;
+    }
+
+    int i;
+    for (i = 0; i < MAX_CONNECTIONS; i++) {
+        if (clients[i] >= 0) {
+            continue;
+        }
+
+        log_file(LogMessage, "Parser", "New client %d:%d", client_addr.sin_addr, client_addr.sin_port);
+        clients[i] = client_sock;
+        break;
+    }
+
+    if (i == MAX_CONNECTIONS) {
+        log_file(LogWarn, "Parser", "Max clients connected");
+    }
+}
+
 /*
- * Check eng->socket for a tcp connection.
+ * Check clients array for messages, first checking the current client;
  *
  * If we have an open connection, listen for a message, 
- *    - If we recieve a graphics request, parse it and call the callback on_message(),
- *    - If the listen times out, do nothing,
- *    - If the client closes the connection, close on our end and cleanup buffer.
+ *    - If we recieve a graphics request, parse the page,
+ *    - If the listen times out, move on to the next client,
+ *    - If the client closes the connection, close on our end.
  *
  */
 
 void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
-    if (socket_client < 0) {
-        socket_client = parser_tcp_timeout_listen(eng->server_socket);
-    } else {
-        ServerResponse rec = parser_get_message(socket_client, &buf_ptr, buf);
+    ServerResponse rec;
+
+    // check if current connection has a message
+    if (socket_client >= 0) {
+        rec = parser_get_message(socket_client, &buf_ptr, buf);
+
+        if (rec == SERVER_MESSAGE) {
+            goto PAGE;
+        }
+    }
+
+    // look for messages in other clients
+    for (int i = 0; i < MAX_CONNECTIONS; i++) {
+        rec = parser_get_message(clients[i], &buf_ptr, buf);
 
         switch (rec) {
-        case SERVER_MESSAGE:
-            parser_header(temp_id, action, layer);
-            IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
-
-            if (page == NULL) {
-                // invalid page, reset globals and clear remaining message
-                *temp_id = -1;
-                *action = BLANK;
-                *layer = 0;
-
-                char attr[PARSE_BUF_SIZE];
-                while (parser_get_token(attr) != EOM);
-                return;
-            }
-
-            // Read new page values
-            parser_page(page);
-            graphics_hub_set_time(eng->hub, 0.0f, *layer);
-            graphics_page_calculate_keyframes(page);
-
-            int num_geo = graphics_page_num_geometry(page);
-            for (int i = 0; i < num_geo; i++) {
-                IGeometry *geo = graphics_page_get_geometry(page, i);
-                if (geo == NULL) {
-                    continue;
+            case SERVER_MESSAGE:
+                socket_client = clients[i];
+                goto PAGE;
+            case SERVER_CLOSE:
+                if (socket_client == clients[i]) {
+                    socket_client = -1;
                 }
 
-                if (geo->geo_type != IMAGE) {
-                    continue;
-                }
+                shutdown(clients[i], SHUT_RDWR);
+                clients[i] = -1;
+            case SERVER_TIMEOUT:
+                break;
+        }
+    }
 
-                if (parser_recieve_image(eng->hub_socket, (GeometryImage *)geo) != SERVER_MESSAGE) {
-                    log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
-                }
-            }
-            break;
-        case SERVER_TIMEOUT:
-            break;
-        case SERVER_CLOSE:
-            shutdown(socket_client, SHUT_RDWR);
-            parser_clean_buffer(&buf_ptr, buf);
-            socket_client = -1;
+    return;
 
-            break;
+PAGE:
+    log_file(LogMessage, "Parser", "Recieved message from %d", socket_client);
+
+    parser_header(temp_id, action, layer);
+    IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
+
+    if (page == NULL) {
+        // invalid page, reset globals and clear remaining message
+        *temp_id = -1;
+        *action = BLANK;
+        *layer = 0;
+
+        char attr[PARSE_BUF_SIZE];
+        while (parser_get_token(attr) != EOM);
+        return;
+    }
+
+    // Read new page values
+    parser_page(page);
+    graphics_hub_set_time(eng->hub, 0.0f, *layer);
+    graphics_page_calculate_keyframes(page);
+
+    int num_geo = graphics_page_num_geometry(page);
+    for (int i = 0; i < num_geo; i++) {
+        IGeometry *geo = graphics_page_get_geometry(page, i);
+        if (geo == NULL) {
+            continue;
+        }
+
+        if (geo->geo_type != IMAGE) {
+            continue;
+        }
+
+        if (parser_recieve_image(eng->hub_socket, (GeometryImage *)geo) != SERVER_MESSAGE) {
+            log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
         }
     }
 }

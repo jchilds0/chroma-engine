@@ -46,6 +46,7 @@ void engine_window(void) {
     while (TRUE) {
         // slow frame rate down to CHROMA_FRAMERATE
         gtk_main_iteration_do(FALSE);
+        parser_check_socket(engine.server_socket);
         parser_parse_graphic(&engine, &e_page_num, &e_action, &layer);
         
         page_num[layer] = e_page_num;

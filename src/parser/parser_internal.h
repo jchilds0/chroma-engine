@@ -13,6 +13,7 @@
 #include "geometry.h"
 
 #define PARSE_BUF_SIZE      100
+#define MAX_CONNECTIONS     10
 #define LOG_PARSER          1
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
@@ -39,7 +40,7 @@ typedef enum {
     INT,
 } Token;
 
-int             parser_tcp_timeout_listen(int server_sock);
+ServerResponse  parser_tcp_timeout_listen(int server_sock);
 ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
 ServerResponse  parser_recieve_image(int hub_socket, GeometryImage *img);
 

@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
         *gval = "127.0.0.1";
     opterr = 0;
     log_start(-1);
+    parser_init_sockets();
 
     while ((x = getopt(argc, argv, "g:hw:p:")) != -1) {
         switch (x) {

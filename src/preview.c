@@ -8,6 +8,7 @@
 #include "gl_render.h"
 #include "parser.h"
 #include "log.h"
+#include "parser/parser_internal.h"
 #include <sys/socket.h>
 
 static void close_preview(GtkWidget *widget, gpointer data) {
@@ -40,6 +41,7 @@ void preview_window(int wid) {
 
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
+        parser_check_socket(engine.server_socket);
         parser_parse_graphic(&engine, &p_page_num, &p_action, &layer);
 
         page_num[0] = p_page_num;
