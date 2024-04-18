@@ -192,6 +192,10 @@ void graphics_page_calculate_keyframes(IPage *page) {
         }
     }
 
+    if (!LOG_KEYFRAMES) {
+        return;
+    }
+
     // print keyframes
     log_file(LogMessage, "Graphics", "Calculating Keyframes");
 

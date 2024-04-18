@@ -12,6 +12,7 @@
 #include "chroma-typedefs.h"
 #include "gl_math.h"
 #include "log.h"
+#include <time.h>
 
 #define ANIM_LENGTH     60
 
