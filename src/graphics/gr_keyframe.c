@@ -154,6 +154,7 @@ void graphics_page_calculate_keyframes(IPage *page) {
         Keyframe *frame = &page->keyframe[i];
         FRAME_ATTR attr = graphics_keyframe_attr_int(frame->attr);
 
+        geo = page->geometry[frame->geo_id];
         frame_index = frame->geo_id * (page->max_keyframe * NUM_ATTR) 
             + attr * page->max_keyframe + frame->frame_num;
         have_keyframe[frame_index] = 1;
@@ -161,7 +162,6 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
         switch (frame->type) {
             case USER_VALUE:
-                geo = page->geometry[frame->geo_id];
                 page->k_value[frame_index] = geometry_get_int_attr(geo, frame->attr);
                 break;
             case SET_VALUE:
@@ -172,6 +172,37 @@ void graphics_page_calculate_keyframes(IPage *page) {
                 break;
             default:
                 log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame->type);
+        }
+
+        if (LOG_KEYFRAMES) {
+            log_file(LogMessage, "Graphics", "Keyframe %d", frame->frame_num);
+            log_file(LogMessage, "Graphics", "\tInitially set geo %d, attr %s to %d", frame->geo_id, frame->attr, page->k_value[frame_index]);
+        }
+
+        if (frame->expand) {
+            for (int geo_id = 0; geo_id < page->num_geometry; geo_id++) {
+                if (page->geometry[geo_id]->parent != frame->geo_id) {
+                    continue;
+                }
+
+                int current_val = page->k_value[frame_index];
+                int parent_padding = geometry_get_int_attr(geo, frame->attr);
+                int child_val = geometry_get_int_attr(page->geometry[geo_id], frame->attr);
+                
+                if (strcmp(frame->attr, "width") == 0) {
+                    child_val += geometry_get_int_attr(page->geometry[geo_id], "rel_x");
+                } else if (strcmp(frame->attr, "height") == 0) {
+                    child_val += geometry_get_int_attr(page->geometry[geo_id], "rel_y");
+                } else {
+                    log_file(LogWarn, "Graphics", "Expand %s not implemented", frame->attr);
+                    continue;
+                }
+
+                if (child_val + parent_padding > current_val && LOG_KEYFRAMES) {
+                    log_file(LogMessage, "Graphics", "\tUpdated to expand for child %d to %d", geo_id, child_val + parent_padding);
+                }
+                page->k_value[frame_index] = MAX(current_val, child_val + parent_padding);
+            }
         }
     }
 

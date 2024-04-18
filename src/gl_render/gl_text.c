@@ -194,3 +194,27 @@ void gl_draw_text(IGeometry *text) {
     glUseProgram(0);
 }
 
+unsigned int gl_text_text_width(char *text, float scale) {
+    float retval = 0.0f;
+
+    for (int i = 0; text[i] != '\0'; i++) {
+        struct Character ch = Characters[(unsigned char)text[i]];
+
+        // advance cursors for next glyph
+        retval += (ch.Advance >> 6) * scale;
+    }
+
+    return (unsigned int) retval;
+}
+
+unsigned int gl_text_text_height(char *text, float scale) {
+    float retval = 0.0f;
+
+    for (int i = 0; text[i] != '\0'; i++) {
+        struct Character ch = Characters[(unsigned char)text[i]];
+        retval = MAX(retval, ch.Size[1] * scale);
+    }
+
+    return (unsigned int) retval;
+
+}

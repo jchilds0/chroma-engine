@@ -8,6 +8,7 @@
 
 #include "chroma-engine.h"
 #include "geometry_internal.h"
+#include "gl_render.h"
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +51,12 @@ void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) 
             break;
         case GEO_SCALE:
             sprintf(value, "%f", text->scale);
+            break;
+        case GEO_WIDTH:
+            sprintf(value, "%d", gl_text_text_width(text->buf, text->scale));
+            break;
+        case GEO_HEIGHT:
+            sprintf(value, "%d", gl_text_text_height(text->buf, text->scale));
             break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not a text attr (%d)", attr);

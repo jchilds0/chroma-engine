@@ -33,6 +33,8 @@ void geometry_clean_image(GeometryImage *image) {
     image->scale = 1.0;
     image->data = NULL;
     image->image_id = 0;
+    image->w = 0;
+    image->h = 0;
     image->cur_image_id = -1;
 }
 
@@ -42,10 +44,10 @@ void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *valu
             sprintf(value, "%f", image->scale);
             break;
         case GEO_WIDTH:
-            sprintf(value, "%d", image->w);
+            sprintf(value, "%d", (int) (image->scale * image->w));
             break;
         case GEO_HEIGHT:
-            sprintf(value, "%d", image->h);
+            sprintf(value, "%d", (int) (image->scale * image->h));
             break;
         case GEO_IMAGE_ID:
             sprintf(value, "%d", image->image_id);

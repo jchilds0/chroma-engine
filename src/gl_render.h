@@ -31,6 +31,9 @@
 extern void gl_realize(GtkWidget *);
 extern gboolean gl_render(GtkGLArea *, GdkGLContext *);
 
+extern unsigned int gl_text_text_width(char *text, float scale);
+extern unsigned int gl_text_text_height(char *text, float scale);
+
 extern int action[];
 extern int page_num[];
 
