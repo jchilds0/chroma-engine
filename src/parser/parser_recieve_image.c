@@ -15,6 +15,11 @@
 static int socket_client = 0;
 static int img_length = 0;
 
+union png_size {
+    unsigned char bytes[4];
+    int size;
+};
+
 void free_row_pointers(int, png_bytep *);
 int parser_read_image(int *, int *, png_byte *, png_byte *, png_bytep **);
 void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length);
@@ -52,13 +57,13 @@ ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
         log_file(LogError, "Parser", "Incorrect image parser version", img->image_id);
     }
 
-    unsigned char length[4] = {0, 0, 0, 0};
-    if (recv(hub_socket, length, sizeof length, 0) < 0) {
+    union png_size length;
+    length.size = 0;
+    if (recv(hub_socket, length.bytes, sizeof length, 0) < 0) {
         log_file(LogWarn, "Parser", "Error receiving image %d length", img->image_id);
     }
 
-    img_length = (length[0] << 24) + (length[1] << 16) + (length[2] << 8) + (length[3]);
-    if (img_length == 0) {
+    if (length.size == 0) {
         free(img->data);
         img->data = NULL;
         if (LOG_PARSER) {
