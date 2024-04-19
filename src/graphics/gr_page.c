@@ -150,14 +150,14 @@ void graphics_page_update_geometry(IPage *page) {
 }
 
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
-    if (page->max_keyframe == 0) {
-        log_file(LogMessage, "Graphics", "No keyframes, skipping interpolation");
+    if (page->max_keyframe == 1) {
+        //log_file(LogMessage, "Graphics", "No keyframes, skipping interpolation");
         return;
     }
 
     IGeometry *geo;
     int next_value, k_index;
-    int frame_width = width / page->max_keyframe;
+    int frame_width = width / (page->max_keyframe - 1);
     int frame_start = index / frame_width;
     int frame_index = index % frame_width;
 
@@ -172,7 +172,7 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
             k_index = geo_id * (page->max_keyframe * NUM_ATTR) 
                 + attr * page->max_keyframe + frame_start;
 
-            if (frame_start == page->max_keyframe) {
+            if (frame_start == page->max_keyframe - 1) {
                 continue;
             }
 

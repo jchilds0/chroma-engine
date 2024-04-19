@@ -12,9 +12,9 @@
 
 #include "geometry.h"
 
-#define PARSE_BUF_SIZE      100
+#define PARSE_BUF_SIZE      1024
 #define MAX_CONNECTIONS     10
-#define LOG_PARSER          1
+#define LOG_PARSER          0
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
 typedef enum {

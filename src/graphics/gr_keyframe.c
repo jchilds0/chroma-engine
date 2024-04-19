@@ -9,10 +9,12 @@
 #include "geometry.h"
 #include "log.h"
 #include <string.h>
+#include <time.h>
 
 FRAME_ATTR graphics_keyframe_attr(char *attr);
 void graphics_keyframe_expand_child(IPage *page, int parent, unsigned char *expand);
 void graphics_keyframe_expand_geometry(IPage *page, int geo_id, unsigned char *expand);
+int  graphics_keyframe_geo_attr(IPage *page, int geo_id, int attr, int frame_index);
 void graphics_keyframe_fill_tails(int *values, unsigned char *frames, int num_frames);
 void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
 
@@ -32,6 +34,8 @@ void graphics_page_init_keyframe(IPage *page) {
     for (int i = 0; i < page->len_keyframe; i++) {
         page->max_keyframe = MAX(page->max_keyframe, page->keyframe[i].frame_num);
     }
+
+    page->max_keyframe++;
 
     free(page->k_value);
     page->k_value = NEW_ARRAY(page->max_keyframe * page->len_geometry * NUM_ATTR, int);
@@ -130,21 +134,10 @@ FRAME_ATTR graphics_keyframe_attr_int(char *attr) {
 
 }
 
-static unsigned char graphics_keyframe_exists(unsigned char *frames, int num_frames) {
-    unsigned char found_keyframe = 0;
-
-    for (int i = 0; i < num_frames; i++) {
-        if (frames[i] == 1) {
-            found_keyframe = 1;
-        }
-    }
-
-    return found_keyframe;
-}
-
 void graphics_page_calculate_keyframes(IPage *page) {
     IGeometry *geo;
     int frame_index;
+    int start, end;
 
     unsigned char *have_keyframe = NEW_ARRAY(page->max_keyframe * page->len_geometry * NUM_ATTR, unsigned char);
     unsigned char *expand = NEW_ARRAY(page->max_keyframe * page->len_geometry * NUM_ATTR, unsigned char);
@@ -155,81 +148,147 @@ void graphics_page_calculate_keyframes(IPage *page) {
     }
 
     // store keyframe value
-    for (int i = 0; i < page->len_keyframe; i++) {
-        Keyframe *frame = &page->keyframe[i];
-        FRAME_ATTR attr = graphics_keyframe_attr_int(frame->attr);
+    {
 
-        geo = page->geometry[frame->geo_id];
-        frame_index = frame->geo_id * (page->max_keyframe * NUM_ATTR) 
-            + attr * page->max_keyframe + frame->frame_num;
-        have_keyframe[frame_index] = 1;
-        page->attr_keyframe[frame->geo_id * NUM_ATTR + attr] = 1;
+        start = clock();
+        for (int i = 0; i < page->len_keyframe; i++) {
+            Keyframe *frame = &page->keyframe[i];
+            FRAME_ATTR attr = graphics_keyframe_attr_int(frame->attr);
 
-        switch (frame->type) {
-            case USER_VALUE:
-                page->k_value[frame_index] = geometry_get_int_attr(geo, frame->attr);
-                break;
-            case SET_VALUE:
-                page->k_value[frame_index] = frame->value;
-                break;
-            case BIND_VALUE:
-                log_file(LogError, "Graphics", "Bind value not implemented");
-                break;
-            default:
-                log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame->type);
-        }
+            geo = page->geometry[frame->geo_id];
+            frame_index = frame->geo_id * (page->max_keyframe * NUM_ATTR) 
+                + attr * page->max_keyframe + frame->frame_num;
+            have_keyframe[frame_index] = 1;
+            page->attr_keyframe[frame->geo_id * NUM_ATTR + attr] = 1;
 
-        if (LOG_KEYFRAMES) {
-            log_file(LogMessage, "Graphics", "Keyframe %d", frame->frame_num);
-            log_file(LogMessage, "Graphics", "\tInitially set geo %d, attr %s to %d", frame->geo_id, frame->attr, page->k_value[frame_index]);
-        }
-
-        if (frame->expand) {
-            expand[frame_index] = 1;
-        }
-    }
-
-    // fill from index 0 to first keyframe and last keyframe to max keyframe
-    for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
-        for (int attr = 0; attr < NUM_ATTR; attr++) {
-            int frame_start = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe;
-
-            if (!graphics_keyframe_exists(&have_keyframe[frame_start], page->max_keyframe)) {
-                continue;
+            switch (frame->type) {
+                case USER_VALUE:
+                    page->k_value[frame_index] = geometry_get_int_attr(geo, frame->attr);
+                    break;
+                case SET_VALUE:
+                    page->k_value[frame_index] = frame->value;
+                    break;
+                case BIND_VALUE:
+                    log_file(LogError, "Graphics", "Bind value not implemented");
+                    break;
+                default:
+                    log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame->type);
             }
 
-            graphics_keyframe_fill_tails(
-                &page->k_value[frame_start], 
-                &have_keyframe[frame_start], 
-                page->max_keyframe
-            );
+            if (LOG_KEYFRAMES) {
+                log_file(LogMessage, "Graphics", "Keyframe %d", frame->frame_num);
+                log_file(LogMessage, "Graphics", "\tInitially set geo %d, attr %s to %d", frame->geo_id, frame->attr, page->k_value[frame_index]);
+            }
+
+            if (frame->expand) {
+                expand[frame_index] = 1;
+            }
         }
+
+        end = clock();
+        if (LOG_KEYFRAMES) {
+            log_file(LogMessage, "Graphics", "Parsed Keyframes in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+        }
+
+    }
+
+    // add default keyframes 
+    {
+
+        if (LOG_KEYFRAMES) {
+            log_file(LogMessage, "Graphics", "Adding default keyframes");
+        }
+
+        start = clock();
+
+        for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+            if (LOG_KEYFRAMES) {
+                log_file(LogMessage, "Graphics", "\tGeo ID %d: ", geo_id);
+            }
+
+            for (int attr = 0; attr < NUM_ATTR; attr++) {
+                int frame_start = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe;
+
+                if (!page->attr_keyframe[geo_id * NUM_ATTR + attr]) {
+                    continue;
+                }
+
+                if (LOG_KEYFRAMES) {
+                    log_file(LogMessage, "Graphics", "\t\tAttr %s", ATTR[attr]);
+                }
+
+                // first keyframe
+                for (frame_index = 0; !have_keyframe[frame_start + frame_index]; frame_index++);
+
+                have_keyframe[frame_start] = 1;
+                //expand[frame_start] = expand[frame_start + frame_index];
+                page->k_value[frame_start] = page->k_value[frame_start + frame_index];
+
+                // last keyframe
+
+                for (int i = 0; i < page->max_keyframe; i++) {
+                    if (!have_keyframe[frame_start + i]) {
+                        continue;
+                    }
+
+                    frame_index = i;
+                };
+
+                have_keyframe[frame_start + page->max_keyframe] = 1;
+                //expand[frame_start + page->max_keyframe] = expand[frame_start + frame_index];
+                page->k_value[frame_start + page->max_keyframe] = page->k_value[frame_start + frame_index];
+            }
+        }
+
+        end = clock();
+
+        if (LOG_KEYFRAMES) {
+            log_file(LogMessage, "Graphics", "Added default frames in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+        }
+
     }
 
     // expand for child geometries 
+    start = clock();
+
     graphics_keyframe_expand_child(page, 0, expand);
 
+    end = clock();
+    if (LOG_KEYFRAMES) {
+        log_file(LogMessage, "Graphics", "Processed expand frames in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+    }
+
     // interpolate between frames
-    for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
-        for (int attr = 0; attr < NUM_ATTR; attr++) {
-            int frame_start = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe;
+    {
 
-            if (!graphics_keyframe_exists(&have_keyframe[frame_start], page->max_keyframe)) {
-                continue;
+        start = clock();
+        for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+            for (int attr = 0; attr < NUM_ATTR; attr++) {
+                int frame_start = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe;
+
+                if (!page->attr_keyframe[geo_id * NUM_ATTR + attr]) {
+                    continue;
+                }
+
+                graphics_keyframe_interpolate_frames(
+                    &page->k_value[frame_start], 
+                    &have_keyframe[frame_start], 
+                    page->max_keyframe
+                );
+
+                graphics_keyframe_fill_tails(
+                    &page->k_value[frame_start], 
+                    &have_keyframe[frame_start], 
+                    page->max_keyframe
+                );
             }
-
-            graphics_keyframe_interpolate_frames(
-                &page->k_value[frame_start], 
-                &have_keyframe[frame_start], 
-                page->max_keyframe
-            );
-
-            graphics_keyframe_fill_tails(
-                &page->k_value[frame_start], 
-                &have_keyframe[frame_start], 
-                page->max_keyframe
-            );
         }
+
+        end = clock();
+        if (LOG_KEYFRAMES) {
+            log_file(LogMessage, "Graphics", "Interpolated frames in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+        }
+
     }
 
     if (!LOG_KEYFRAMES) {
@@ -249,7 +308,7 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
             log_file(LogMessage, "Graphics", "\t\tAttr %s: ", ATTR[attr]);
 
-            for (int frame_index = 0; frame_index <= page->max_keyframe; frame_index++) {
+            for (int frame_index = 0; frame_index < page->max_keyframe; frame_index++) {
                 int i = geo_id * (page->max_keyframe * NUM_ATTR) + attr * page->max_keyframe + frame_index;
 
                 log_file(LogMessage, "Graphics", "\t\t\tFrame %d: %d", frame_index, page->k_value[i]); 
@@ -258,6 +317,7 @@ void graphics_page_calculate_keyframes(IPage *page) {
     }
 
     free(have_keyframe);
+    free(expand);
 }
 
 void graphics_keyframe_fill_tails(int *values, unsigned char *frames, int num_frames) {
@@ -268,11 +328,9 @@ void graphics_keyframe_fill_tails(int *values, unsigned char *frames, int num_fr
         start++; 
     };
 
-    for (int i = 0; i < start; i++) {
-        values[i] = values[start];
-    }
+    for (int i = 0; i < start; values[i++] = values[start]);
 
-    for (int i = 0; i <= num_frames; i++) {
+    for (int i = 0; i < num_frames; i++) {
         if (!frames[i]) {
             continue;
         }
@@ -281,9 +339,7 @@ void graphics_keyframe_fill_tails(int *values, unsigned char *frames, int num_fr
     }
 
     // forward propagate the final keyframe
-    for (int i = start + 1; i <= num_frames; i++) {
-        values[i] = values[start];
-    }
+    for (int i = start + 1; i < num_frames; values[i++] = values[start]);
 }
 
 int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width) {
@@ -305,13 +361,7 @@ void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, in
             continue;
         }
 
-        for (end = start + 1; end < num_frames; end++) {
-            if (!frames[end]) {
-                continue;
-            }
-
-            break;
-        }
+        for (end = start + 1; end < num_frames && !frames[end]; end++);
 
         if (!frames[end]) {
             break;
@@ -341,48 +391,51 @@ void graphics_keyframe_expand_child(IPage *page, int parent, unsigned char *expa
     graphics_keyframe_expand_geometry(page, parent, expand);
 }
 
-void graphics_keyframe_expand_geometry(IPage *page, int geo_id, unsigned char *expand_frames) {
+void graphics_keyframe_expand_geometry(IPage *page, int parent_id, unsigned char *expand_frames) {
     int frame_index;
-    IGeometry *geo = page->geometry[geo_id];
+    IGeometry *geo = page->geometry[parent_id];
 
     if (LOG_KEYFRAMES) {
-        log_file(LogMessage, "Graphics", "Expand geometry %d", geo_id);
+        log_file(LogMessage, "Graphics", "Expand geometry %d", parent_id);
     }
 
     for (int key_idx = 0; key_idx < page->max_keyframe; key_idx++) {
         for (int attr = 0; attr < NUM_ATTR; attr++) {
-            frame_index = geo_id * (page->max_keyframe * NUM_ATTR) 
+            frame_index = parent_id * (page->max_keyframe * NUM_ATTR) 
                 + attr * page->max_keyframe + key_idx;
 
             if (!expand_frames[frame_index]) {
-                continue;
+                continue; 
             }
 
-            for (int i = 0; i < page->num_geometry; i++) {
-                if (page->geometry[i]->parent != geo_id) {
+            for (int child_id = 0; child_id < page->num_geometry; child_id++) {
+                if (page->geometry[child_id] == NULL) {
+                    continue;
+                }
+
+                if (page->geometry[child_id]->parent != parent_id) {
                     continue;
                 }
 
                 int current_val = page->k_value[frame_index];
                 int parent_padding = geometry_get_int_attr(geo, ATTR[attr]);
-                int child_val = geometry_get_int_attr(page->geometry[i], ATTR[attr]);
-                
+                int child_val = graphics_keyframe_geo_attr(page, child_id, attr, key_idx);
+
                 switch (attr) {
                     case WIDTH:
-                        child_val += geometry_get_int_attr(page->geometry[i], "rel_x");
+                        child_val += graphics_keyframe_geo_attr(page, child_id, REL_X, key_idx);
                         break;
 
                     case HEIGHT:
-                        child_val += geometry_get_int_attr(page->geometry[i], "rel_y");
+                        child_val += graphics_keyframe_geo_attr(page, child_id, REL_Y, key_idx);
                         break;
 
                     default:
                         log_file(LogWarn, "Graphics", "Expand %s not implemented", ATTR[attr]);
-                        continue;
                 }
 
                 if (child_val + parent_padding > current_val && LOG_KEYFRAMES) {
-                    log_file(LogMessage, "Graphics", "\tUpdated to expand for child %d to %d", i, child_val + parent_padding);
+                    log_file(LogMessage, "Graphics", "\tUpdated to expand for child %d to %d", child_id, child_val + parent_padding);
                 }
 
                 page->k_value[frame_index] = MAX(current_val, child_val + parent_padding);
@@ -390,4 +443,22 @@ void graphics_keyframe_expand_geometry(IPage *page, int geo_id, unsigned char *e
         }
     }
     
+}
+
+int graphics_keyframe_geo_attr(IPage *page, int geo_id, int attr, int key_idx) {
+    IGeometry *geo = page->geometry[geo_id];
+    int geo_value = 0;
+    int frame_index;
+
+    if (page->attr_keyframe[geo_id * NUM_ATTR + attr]) {
+        frame_index = geo_id * (NUM_ATTR * page->max_keyframe) 
+            + attr * page->max_keyframe + key_idx; 
+
+        geo_value = page->k_value[frame_index];
+    } else {
+        geo_value = geometry_get_int_attr(geo, ATTR[attr]);
+
+    }
+
+    return geo_value;
 }

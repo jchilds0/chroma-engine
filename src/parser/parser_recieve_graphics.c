@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 
 static int clients[MAX_CONNECTIONS];
 static int socket_client = -1;
@@ -109,6 +110,7 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
 PAGE:
     log_file(LogMessage, "Parser", "Recieved message from %d", socket_client);
 
+    int start = clock();
     parser_header(temp_id, action, layer);
     IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
 
@@ -143,6 +145,9 @@ PAGE:
             log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
         }
     }
+
+    int end = clock();
+    log_file(LogMessage, "Graphics", "Parsed Page in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
 }
 
 /*

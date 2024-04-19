@@ -238,7 +238,7 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
 // G -> {'id': num, 'type': string, 'attr': [A]} | G, G
 void parser_parse_geometry(IPage *page, int socket_client) {
     IGeometry *geo;
-    int id;
+    int id = 0;
     int got_id = 0,
         got_type = 0;
     char geo_type[PARSE_BUF_SIZE];
@@ -394,6 +394,7 @@ void parser_match_token(int t, int socket_client) {
     if (t == c_token) {
         parser_next_token(socket_client);
     } else {
+        log_file(LogMessage, "Parser", "Buffer: %s", buf);
         log_file(LogError, "Parser", "Couldn't match token %d to token %d", c_token, t);
     }
 }
