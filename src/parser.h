@@ -26,5 +26,6 @@ extern int parser_tcp_start_client(char *addr, int port);
 
 extern void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer);
 extern void parser_parse_hub(Engine *eng);
+extern void parser_update_template(Engine *eng, int page_num);
 
 #endif // !CHROMA_PARSER

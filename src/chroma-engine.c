@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     parser_parse_hub(&engine);
     end = clock();
 
-    log_file(LogMessage, "Parser", "Imported Chroma Hub in %f s", ((double) (end - start)) / CLOCKS_PER_SEC);
+    log_file(LogMessage, "Parser", "Imported Chroma Hub in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
 
     if (wflag) {
         // Preview process

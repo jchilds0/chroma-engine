@@ -75,7 +75,7 @@ void gl_rectangle_init_buffers(void) {
     // configure vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof( float ), (void *)0);
 
-    circle = (GeometryCircle *)geometry_create_geometry("circle");
+    circle = (GeometryCircle *)geometry_create_geometry(CIRCLE);
 
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);

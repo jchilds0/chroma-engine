@@ -39,9 +39,9 @@
 typedef enum {
     RECT,
     CIRCLE,
-    GRAPH,
     TEXT,
     IMAGE,
+    GRAPH,
 } GeometryType;
 
 typedef struct {
@@ -104,7 +104,7 @@ typedef struct {
     unsigned char     *data;
 } GeometryImage;
 
-extern IGeometry *geometry_create_geometry(char *);
+extern IGeometry *geometry_create_geometry(GeometryType type);
 extern void   geometry_free_geometry(IGeometry *geo);
 extern void   geometry_clean_geo(IGeometry *geo);
 

@@ -34,6 +34,16 @@ IGraphics *graphics_new_graphics_hub(int num_pages) {
     return hub;
 }
 
+void graphics_hub_free_page(IGraphics *hub, int page_num) {
+    if (page_num < 0 || page_num >= hub->len_pages) {
+        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
+        return;
+    }
+
+    graphics_free_page(hub->pages[page_num]);
+    hub->pages[page_num] = NULL;
+}
+
 void graphics_free_graphics_hub(IGraphics *hub) {
     for (int i = 0; i < hub->num_pages; i++) {
         graphics_free_page(hub->pages[i]);

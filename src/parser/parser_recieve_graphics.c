@@ -130,6 +130,11 @@ PAGE:
     graphics_hub_set_time(eng->hub, 0.0f, *layer);
     graphics_page_calculate_keyframes(page);
 
+    if (*action == UPDATE) {
+        parser_update_template(eng, *temp_id);
+        *action = BLANK;
+    }
+
     int num_geo = graphics_page_num_geometry(page);
     for (int i = 0; i < num_geo; i++) {
         IGeometry *geo = graphics_page_get_geometry(page, i);

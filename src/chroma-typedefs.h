@@ -14,7 +14,7 @@ typedef enum {
     ANIMATE_ON,
     CONTINUE,
     ANIMATE_OFF,
-    CLEAN,
+    UPDATE,
 } Action;
 
 /* graphics structs */

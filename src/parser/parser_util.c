@@ -6,6 +6,24 @@
 #include "parser_internal.h"
 #include <string.h>
 
+void parser_incorrect_token(char tok1, char tok2, char *buf, int buf_ptr) {
+    char error[30];
+    int start = (buf_ptr < 10) ? 0 : buf_ptr - 10;
+    int end = (buf_ptr > PARSE_BUF_SIZE - 20) ? PARSE_BUF_SIZE : buf_ptr + 20;
+
+    memset(error, '\0', sizeof error);
+    memcpy(error, &buf[start], end - start);
+
+    log_file(LogMessage, "Parser", "Buffer: %s", error);
+    log_file(LogMessage, "Parser", "        " "        ^");
+
+    if (tok1 < 'a') {
+        log_file(LogError, "Parser", "Couldn't match token %d to token %d", tok1, tok2);
+    } else {
+        log_file(LogError, "Parser", "Couldn't match token %c to token %c", tok1, tok2);
+    }
+}
+
 char parser_get_char(int socket_client, int *buf_ptr, char *buf) {
     if (parser_get_message(socket_client, buf_ptr, buf) != SERVER_MESSAGE) {
         log_file(LogWarn, "Parser", "Tried to get char, but didn't have any remaining");

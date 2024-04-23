@@ -4,8 +4,8 @@
  * Callbacks for GTK_GL_AREA used in preview.c and engine.c
  */
 
-#include "gl_render.h"
 #include "geometry.h"
+#include "parser.h"
 #include "gl_render_internal.h"
 
 #include "chroma-engine.h"
@@ -163,7 +163,6 @@ static float gl_bezier_time_step(float time, float start, float end, int order) 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     int current_page, num_geo;
     float time, bezier_time;
-    char geo_type[20];
     IPage *page;
     IGeometry *geo;
 
@@ -218,8 +217,8 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
                 break;
-            case CLEAN:
-                graphics_page_clean_page(page);
+            case UPDATE:
+                parser_update_template(&engine, page_num[layer]);
                 break;
             default:
                 log_file(LogError, "GL Render", "Unknown action %d", action);
@@ -228,14 +227,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         graphics_page_update_geometry(page);
 
         for (int geo_num = 0; geo_num < num_geo; geo_num++) {
-            memset(geo_type, '\0', sizeof geo_type);
             geo = graphics_page_get_geometry(page, geo_num);
-
             if (geo == NULL) {
                 continue;
             }
-
-            geometry_get_attr(geo, "geo_type", geo_type);
 
             switch (geo->geo_type) {
                 case RECT:
@@ -254,7 +249,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                     gl_draw_image(geo);
                     break;
                 default:
-                    log_file(LogWarn, "GL Renderer", "Unknown geo type (%s)", geo_type);
+                    log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", geo->geo_type);
             }
         }
     }

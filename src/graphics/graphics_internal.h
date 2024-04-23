@@ -106,7 +106,7 @@ void         graphics_hub_set_current_page_num(IGraphics *hub, int page_num, int
 /* gr_page.c */
 
 // external functions
-IGeometry    *graphics_page_add_geometry(IPage *page, int id, char *type);
+IGeometry    *graphics_page_add_geometry(IPage *page, int id, int type);
 IGeometry    *graphics_page_get_geometry(IPage *page, int geo_num);
 int          graphics_page_num_geometry(IPage *page);
 

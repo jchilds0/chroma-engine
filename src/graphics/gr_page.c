@@ -33,27 +33,14 @@ IPage *graphics_new_page(int num_geo, int num_keyframe) {
     memset(page->attr_keyframe, 0, page->len_geometry * NUM_ATTR);
 
     // root 
-    IGeometry *geo = graphics_page_add_geometry(page, 0, "rect");
+    IGeometry *geo = graphics_page_add_geometry(page, 0, RECT);
     geometry_set_int_attr(geo, "pos_x", 0);
     geometry_set_int_attr(geo, "pos_y", 0);
 
     return page;
 }
 
-void graphics_page_clean_page(IPage *page) {
-    if (page == NULL) {
-        log_file(LogError, "Graphics", "Attempted to clean null page");
-    }
-    for (int i = 0; i < page->num_geometry; i++) {
-        if (page->geometry[i] == NULL) {
-            continue;
-        }
-
-        geometry_clean_geo(page->geometry[i]);
-    }
-}
-
-IGeometry *graphics_page_add_geometry(IPage *page, int id, char *type) {
+IGeometry *graphics_page_add_geometry(IPage *page, int id, int type) {
     if (id < 0 || id >= page->len_geometry) {
         log_file(LogWarn, "Graphics", "Can't add geometry to page, id %d out of range", id);
         return NULL;
