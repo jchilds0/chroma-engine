@@ -123,12 +123,11 @@ void gl_draw_rectangle(IGeometry *rect) {
         pos_x + width - round, pos_y + height,         0.0f,
     };
 
-    int circ_v[] = {
-        pos_x + round,         pos_y + round, 
-        pos_x + width - round, pos_y + round,         
-
-        pos_x + round,         pos_y + height - round,
-        pos_x + width - round, pos_y + height - round,
+    int circ_v[4][4] = {
+        {pos_x + round,         pos_y + round,          180, 270},
+        {pos_x + width - round, pos_y + round,          270, 360},
+        {pos_x + round,         pos_y + height - round, 90,  180},
+        {pos_x + width - round, pos_y + height - round, 0,   90},
     };
 
     // draw corners
@@ -140,8 +139,10 @@ void gl_draw_rectangle(IGeometry *rect) {
     circle->outer_radius = round;
 
     for (int i = 0; i < 4; i++) {
-        geometry_set_int_attr((IGeometry *)circle, "pos_x", circ_v[2 * i]);
-        geometry_set_int_attr((IGeometry *)circle, "pos_y", circ_v[2 * i + 1]);
+        geometry_set_int_attr((IGeometry *)circle, "pos_x", circ_v[i][0]);
+        geometry_set_int_attr((IGeometry *)circle, "pos_y", circ_v[i][1]);
+        geometry_set_int_attr((IGeometry *)circle, "start_angle", circ_v[i][2]);
+        geometry_set_int_attr((IGeometry *)circle, "end_angle", circ_v[i][3]);
         gl_draw_circle((IGeometry *)circle);
     }
 
