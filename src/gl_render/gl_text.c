@@ -120,20 +120,11 @@ void gl_text_cache_characters(void) {
 }
 
 void gl_draw_text(IGeometry *text) {
-    int text_x = geometry_get_int_attr(text, "pos_x");
-    int text_y = geometry_get_int_attr(text, "pos_y");
+    int text_x = geometry_get_int_attr(text, GEO_POS_X); 
+    int text_y = geometry_get_int_attr(text, GEO_POS_Y); 
+    float scale = geometry_get_float_attr(text, GEO_SCALE);
 
     char buf[100];
-    GLfloat r, g, b, a, scale;
-
-    memset(buf, '\0', sizeof buf);
-    geometry_get_attr(text, "color", buf);
-    sscanf(buf, "%f %f %f %f", &r, &g, &b, &a);
-
-    memset(buf, '\0', sizeof buf);
-    geometry_get_attr(text, "scale", buf);
-    sscanf(buf, "%f", &scale);
-
     memset(buf, '\0', sizeof buf);
     geometry_get_attr(text, "string", buf);
 
@@ -142,8 +133,10 @@ void gl_draw_text(IGeometry *text) {
 
     glUseProgram(program);
 
+    GeometryText *g_text = (GeometryText *)text;
     GLint color_loc = glGetUniformLocation(program, "color");
-    glUniform3f(color_loc, r, g, b);
+    glUniform4f(color_loc, g_text->color[0], g_text->color[1], 
+                g_text->color[2], g_text->color[3]); 
     glBindVertexArray(vao);
 
     glEnable(GL_CULL_FACE);

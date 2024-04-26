@@ -14,28 +14,6 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
-typedef enum {
-    GEO_COLOR,
-    GEO_POS_X,
-    GEO_POS_Y,
-    GEO_REL_X,
-    GEO_REL_Y,
-    GEO_PARENT,
-    GEO_WIDTH,
-    GEO_HEIGHT,
-    GEO_ROUNDING,
-    GEO_INNER_RADIUS,
-    GEO_OUTER_RADIUS,
-    GEO_START_ANGLE,
-    GEO_END_ANGLE,
-    GEO_TEXT,
-    GEO_SCALE,
-    GEO_GRAPH_NODE,
-    GEO_NUM_NODE,
-    GEO_GRAPH_TYPE,
-    GEO_IMAGE_ID,
-} GeometryAttr;
-
 /* geo_rect.c */
 GeometryRect *geometry_new_rectangle(void);
 void geometry_free_rectangle(GeometryRect *rect);

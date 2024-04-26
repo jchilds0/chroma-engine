@@ -7,6 +7,7 @@
  */
 
 #include "chroma-engine.h"
+#include "geometry.h"
 #include "gl_render_internal.h"
 #include "log.h"
 
@@ -199,8 +200,8 @@ static void gl_graph_gen_step(GeometryGraph *g, vec2 pos, vec2 offset) {
 
 void gl_draw_graph(IGeometry *graph) {
     GeometryGraph *geo_graph = (GeometryGraph *)graph;
-    int pos_x = geometry_get_int_attr(graph, "pos_x");
-    int pos_y = geometry_get_int_attr(graph, "pos_y");
+    int pos_x = geometry_get_int_attr(graph, GEO_POS_X);
+    int pos_y = geometry_get_int_attr(graph, GEO_POS_Y);
 
     vec2 pos = {pos_x, pos_y};
     vec2 offset = {20, 20};

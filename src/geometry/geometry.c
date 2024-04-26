@@ -13,6 +13,7 @@
  *
  */
 
+#include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -157,18 +158,60 @@ GeometryAttr geometry_char_to_attr(char *attr) {
     return g_attr;
 }
 
-int geometry_get_int_attr(IGeometry *geo, char *attr) {
+static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *value) {
+    switch (attr) {
+        case GEO_POS_X:
+            sprintf(value, "%d", geo->pos.x);
+            return;
+        case GEO_POS_Y:
+            sprintf(value, "%d", geo->pos.y);
+            return;
+        case GEO_REL_X:
+            sprintf(value, "%d", geo->rel.x);
+            return;
+        case GEO_REL_Y:
+            sprintf(value, "%d", geo->rel.y);
+            return;
+        case GEO_PARENT:
+            sprintf(value, "%d", geo->parent);
+            return;
+        default:
+            break;
+    }
+
+    switch (geo->geo_type) {
+        case RECT:
+            geometry_rectangle_get_attr((GeometryRect *)geo, attr, value);
+            break;
+        case CIRCLE:
+            geometry_circle_get_attr((GeometryCircle *)geo, attr, value);
+            break;
+        case GRAPH:
+            geometry_graph_get_attr((GeometryGraph *)geo, attr, value);
+            break;
+        case TEXT:
+            geometry_text_get_attr((GeometryText *)geo, attr, value);
+            break;
+        case IMAGE:
+            geometry_image_get_attr((GeometryImage *)geo, attr, value);
+            break;
+        default:
+            log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
+    }
+}
+
+int geometry_get_int_attr(IGeometry *geo, GeometryAttr attr) {
     char buf[GEO_BUF_SIZE];
     memset(buf, '\0', GEO_BUF_SIZE);
-    geometry_get_attr(geo, attr, buf);
+    geometry_get_attribute(geo, attr, buf);
 
     return atoi(buf);
 }
 
-float geometry_get_float_attr(IGeometry *geo, char *attr) {
+float geometry_get_float_attr(IGeometry *geo, GeometryAttr attr) {
     char buf[GEO_BUF_SIZE];
     memset(buf, '\0', GEO_BUF_SIZE);
-    geometry_get_attr(geo, attr, buf);
+    geometry_get_attribute(geo, attr, buf);
 
     return atof(buf);
 }
@@ -203,70 +246,11 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
     }
 
     GeometryAttr g_attr = geometry_char_to_attr(attr);
-
-    switch (g_attr) {
-        case GEO_POS_X:
-            sprintf(value, "%d", geo->pos.x);
-            return;
-        case GEO_POS_Y:
-            sprintf(value, "%d", geo->pos.y);
-            return;
-        case GEO_REL_X:
-            sprintf(value, "%d", geo->rel.x);
-            return;
-        case GEO_REL_Y:
-            sprintf(value, "%d", geo->rel.y);
-            return;
-        case GEO_PARENT:
-            sprintf(value, "%d", geo->parent);
-            return;
-        default:
-            break;
-    }
-
-    switch (geo->geo_type) {
-        case RECT:
-            geometry_rectangle_get_attr((GeometryRect *)geo, g_attr, value);
-            break;
-        case CIRCLE:
-            geometry_circle_get_attr((GeometryCircle *)geo, g_attr, value);
-            break;
-        case GRAPH:
-            geometry_graph_get_attr((GeometryGraph *)geo, g_attr, value);
-            break;
-        case TEXT:
-            geometry_text_get_attr((GeometryText *)geo, g_attr, value);
-            break;
-        case IMAGE:
-            geometry_image_get_attr((GeometryImage *)geo, g_attr, value);
-            break;
-        default:
-            log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
-    }
+    geometry_get_attribute(geo, g_attr, value);
 }
 
-void geometry_set_int_attr(IGeometry *geo, char *attr, int value) {
-    char buf[GEO_BUF_SIZE];
-    memset(buf, '\0', GEO_BUF_SIZE);
-    sprintf(buf, "%d", value);
-    geometry_set_attr(geo, attr, buf);
-}
-
-void geometry_set_float_attr(IGeometry *geo, char *attr, float value) {
-    char buf[GEO_BUF_SIZE];
-    memset(buf, '\0', GEO_BUF_SIZE);
-    sprintf(buf, "%f", value);
-    geometry_set_attr(geo, attr, buf);
-}
-
-void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
-    GeometryAttr g_attr = geometry_char_to_attr(attr);
-
-    if (geo == NULL) {
-        log_file(LogError, "Geometry", "Geometry is NULL");
-    }
-
-    switch (g_attr) {
+static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *value) {
+    switch (attr) {
         case GEO_POS_X:
             sscanf(value, "%d", &geo->pos.x);
             return;
@@ -288,22 +272,46 @@ void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
 
     switch (geo->geo_type) {
         case RECT:
-            geometry_rectangle_set_attr((GeometryRect *)geo, g_attr, value);
+            geometry_rectangle_set_attr((GeometryRect *)geo, attr, value);
             break;
         case CIRCLE:
-            geometry_circle_set_attr((GeometryCircle *)geo, g_attr, value);
+            geometry_circle_set_attr((GeometryCircle *)geo, attr, value);
             break;
         case GRAPH:
-            geometry_graph_set_attr((GeometryGraph *)geo, g_attr, value);
+            geometry_graph_set_attr((GeometryGraph *)geo, attr, value);
             break;
         case TEXT:
-            geometry_text_set_attr((GeometryText *)geo, g_attr, value);
+            geometry_text_set_attr((GeometryText *)geo, attr, value);
             break;
         case IMAGE:
-            geometry_image_set_attr((GeometryImage *)geo, g_attr, value);
+            geometry_image_set_attr((GeometryImage *)geo, attr, value);
             break;
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
+}
+
+void geometry_set_attr(IGeometry *geo, char *attr, char *value) {
+    GeometryAttr g_attr = geometry_char_to_attr(attr);
+
+    if (geo == NULL) {
+        log_file(LogError, "Geometry", "Geometry is NULL");
+    }
+
+    geometry_set_attribute(geo, g_attr, value);
+}
+
+void geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value) {
+    char buf[GEO_BUF_SIZE];
+    memset(buf, '\0', GEO_BUF_SIZE);
+    sprintf(buf, "%d", value);
+    geometry_set_attribute(geo, attr, buf);
+}
+
+void geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value) {
+    char buf[GEO_BUF_SIZE];
+    memset(buf, '\0', GEO_BUF_SIZE);
+    sprintf(buf, "%f", value);
+    geometry_set_attribute(geo, attr, buf);
 }
 

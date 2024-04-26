@@ -42,6 +42,7 @@ void graphics_hub_free_page(IGraphics *hub, int page_num) {
 
     graphics_free_page(hub->pages[page_num]);
     hub->pages[page_num] = NULL;
+    hub->num_pages--;
 }
 
 void graphics_free_graphics_hub(IGraphics *hub) {

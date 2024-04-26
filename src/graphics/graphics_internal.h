@@ -16,53 +16,22 @@
 #define LOG_KEYFRAMES 0
 
 typedef enum {
-    POS_X = 0,
-    POS_Y,
-    REL_X,
-    REL_Y,
-    PARENT,
-    WIDTH,
-    HEIGHT,
-    ROUNDING,
-    INNER_RADIUS,
-    OUTER_RADIUS,
-    START_ANGLE,
-    END_ANGLE,
-    NUM_ATTR
-} FRAME_ATTR;
-
-static char *ATTR[] = { 
-    "pos_x", 
-    "pos_y", 
-    "rel_x", 
-    "rel_y", 
-    "parent", 
-    "width", 
-    "height", 
-    "rounding", 
-    "inner_radius",
-    "outer_radius",
-    "start_angle",
-    "end_angle",
-};
-
-typedef enum {
-    SET_VALUE = 0,
-    USER_VALUE,
-    BIND_VALUE,
+    SET_FRAME = 0,
+    USER_FRAME,
+    BIND_FRAME,
 } FRAME_TYPE;
 
 typedef struct {
     unsigned int      frame_num;
     unsigned int      geo_id;
-    char              attr[GEO_BUF_SIZE];
+    unsigned int      attr;
     FRAME_TYPE        type;
     int               value;
     unsigned char     mask;
     unsigned char     expand;
     unsigned int      bind_frame_num;
     unsigned int      bind_geo_id;
-    char              bind_attr[GEO_BUF_SIZE];
+    unsigned int      bind_attr;
 } Keyframe;
 
 typedef struct IPage {

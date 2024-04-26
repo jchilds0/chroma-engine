@@ -95,8 +95,8 @@ void gl_image_init_shaders(void) {
 
 void gl_draw_image(IGeometry *geo) {
     GeometryImage *img = (GeometryImage *)geo;
-    int pos_x = geometry_get_int_attr(geo, "pos_x");
-    int pos_y = geometry_get_int_attr(geo, "pos_y");
+    int pos_x = geometry_get_int_attr(geo, GEO_POS_X);
+    int pos_y = geometry_get_int_attr(geo, GEO_POS_Y);
 
     if (img->data == NULL) {
         return;

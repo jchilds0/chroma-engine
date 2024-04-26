@@ -133,6 +133,7 @@ PAGE:
     if (*action == UPDATE) {
         parser_update_template(eng, *temp_id);
         *action = BLANK;
+        return;
     }
 
     int num_geo = graphics_page_num_geometry(page);

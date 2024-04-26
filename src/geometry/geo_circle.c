@@ -50,6 +50,12 @@ void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *v
         case GEO_OUTER_RADIUS:
             sprintf(value, "%d", circle->outer_radius);
             break;
+        case GEO_START_ANGLE:
+            sprintf(value, "%d", (int)(circle->start_angle * 180 / M_PI));
+            break;
+        case GEO_END_ANGLE:
+            sprintf(value, "%d", (int)(circle->end_angle * 180 / M_PI));
+            break;
         default:
             log_file(LogWarn, "Geometry", "Geo attr not an circle attr (%d)", attr);
     }

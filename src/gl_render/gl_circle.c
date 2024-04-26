@@ -66,13 +66,17 @@ static int gl_circle_tri_num(int radius, float start_angle, float end_angle) {
 } 
 
 void gl_draw_circle(IGeometry *circle) {
-    GeometryCircle *g_circle = (GeometryCircle *)circle;
-    int center_x = geometry_get_int_attr(circle, "pos_x");
-    int center_y = geometry_get_int_attr(circle, "pos_y");
+    int center_x = geometry_get_int_attr(circle, GEO_POS_X);
+    int center_y = geometry_get_int_attr(circle, GEO_POS_Y);
+
+    int inner_radius = geometry_get_int_attr(circle, GEO_INNER_RADIUS);
+    int outer_radius = geometry_get_int_attr(circle, GEO_OUTER_RADIUS);
+    float start_angle = geometry_get_int_attr(circle, GEO_START_ANGLE) * M_PI / 180;
+    float end_angle = geometry_get_int_attr(circle, GEO_END_ANGLE) * M_PI / 180;
 
     float cos_theta, sin_theta;
 
-    int n = gl_circle_tri_num(g_circle->outer_radius, g_circle->start_angle, g_circle->end_angle);
+    int n = gl_circle_tri_num(outer_radius, start_angle, end_angle);
     if (num_nodes != n) {
         free(vertices);
         free(indices);
@@ -82,7 +86,7 @@ void gl_draw_circle(IGeometry *circle) {
         indices   = NEW_ARRAY(6 * n, unsigned int);
     }
 
-    float theta = (g_circle->end_angle - g_circle->start_angle) / n;
+    float theta = (float)(end_angle - start_angle) / n;
 
     /*
      * Create a quadrilateral out of the 4 points 
@@ -96,17 +100,17 @@ void gl_draw_circle(IGeometry *circle) {
      */
 
     for (int i = 0; i < n + 1; i++) {
-        cos_theta = cosf(theta * i + g_circle->start_angle);
-        sin_theta = sinf(theta * i + g_circle->start_angle);
+        cos_theta = cosf(theta * i + start_angle);
+        sin_theta = sinf(theta * i + start_angle);
 
         // inner radius point
-        vertices[6 * i]     = g_circle->inner_radius * cos_theta + center_x;
-        vertices[6 * i + 1] = g_circle->inner_radius * sin_theta + center_y;
+        vertices[6 * i]     = inner_radius * cos_theta + center_x;
+        vertices[6 * i + 1] = inner_radius * sin_theta + center_y;
         vertices[6 * i + 2] = 0.0f;
 
         // outer radius point
-        vertices[6 * i + 3] = g_circle->outer_radius * cos_theta + center_x;
-        vertices[6 * i + 4] = g_circle->outer_radius * sin_theta + center_y;
+        vertices[6 * i + 3] = outer_radius * cos_theta + center_x;
+        vertices[6 * i + 4] = outer_radius * sin_theta + center_y;
         vertices[6 * i + 5] = 0.0f;
     }
 
@@ -126,6 +130,7 @@ void gl_draw_circle(IGeometry *circle) {
     glBindVertexArray(vao);
 
     uint color_loc = glGetUniformLocation(program, "color");
+    GeometryCircle *g_circle = (GeometryCircle *)circle;
     glUniform4f(color_loc, g_circle->color[0], g_circle->color[1], 
                 g_circle->color[2], g_circle->color[3]);
     

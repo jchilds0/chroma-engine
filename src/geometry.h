@@ -44,6 +44,29 @@ typedef enum {
     GRAPH,
 } GeometryType;
 
+typedef enum {
+    GEO_COLOR,
+    GEO_POS_X,
+    GEO_POS_Y,
+    GEO_REL_X,
+    GEO_REL_Y,
+    GEO_PARENT,
+    GEO_WIDTH,
+    GEO_HEIGHT,
+    GEO_ROUNDING,
+    GEO_INNER_RADIUS,
+    GEO_OUTER_RADIUS,
+    GEO_START_ANGLE,
+    GEO_END_ANGLE,
+    GEO_TEXT,
+    GEO_SCALE,
+    GEO_GRAPH_NODE,
+    GEO_NUM_NODE,
+    GEO_GRAPH_TYPE,
+    GEO_IMAGE_ID,
+    GEO_NUM,
+} GeometryAttr;
+
 typedef struct {
     GeometryType      geo_type;
     int               parent;
@@ -109,11 +132,11 @@ extern void   geometry_free_geometry(IGeometry *geo);
 extern void   geometry_clean_geo(IGeometry *geo);
 
 extern void   geometry_set_attr(IGeometry *geo, char *attr, char *value);
-extern void   geometry_set_int_attr(IGeometry *geo, char *attr, int value);
-extern void   geometry_set_float_attr(IGeometry *geo, char *attr, float value);
+extern void   geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
+extern void   geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);
 
 extern void   geometry_get_attr(IGeometry *geo, char *attr, char *value);
-extern int    geometry_get_int_attr(IGeometry *geo, char *attr);
-extern float  geometry_get_float_attr(IGeometry *geo, char *attr);
+extern int    geometry_get_int_attr(IGeometry *geo, GeometryAttr attr);
+extern float  geometry_get_float_attr(IGeometry *geo, GeometryAttr attr);
 
 #endif // !CHROMA_GEOMETRY
