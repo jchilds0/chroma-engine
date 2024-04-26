@@ -13,7 +13,7 @@
 #include "chroma-engine.h"
 #include "geometry.h"
 
-#define LOG_KEYFRAMES 0
+#define LOG_KEYFRAMES 1
 
 typedef enum {
     SET_FRAME = 0,

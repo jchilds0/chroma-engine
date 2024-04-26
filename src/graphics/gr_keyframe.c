@@ -58,15 +58,15 @@ void graphics_page_set_keyframe_int(IPage *page, int keyframe_index, char *name,
     } else if (strcmp(name, "frame_attr") == 0) {
         frame->attr = value;
     } else if (strcmp(name, "value") == 0) {
-        frame->type = SET_FRAME;
         frame->value = value;
     } else if (strcmp(name, "bind_frame") == 0) {
-        frame->type = BIND_FRAME;
         frame->bind_frame_num = value;
     } else if (strcmp(name, "bind_geo") == 0) {
         frame->bind_geo_id = value;
     } else if (strcmp(name, "bind_attr") == 0) {
         frame->bind_attr = value;
+    } else if (strcmp(name, "frame_type") == 0) {
+        frame->type = value;
     } else {
         log_file(LogWarn, "Graphics", "Keyframe attr %s is not an int attr", name);
     }
@@ -141,7 +141,7 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
             if (LOG_KEYFRAMES) {
                 log_file(LogMessage, "Graphics", "Keyframe %d", frame->frame_num);
-                log_file(LogMessage, "Graphics", "\tInitially set geo %d, attr %s to %d", frame->geo_id, frame->attr, page->k_value[frame_index]);
+                log_file(LogMessage, "Graphics", "\tInitially set geo %d, attr %d to %d", frame->geo_id, frame->attr, page->k_value[frame_index]);
             }
 
             if (frame->expand) {
