@@ -112,6 +112,17 @@ PAGE:
 
     int start = clock();
     parser_header(temp_id, action, layer);
+
+    if (*action == UPDATE) {
+        parser_update_template(eng, *temp_id);
+
+        *action = BLANK;
+        char attr[PARSE_BUF_SIZE];
+        while (parser_get_token(attr) != EOM);
+
+        return;
+    }
+
     IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
 
     if (page == NULL) {
@@ -125,20 +136,9 @@ PAGE:
         return;
     }
 
-    graphics_hub_set_time(eng->hub, 0.0f, *layer);
-
-    if (*action == UPDATE) {
-        parser_update_template(eng, *temp_id);
-
-        *action = BLANK;
-        char attr[PARSE_BUF_SIZE];
-        while (parser_get_token(attr) != EOM);
-
-        return;
-    }
-
     // Read new page values
     parser_page(page);
+    graphics_hub_set_time(eng->hub, 0.0f, *layer);
     graphics_page_calculate_keyframes(page);
 
     int num_geo = graphics_page_num_geometry(page);

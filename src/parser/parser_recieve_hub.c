@@ -93,6 +93,12 @@ void parser_update_template(Engine *eng, int temp_id) {
 
     parser_clean_buffer(&buf_ptr, buf);
     parser_next_token(eng->hub_socket);
+
+    if (c_token == END_OF_MESSAGE) {
+        log_file(LogMessage, "Parser", "Error in chroma hub");
+        return;
+    }
+
     parser_parse_template(eng->hub, eng->hub_socket);
 }
 
