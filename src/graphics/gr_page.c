@@ -36,6 +36,13 @@ IPage *graphics_new_page(int num_geo, int num_keyframe) {
     IGeometry *geo = graphics_page_add_geometry(page, 0, RECT);
     geometry_set_int_attr(geo, GEO_POS_X, 0);
     geometry_set_int_attr(geo, GEO_POS_Y, 0);
+    geometry_set_int_attr(geo, GEO_WIDTH, 1920);
+    geometry_set_int_attr(geo, GEO_HEIGHT, 1080);
+
+    geometry_set_int_attr(geo, GEO_X_LOWER, 0);
+    geometry_set_int_attr(geo, GEO_X_UPPER, 1920);
+    geometry_set_int_attr(geo, GEO_Y_LOWER, 0);
+    geometry_set_int_attr(geo, GEO_Y_UPPER, 1080);
 
     return page;
 }
@@ -89,6 +96,33 @@ int graphics_page_num_geometry(IPage *page) {
     return page->num_geometry;
 }
 
+static void graphics_geometry_update_absolute_position(IGeometry *parent, IGeometry *child) {
+    int parent_x = geometry_get_int_attr(parent, GEO_POS_X);
+    int parent_y = geometry_get_int_attr(parent, GEO_POS_Y);
+    int rel_x = geometry_get_int_attr(child, GEO_REL_X);
+    int rel_y = geometry_get_int_attr(child, GEO_REL_Y);
+
+    geometry_set_int_attr(child, GEO_POS_X, parent_x + rel_x);
+    geometry_set_int_attr(child, GEO_POS_Y, parent_y + rel_y);
+}
+
+static void graphics_geometry_update_mask(IGeometry *parent, IGeometry *child) {
+    int x_lower = geometry_get_int_attr(parent, GEO_X_LOWER);
+    int x_upper = geometry_get_int_attr(parent, GEO_X_UPPER);
+    int y_lower = geometry_get_int_attr(parent, GEO_Y_LOWER);
+    int y_upper = geometry_get_int_attr(parent, GEO_Y_UPPER);
+
+    int pos_x = geometry_get_int_attr(parent, GEO_POS_X);
+    int pos_y = geometry_get_int_attr(parent, GEO_POS_Y);
+    int width = geometry_get_int_attr(parent, GEO_WIDTH);
+    int height = geometry_get_int_attr(parent, GEO_HEIGHT);
+
+    geometry_set_int_attr(child, GEO_X_LOWER, MIN(x_lower, pos_x));
+    geometry_set_int_attr(child, GEO_X_UPPER, MIN(x_upper, pos_x + width));
+    geometry_set_int_attr(child, GEO_Y_LOWER, MIN(y_lower, pos_y));
+    geometry_set_int_attr(child, GEO_Y_UPPER, MIN(y_upper, pos_y + height));
+}
+
 static void graphics_page_update_child_geometry(IPage *page, unsigned int node) {
     IGeometry *parent, *child;
     int child_num, parent_num;
@@ -97,13 +131,8 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
     parent_num = geometry_get_int_attr(child, GEO_PARENT);
     parent = page->geometry[parent_num];
 
-    int parent_x = geometry_get_int_attr(parent, GEO_POS_X);
-    int parent_y = geometry_get_int_attr(parent, GEO_POS_Y);
-    int rel_x = geometry_get_int_attr(child, GEO_REL_X);
-    int rel_y = geometry_get_int_attr(child, GEO_REL_Y);
-
-    geometry_set_int_attr(child, GEO_POS_X, parent_x + rel_x);
-    geometry_set_int_attr(child, GEO_POS_Y, parent_y + rel_y);
+    graphics_geometry_update_absolute_position(parent, child);
+    graphics_geometry_update_mask(parent, child);
 
     for (int i = 1; i < page->num_geometry; i++) {
         if (page->geometry[i] == NULL) {

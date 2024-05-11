@@ -147,6 +147,21 @@ void graphics_page_calculate_keyframes(IPage *page) {
             if (frame->expand) {
                 expand[frame_index] = 1;
             }
+
+            if (frame->mask) {
+                IGeometry *geo = page->geometry[frame->geo_id];
+
+                switch (frame->attr) {
+                    case GEO_REL_X:
+                        geometry_set_int_attr(geo, GEO_MASK_X, 1);
+                        break;
+                    case GEO_REL_Y:
+                        geometry_set_int_attr(geo, GEO_MASK_Y, 1);
+                        break;
+                    default:
+                        log_file(LogWarn, "Graphics", "Expand %d not implemented", frame->attr);
+                }
+            }
         }
 
         end = clock();

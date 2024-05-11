@@ -58,6 +58,14 @@ IGeometry *geometry_create_geometry(GeometryType type) {
     geo->rel.x = 0;
     geo->rel.y = 0;
 
+    geo->mask_x = 0;
+    geo->mask_y = 0;
+
+    geo->bound_lower.x = 0;
+    geo->bound_lower.y = 0;
+    geo->bound_upper.x = 0;
+    geo->bound_upper.y = 0;
+
     return geo;
 }
 
@@ -175,6 +183,24 @@ static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case GEO_PARENT:
             sprintf(value, "%d", geo->parent);
             return;
+        case GEO_MASK_X:
+            sprintf(value, "%d", geo->mask_x);
+            return;
+        case GEO_MASK_Y:
+            sprintf(value, "%d", geo->mask_y);
+            return;
+        case GEO_X_LOWER:
+            sprintf(value, "%d", geo->bound_lower.x);
+            return;
+        case GEO_X_UPPER:
+            sprintf(value, "%d", geo->bound_upper.x);
+            return;
+        case GEO_Y_LOWER:
+            sprintf(value, "%d", geo->bound_lower.y);
+            return;
+        case GEO_Y_UPPER:
+            sprintf(value, "%d", geo->bound_upper.y);
+            return;
         default:
             break;
     }
@@ -265,6 +291,24 @@ static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *valu
             return;
         case GEO_PARENT:
             sscanf(value, "%d", &geo->parent);
+            return;
+        case GEO_MASK_X:
+            sscanf(value, "%c", &geo->mask_x);
+            return;
+        case GEO_MASK_Y:
+            sscanf(value, "%c", &geo->mask_y);
+            return;
+        case GEO_X_LOWER:
+            sscanf(value, "%d", &geo->bound_lower.x);
+            return;
+        case GEO_X_UPPER:
+            sscanf(value, "%d", &geo->bound_upper.x);
+            return;
+        case GEO_Y_LOWER:
+            sscanf(value, "%d", &geo->bound_lower.y);
+            return;
+        case GEO_Y_UPPER:
+            sscanf(value, "%d", &geo->bound_upper.y);
             return;
         default:
             break;

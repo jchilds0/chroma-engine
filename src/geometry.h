@@ -65,6 +65,12 @@ typedef enum {
     GEO_GRAPH_TYPE,
     GEO_IMAGE_ID,
     GEO_NUM,
+    GEO_MASK_X,
+    GEO_MASK_Y,
+    GEO_X_LOWER,
+    GEO_X_UPPER,
+    GEO_Y_LOWER,
+    GEO_Y_UPPER,
 } GeometryAttr;
 
 typedef struct {
@@ -72,6 +78,10 @@ typedef struct {
     int               parent;
     vec2              pos;
     vec2              rel;
+    unsigned char     mask_x;
+    unsigned char     mask_y;
+    vec2              bound_lower;
+    vec2              bound_upper;
 } IGeometry;
 
 typedef struct {
