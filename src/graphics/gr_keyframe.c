@@ -213,9 +213,9 @@ void graphics_page_calculate_keyframes(IPage *page) {
                     frame_index = i;
                 };
 
-                have_keyframe[frame_start + page->max_keyframe] = 1;
+                have_keyframe[frame_start + page->max_keyframe - 1] = 1;
                 //expand[frame_start + page->max_keyframe] = expand[frame_start + frame_index];
-                page->k_value[frame_start + page->max_keyframe] = page->k_value[frame_start + frame_index];
+                page->k_value[frame_start + page->max_keyframe - 1] = page->k_value[frame_start + frame_index];
             }
         }
 
