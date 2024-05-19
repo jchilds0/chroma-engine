@@ -198,8 +198,13 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 break;
             case CONTINUE:
                 time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, 0, ANIM_LENGTH, 3);
-                //graphics_page_update_animation(page, "continue", bezier_time);
+                bezier_time = gl_bezier_time_step(time, 0, 1.0, 3);
+
+                if (time == 1.0f) {
+                    graphics_page_interpolate_geometry(page, ANIM_LENGTH - 1, ANIM_LENGTH);
+                    break;
+                }
+                graphics_page_interpolate_geometry(page, bezier_time * ANIM_LENGTH, ANIM_LENGTH);
 
                 time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
