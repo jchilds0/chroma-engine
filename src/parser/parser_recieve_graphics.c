@@ -80,8 +80,18 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
     if (socket_client >= 0) {
         rec = parser_get_message(socket_client, &buf_ptr, buf);
 
-        if (rec == SERVER_MESSAGE) {
-            goto PAGE;
+        switch (rec) {
+            case SERVER_MESSAGE:
+                goto PAGE;
+                break;
+
+            case SERVER_CLOSE:
+                shutdown(socket_client, SHUT_RDWR);
+                parser_clean_buffer(&buf_ptr, buf);
+
+            case SERVER_TIMEOUT:
+                socket_client = -1;
+                break;
         }
     }
 
@@ -93,13 +103,18 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
             case SERVER_MESSAGE:
                 socket_client = clients[i];
                 goto PAGE;
+                break;
+
             case SERVER_CLOSE:
                 if (socket_client == clients[i]) {
                     socket_client = -1;
                 }
 
+                parser_clean_buffer(&buf_ptr, buf);
                 shutdown(clients[i], SHUT_RDWR);
                 clients[i] = -1;
+                break;
+
             case SERVER_TIMEOUT:
                 break;
         }
