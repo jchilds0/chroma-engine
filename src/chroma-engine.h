@@ -16,9 +16,11 @@
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
+
 #define WITHIN(a, x, y)               ((x <= a) && (a <= y))
 #define MIN(a, b)                     (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)                     (((a) > (b)) ? (a) : (b))
+#define INDEX(x, y, z, y_len, z_len)  x * (y_len * z_len) + y * z_len + z
 
 #define INSTALL_DIR                   "/home/josh/Documents/projects/chroma-engine/"
 
