@@ -34,6 +34,19 @@ void graphics_keyframe_expand_child(IPage *page, int parent, unsigned char *expa
 void graphics_keyframe_expand_geometry(IPage *page, int parent, int attr, int keyframe, int child);
 int  graphics_keyframe_geo_attr(IPage *page, int geo_id, int attr, int frame_index);
 
+static int keyframeToEnum(char *name) {
+    if (strncmp(name, "bind-frame", KEYFRAME_TYPE_LEN) == 0) {
+        return BIND_FRAME;
+    } else if (strncmp(name, "user-frame", KEYFRAME_TYPE_LEN) == 0) {
+        return USER_FRAME;
+    } else if (strncmp(name, "set-frame", KEYFRAME_TYPE_LEN) == 0) {
+        return SET_FRAME;
+    }
+
+    log_file(LogWarn, "Graphics", "Unknown keyframe type %s", name);
+    return -1;
+}
+
 /*
  * Next available keyframe index
  */
@@ -77,22 +90,16 @@ void graphics_page_set_keyframe_int(IPage *page, int keyframe_index, char *name,
 
     Keyframe *frame = &page->keyframe[keyframe_index];
 
-    if (strcmp(name, "frame_num") == 0) {
+    if (strncmp(name, "frame_num", KEYFRAME_TYPE_LEN) == 0) {
         frame->frame_num = value;
-    } else if (strcmp(name, "frame_geo") == 0) {
+    } else if (strncmp(name, "frame_geo", KEYFRAME_TYPE_LEN) == 0) {
         frame->geo_id = value;
-    } else if (strcmp(name, "frame_attr") == 0) {
-        frame->attr = value;
-    } else if (strcmp(name, "value") == 0) {
+    } else if (strncmp(name, "value", KEYFRAME_TYPE_LEN) == 0) {
         frame->value = value;
-    } else if (strcmp(name, "bind_frame") == 0) {
+    } else if (strncmp(name, "bind_frame", KEYFRAME_TYPE_LEN) == 0) {
         frame->bind_frame_num = value;
-    } else if (strcmp(name, "bind_geo") == 0) {
+    } else if (strncmp(name, "bind_geo", KEYFRAME_TYPE_LEN) == 0) {
         frame->bind_geo_id = value;
-    } else if (strcmp(name, "bind_attr") == 0) {
-        frame->bind_attr = value;
-    } else if (strcmp(name, "frame_type") == 0) {
-        frame->type = value;
     } else {
         log_file(LogWarn, "Graphics", "Keyframe attr %s is not an int attr", name);
     }
@@ -106,20 +113,26 @@ void graphics_page_set_keyframe_attr(IPage *page, int keyframe_index, char *name
 
     Keyframe *frame = &page->keyframe[keyframe_index];
 
-    if (strcmp(name, "mask") == 0) {
-        if (strcmp(value, "true") == 0) {
+    if (strncmp(name, "frame_type", KEYFRAME_TYPE_LEN) == 0) {
+        frame->type = keyframeToEnum(value); 
+    } else if (strncmp(name, "frame_attr", KEYFRAME_TYPE_LEN) == 0) {
+        frame->attr = geometry_char_to_attr(value); 
+    } else if (strncmp(name, "mask", KEYFRAME_TYPE_LEN) == 0) {
+        if (strncmp(value, "true", KEYFRAME_TYPE_LEN) == 0) {
             frame->mask = 1;
         } else {
             frame->mask = 0;
         }
-    } else if (strcmp(name, "expand") == 0) {
-        if (strcmp(value, "true") == 0) {
+    } else if (strncmp(name, "expand", KEYFRAME_TYPE_LEN) == 0) {
+        if (strncmp(value, "true", KEYFRAME_TYPE_LEN) == 0) {
             frame->expand = 1;
         } else {
             frame->expand = 0;
         }
-    } else if (strcmp(name, "user_frame") == 0) {
+    } else if (strncmp(name, "user_frame", KEYFRAME_TYPE_LEN) == 0) {
         frame->type = USER_FRAME;
+    } else if (strncmp(name, "bind_attr", KEYFRAME_TYPE_LEN) == 0) {
+        frame->bind_attr = geometry_char_to_attr(value); 
     } else {
         log_file(LogWarn, "Graphics", "Keyframe attr %s is not a string attr", name);
     }

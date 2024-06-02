@@ -14,6 +14,8 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
+#define MAX_NAME_LEN 20
+
 /* geo_rect.c */
 GeometryRect *geometry_new_rectangle(void);
 void geometry_free_rectangle(GeometryRect *rect);

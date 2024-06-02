@@ -293,12 +293,13 @@ void parser_parse_geometry(IPage *page, int socket_client) {
         } else if (strcmp(c_value, "geo_type") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
-            geo_type = atoi(c_value);
+            geo_type = geometry_char_to_type(c_value);
+
             if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\t\tgeo type: %d", geo_type);
+                log_file(LogMessage, "Parser", "\t\tgeo type: %s", c_value);
             }
 
-            parser_match_token(INT, socket_client);
+            parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "prop_type") == 0) {
             // skip attr
             parser_match_token(STRING, socket_client);
@@ -307,7 +308,7 @@ void parser_parse_geometry(IPage *page, int socket_client) {
                 log_file(LogMessage, "Parser", "\t\tprop type: %s", c_value);
             }
 
-            parser_match_token(INT, socket_client);
+            parser_match_token(STRING, socket_client);
         } else if (strcmp(c_value, "visible") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);

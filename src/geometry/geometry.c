@@ -23,6 +23,21 @@
 void geometry_get_attr(IGeometry *geo, char *attr, char *value);
 void geometry_set_attr(IGeometry *geo, char *attr, char *value);
 
+GeometryType geometry_char_to_type(char *name) {
+    if (strncmp(name, "rect", MAX_NAME_LEN) == 0) {
+        return RECT;
+    } else if (strncmp(name, "text", MAX_NAME_LEN) == 0) {
+        return TEXT;
+    } else if (strncmp(name, "circle", MAX_NAME_LEN) == 0) {
+        return CIRCLE;
+    } else if (strncmp(name, "image", MAX_NAME_LEN) == 0) {
+        return IMAGE;
+    } 
+
+    log_file(LogWarn, "Geometry", "Unknown geometry type (%d)", name);
+    return -1;
+}
+
 IGeometry *geometry_create_geometry(GeometryType type) {
     IGeometry *geo;
 

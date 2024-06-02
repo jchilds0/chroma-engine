@@ -14,6 +14,7 @@
 #include "geometry.h"
 
 #define LOG_KEYFRAMES 1
+#define KEYFRAME_TYPE_LEN 20
 
 typedef enum {
     SET_FRAME = 0,

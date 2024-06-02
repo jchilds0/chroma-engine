@@ -137,16 +137,18 @@ typedef struct {
     unsigned char     *data;
 } GeometryImage;
 
-extern IGeometry *geometry_create_geometry(GeometryType type);
-extern void   geometry_free_geometry(IGeometry *geo);
-extern void   geometry_clean_geo(IGeometry *geo);
+extern GeometryType geometry_char_to_type(char *name);
+extern IGeometry    *geometry_create_geometry(GeometryType type);
+extern void         geometry_free_geometry(IGeometry *geo);
+extern void         geometry_clean_geo(IGeometry *geo);
 
-extern void   geometry_set_attr(IGeometry *geo, char *attr, char *value);
-extern void   geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
-extern void   geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);
+extern GeometryAttr geometry_char_to_attr(char *attr);
+extern void         geometry_set_attr(IGeometry *geo, char *attr, char *value);
+extern void         geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
+extern void         geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);
 
-extern void   geometry_get_attr(IGeometry *geo, char *attr, char *value);
-extern int    geometry_get_int_attr(IGeometry *geo, GeometryAttr attr);
-extern float  geometry_get_float_attr(IGeometry *geo, GeometryAttr attr);
+extern void         geometry_get_attr(IGeometry *geo, char *attr, char *value);
+extern int          geometry_get_int_attr(IGeometry *geo, GeometryAttr attr);
+extern float        geometry_get_float_attr(IGeometry *geo, GeometryAttr attr);
 
 #endif // !CHROMA_GEOMETRY
