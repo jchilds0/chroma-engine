@@ -6,6 +6,7 @@
 #include "chroma-prototypes.h"
 #include "gl_render.h"
 #include "graphics.h"
+#include "gtk/gtk.h"
 #include "log.h"
 #include "parser.h"
 #include <sys/socket.h>
@@ -28,6 +29,9 @@ void engine_window(void) {
 
     gl_area = gtk_gl_area_new();
     gtk_container_add(GTK_CONTAINER(window), gl_area);
+
+    gtk_gl_area_set_has_stencil_buffer(GTK_GL_AREA(gl_area), gtk_true());
+    gtk_gl_area_set_has_depth_buffer(GTK_GL_AREA(gl_area), gtk_false());
 
     engine.server_port = 6800;
     engine.server_socket = parser_tcp_start_server("127.0.0.1", engine.server_port);

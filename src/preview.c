@@ -6,9 +6,11 @@
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
 #include "gl_render.h"
+#include "glib.h"
+#include "gtk/gtk.h"
 #include "parser.h"
 #include "log.h"
-#include "parser/parser_internal.h"
+#include <X11/Xlib.h>
 #include <sys/socket.h>
 
 static void close_preview(GtkWidget *widget, gpointer data) {
@@ -30,6 +32,8 @@ void preview_window(int wid) {
 
     plug = gtk_plug_new(wid);
     gl_area = gtk_gl_area_new();
+
+    gtk_gl_area_set_has_stencil_buffer(GTK_GL_AREA(gl_area), gtk_true());
 
     g_signal_connect(G_OBJECT(plug), "destroy", G_CALLBACK(close_preview), NULL);
 

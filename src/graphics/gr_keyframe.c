@@ -345,7 +345,7 @@ void graphics_keyframe_store_value(IPage *page, Keyframe *frame, unsigned char *
                 geometry_set_int_attr(geo, GEO_MASK_Y, 1);
                 break;
             default:
-                log_file(LogWarn, "Graphics", "Expand %d not implemented", frame->attr);
+                log_file(LogWarn, "Graphics", "Mask %d not implemented", frame->attr);
         }
     }
 }
@@ -472,7 +472,7 @@ void graphics_keyframe_expand_child(IPage *page, int parent, unsigned char *expa
                 continue; 
             }
 
-            for (int child_id = 0; child_id < page->num_geometry; child_id++) {
+            for (int child_id = 0; child_id < page->len_geometry; child_id++) {
                 if (page->geometry[child_id] == NULL) {
                     continue;
                 }

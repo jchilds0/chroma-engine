@@ -94,7 +94,7 @@ void current_time(char *buf, int buf_size) {
             pad_int(timeinfo->tm_mday),
             timeinfo->tm_mday,
             pad_int(timeinfo->tm_mon),
-            timeinfo->tm_mon,
+            timeinfo->tm_mon + 1,
             timeinfo->tm_year - 100, 
             pad_int(timeinfo->tm_hour),
             timeinfo->tm_hour, 

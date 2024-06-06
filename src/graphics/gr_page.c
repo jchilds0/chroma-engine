@@ -17,7 +17,6 @@
 IPage *graphics_new_page(int num_geo, int num_keyframe) {
     IPage *page = NEW_STRUCT(IPage);
     page->len_geometry = num_geo + 1;
-    page->num_geometry = 0;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
 
     for (int i = 0; i < page->len_geometry; i++) {
@@ -55,7 +54,6 @@ IGeometry *graphics_page_add_geometry(IPage *page, int id, int type) {
 
     IGeometry *geo = geometry_create_geometry(type);
     page->geometry[id] = geo;
-    page->num_geometry++;
     return geo;
 }
 
@@ -84,7 +82,7 @@ void graphics_free_page(IPage *page) {
         return;
     }
 
-    for (int i = 0; i < page->num_geometry; i++) {
+    for (int i = 0; i < page->len_geometry; i++) {
         geometry_free_geometry(page->geometry[i]);
     }
 
@@ -93,7 +91,7 @@ void graphics_free_page(IPage *page) {
 }
 
 int graphics_page_num_geometry(IPage *page) {
-    return page->num_geometry;
+    return page->len_geometry;
 }
 
 static void graphics_geometry_update_absolute_position(IGeometry *parent, IGeometry *child) {
@@ -117,9 +115,9 @@ static void graphics_geometry_update_mask(IGeometry *parent, IGeometry *child) {
     int width = geometry_get_int_attr(parent, GEO_WIDTH);
     int height = geometry_get_int_attr(parent, GEO_HEIGHT);
 
-    geometry_set_int_attr(child, GEO_X_LOWER, MIN(x_lower, pos_x));
+    geometry_set_int_attr(child, GEO_X_LOWER, MAX(x_lower, pos_x));
     geometry_set_int_attr(child, GEO_X_UPPER, MIN(x_upper, pos_x + width));
-    geometry_set_int_attr(child, GEO_Y_LOWER, MIN(y_lower, pos_y));
+    geometry_set_int_attr(child, GEO_Y_LOWER, MAX(y_lower, pos_y));
     geometry_set_int_attr(child, GEO_Y_UPPER, MIN(y_upper, pos_y + height));
 }
 
@@ -134,7 +132,7 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
     graphics_geometry_update_absolute_position(parent, child);
     graphics_geometry_update_mask(parent, child);
 
-    for (int i = 1; i < page->num_geometry; i++) {
+    for (int i = 1; i < page->len_geometry; i++) {
         if (page->geometry[i] == NULL) {
             continue ;
         }
@@ -152,7 +150,7 @@ static void graphics_page_update_child_geometry(IPage *page, unsigned int node) 
 void graphics_page_update_geometry(IPage *page) {
     int parent_num;
 
-    for (int i = 1; i < page->num_geometry; i++) {
+    for (int i = 1; i < page->len_geometry; i++) {
         if (page->geometry[i] == NULL) {
             continue;
         }
@@ -180,6 +178,11 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
     //log_file(LogMessage, "Graphics", "Interpolating page %d at keyframe %d and index %d", page->temp_id, frame_start, frame_index);
 
     for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+        geo = page->geometry[geo_id];
+        if (geo == NULL) {
+            continue;
+        }
+
         for (int attr = 0; attr < GEO_NUM; attr++) {
             if (!page->attr_keyframe[geo_id * GEO_NUM + attr]) {
                 continue;
@@ -192,7 +195,6 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
                 continue;
             }
 
-            geo = page->geometry[geo_id];
             next_value = graphics_keyframe_interpolate_int(
                 page->k_value[k_index],
                 page->k_value[k_index + 1], 

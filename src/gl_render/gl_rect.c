@@ -152,7 +152,6 @@ void gl_draw_rectangle(IGeometry *rect) {
     }
 
     gl_renderer_set_scale(program);
-    //log_to_file(LogMessage, "Render rectangle %d %d %d %d", rect->pos_x, rect->pos_y, rect->width, rect->height)
 
     glUseProgram(program);
     glBindVertexArray(vao);

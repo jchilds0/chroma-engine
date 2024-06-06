@@ -130,7 +130,6 @@ void gl_draw_text(IGeometry *text) {
 
     // Copy vertices array in a buffer for OpenGL
     gl_renderer_set_scale(program);
-
     glUseProgram(program);
 
     GeometryText *g_text = (GeometryText *)text;
@@ -139,23 +138,8 @@ void gl_draw_text(IGeometry *text) {
                 g_text->color[2], g_text->color[3]); 
     glBindVertexArray(vao);
 
-    GLint bound_loc = glGetUniformLocation(program, "bound");
-    GLfloat bound[4] = {0, 1920, 0, 1080};
-
-    if (geometry_get_int_attr(text, GEO_MASK_X)) {
-        bound[0] = geometry_get_int_attr(text, GEO_X_LOWER);
-        bound[1] = geometry_get_int_attr(text, GEO_X_UPPER);
-    }
-
-    if (geometry_get_int_attr(text, GEO_MASK_Y)) {
-        bound[2] = geometry_get_int_attr(text, GEO_Y_LOWER);
-        bound[3] = geometry_get_int_attr(text, GEO_Y_UPPER);
-    }
-
-    glUniform4f(bound_loc, bound[0], bound[1], bound[2], bound[3]);
-
-    glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     for (int i = 0; buf[i] != '\0'; i++) {
@@ -194,8 +178,7 @@ void gl_draw_text(IGeometry *text) {
     }
 
     glDisable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
     
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

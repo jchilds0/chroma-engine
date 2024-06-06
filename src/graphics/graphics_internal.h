@@ -40,7 +40,6 @@ typedef struct IPage {
     unsigned int      mask_index;
     unsigned int      bg_index;
 
-    unsigned int      num_geometry;
     unsigned int      len_geometry;
     IGeometry         **geometry;
 

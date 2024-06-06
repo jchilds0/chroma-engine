@@ -5,6 +5,7 @@
  */
 
 #include "geometry.h"
+#include "gtk/gtk.h"
 #include "parser.h"
 #include "gl_render_internal.h"
 
@@ -113,6 +114,11 @@ void gl_realize(GtkWidget *widget) {
     g_signal_connect_swapped(frame_clock, "update", G_CALLBACK(gtk_gl_area_queue_render), widget);
     gdk_frame_clock_begin_updating(frame_clock);
 
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
     gl_rectangle_init_buffers();
     gl_rectangle_init_shaders();
 
@@ -167,7 +173,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     IGeometry *geo;
 
     glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     glUseProgram(0);
 
@@ -231,10 +237,25 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
         graphics_page_update_geometry(page);
 
+        if (action[layer] == UPDATE) {
+            continue;
+        }
+
         for (int geo_num = 0; geo_num < num_geo; geo_num++) {
             geo = graphics_page_get_geometry(page, geo_num);
             if (geo == NULL) {
                 continue;
+            }
+
+            if (geo->mask_x || geo->mask_y) {
+                glStencilFunc(GL_EQUAL, 1, 0xFF);
+                glStencilMask(0xFF);
+            } else if (geo_num == 0) {
+                glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                glStencilMask(0x00);
+            } else {
+                glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                glStencilMask(0xFF);
             }
 
             switch (geo->geo_type) {
