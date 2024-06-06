@@ -115,7 +115,7 @@ void gl_realize(GtkWidget *widget) {
     gdk_frame_clock_begin_updating(frame_clock);
 
     glEnable(GL_STENCIL_TEST);
-    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+    glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
     glStencilMask(0xFF);
 
