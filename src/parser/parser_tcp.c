@@ -8,7 +8,6 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-typedefs.h"
 #include "log.h"
 #include "parser_internal.h"
 #include <arpa/inet.h>
@@ -43,6 +42,8 @@ int parser_tcp_start_server(char *addr, int port) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(addr);
+
+    setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
     // bind to the set port and ip 
     attempts = 0;

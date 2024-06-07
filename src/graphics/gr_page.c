@@ -192,17 +192,18 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
                 + attr * page->max_keyframe + frame_start;
 
             if (frame_start == page->max_keyframe - 1) {
-                continue;
+                next_value = page->k_value[k_index];
+            } else {
+                next_value = graphics_keyframe_interpolate_int(
+                    page->k_value[k_index],
+                    page->k_value[k_index + 1], 
+                    frame_index,
+                    frame_width
+                );
             }
 
-            next_value = graphics_keyframe_interpolate_int(
-                page->k_value[k_index],
-                page->k_value[k_index + 1], 
-                frame_index,
-                frame_width
-            );
             geometry_set_int_attr(geo, attr, next_value);
-            //log_file(LogMessage, "Graphics", "Set geo %d attr %s to %d", geo_id, ATTR[attr], next_value);
+            //log_file(LogMessage, "Graphics", "Set geo %d attr %d to %d", geo_id, attr, next_value);
         }
     }
 }

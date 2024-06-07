@@ -138,7 +138,6 @@ void gl_draw_text(IGeometry *text) {
                 g_text->color[2], g_text->color[3]); 
     glBindVertexArray(vao);
 
-    glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -178,7 +177,6 @@ void gl_draw_text(IGeometry *text) {
     }
 
     glDisable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
     
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

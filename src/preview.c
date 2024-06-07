@@ -6,6 +6,7 @@
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
 #include "gl_render.h"
+#include "glib-object.h"
 #include "glib.h"
 #include "gtk/gtk.h"
 #include "parser.h"

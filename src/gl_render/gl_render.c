@@ -115,9 +115,7 @@ void gl_realize(GtkWidget *widget) {
     gdk_frame_clock_begin_updating(frame_clock);
 
     glEnable(GL_STENCIL_TEST);
-    glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glStencilMask(0xFF);
+    glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
 
     gl_rectangle_init_buffers();
     gl_rectangle_init_shaders();
@@ -170,10 +168,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     int current_page, num_geo;
     float time, bezier_time;
     IPage *page;
-    IGeometry *geo;
+    IGeometry *geo, *parent_geo;
 
     glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     glUseProgram(0);
 
@@ -191,9 +189,6 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             case ANIMATE_ON:
                 time = graphics_hub_get_time(engine.hub, layer);
                 bezier_time = gl_bezier_time_step(time, 0, 1.0, 3);
-                if (time == 1.0f) {
-                    break;
-                }
 
                 graphics_page_interpolate_geometry(page, bezier_time * ANIM_LENGTH, ANIM_LENGTH);
 
@@ -217,6 +212,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
                 break;
             case ANIMATE_OFF:
+                /*
                 current_page = graphics_hub_get_current_page_num(engine.hub, layer);
                 if (current_page != page_num[layer]) {
                     break;
@@ -227,6 +223,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
                 time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
                 graphics_hub_set_time(engine.hub, time, layer);
+                */
                 break;
             case UPDATE:
                 parser_update_template(&engine, page_num[layer]);
@@ -247,16 +244,45 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 continue;
             }
 
+            glClear(GL_STENCIL_BUFFER_BIT);
+            glStencilFunc(GL_NEVER, 1, 0xFF);
+
+            if (geo->mask_x || geo->mask_y) {
+                glStencilMask(0xFF);
+            } else {
+                glStencilMask(0x00);
+            }
+
+            parent_geo = graphics_page_get_geometry(page, geo->parent);
+
+            switch (parent_geo->geo_type) {
+                case RECT:
+                    gl_draw_rectangle(parent_geo);
+                    break;
+                case CIRCLE:
+                    gl_draw_circle(parent_geo);
+                    break;
+                case TEXT:
+                    gl_draw_text(parent_geo);
+                    break;
+                case GRAPH:
+                    gl_draw_graph(parent_geo);
+                    break;
+                case IMAGE:
+                    gl_draw_image(parent_geo);
+                    break;
+                default:
+                    log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", parent_geo->geo_type);
+            }
+
             if (geo->mask_x || geo->mask_y) {
                 glStencilFunc(GL_EQUAL, 1, 0xFF);
-                glStencilMask(0xFF);
-            } else if (geo_num == 0) {
-                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                glStencilMask(0x00);
             } else {
                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                glStencilMask(0xFF);
             }
+
+            glStencilMask(0xFF);
+            glEnable(GL_BLEND);
 
             switch (geo->geo_type) {
                 case RECT:
@@ -277,6 +303,9 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 default:
                     log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", geo->geo_type);
             }
+
+            glDisable(GL_BLEND);
+            glClear(GL_STENCIL_BUFFER_BIT);
         }
     }
 

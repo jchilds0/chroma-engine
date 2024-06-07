@@ -157,6 +157,8 @@ PAGE:
     if (*action == ANIMATE_ON) {
         graphics_hub_set_time(eng->hub, 0.0f, *layer);
         graphics_page_calculate_keyframes(page);
+    } else if (*action == ANIMATE_OFF) {
+        *temp_id = -1;
     } 
 
     int num_geo = graphics_page_num_geometry(page);
