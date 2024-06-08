@@ -27,11 +27,8 @@
 #include <time.h>
 
 void graphics_keyframe_store_value(IPage *page, Keyframe *frame, unsigned char *have_keyframe, unsigned char *expand);
-void graphics_keyframe_default_frames(IPage *page, int frame_start, unsigned char *have_keyframe);
-void graphics_keyframe_fill_tails(int *values, unsigned char *frames, int num_frames);
+void graphics_keyframe_traverse_geometry(IPage *page, int parent, unsigned char *have_keyframe, unsigned char *expand);
 void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
-void graphics_keyframe_expand_child(IPage *page, int parent, unsigned char *expand);
-void graphics_keyframe_expand_geometry(IPage *page, int parent, int attr, int keyframe, int child);
 int  graphics_keyframe_geo_attr(IPage *page, int geo_id, int attr, int frame_index);
 
 static int keyframeToEnum(char *name) {
@@ -176,6 +173,21 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
     }
 
+    // expand for child geometries 
+    start = clock();
+
+    graphics_keyframe_traverse_geometry(page, 0, have_keyframe, expand);
+
+    end = clock();
+    if (LOG_KEYFRAMES) {
+        log_file(
+            LogMessage, 
+            "Graphics", 
+            "Processed expand frames in %f ms", 
+            ((double) (end - start) * 1000) / CLOCKS_PER_SEC
+        );
+    }
+
     // add default keyframes 
     {
 
@@ -191,17 +203,6 @@ void graphics_page_calculate_keyframes(IPage *page) {
             }
 
             for (int attr = 0; attr < GEO_NUM; attr++) {
-                int frame_start = INDEX(geo_id, attr, 0, GEO_NUM, page->max_keyframe);
-
-                if (!page->attr_keyframe[geo_id * GEO_NUM + attr]) {
-                    continue;
-                }
-
-                if (LOG_KEYFRAMES) {
-                    log_file(LogMessage, "Graphics", "\t\tAttr %d", attr);
-                }
-
-                graphics_keyframe_default_frames(page, frame_start, have_keyframe);
             }
         }
 
@@ -216,21 +217,6 @@ void graphics_page_calculate_keyframes(IPage *page) {
             );
         }
 
-    }
-
-    // expand for child geometries 
-    start = clock();
-
-    graphics_keyframe_expand_child(page, 0, expand);
-
-    end = clock();
-    if (LOG_KEYFRAMES) {
-        log_file(
-            LogMessage, 
-            "Graphics", 
-            "Processed expand frames in %f ms", 
-            ((double) (end - start) * 1000) / CLOCKS_PER_SEC
-        );
     }
 
     // interpolate between frames
@@ -355,7 +341,7 @@ void graphics_keyframe_store_value(IPage *page, Keyframe *frame, unsigned char *
  * as the first keyframe present, similarly
  * for the last keyframe and final frame.
  */
-void graphics_keyframe_default_frames(IPage *page, int frame_start, unsigned char *have_keyframe) {
+static void graphics_keyframe_default_frames(IPage *page, int frame_start, unsigned char *have_keyframe) {
     int frame_index;
     // first keyframe
     for (frame_index = 0; !have_keyframe[frame_start + frame_index]; frame_index++);
@@ -376,27 +362,123 @@ void graphics_keyframe_default_frames(IPage *page, int frame_start, unsigned cha
     page->k_value[frame_start + page->max_keyframe - 1] = page->k_value[frame_start + frame_index];
 }
 
-// Not needed?
-void graphics_keyframe_fill_tails(int *values, unsigned char *frames, int num_frames) {
-    int start = 0;
+/*
+ * Calculate the expanded size of the geometry with 
+ * index 'parent', for geometry attribute 'attr' at 
+ * keyframe 'keyframe' to fit child geometry 'child'
+ *
+ * Assumes 'child' expansion has been calculated
+ */
+static void graphics_keyframe_expand_geometry(IPage *page, int parent, int attr, int keyframe, int child) {
+    IGeometry *geo = page->geometry[parent];
+    int frame_index = INDEX(parent, attr, keyframe, GEO_NUM, page->max_keyframe);
 
-    // back propagate the initial keyframe
-    while (!frames[start]) { 
-        start++; 
-    };
+    int current_val = page->k_value[frame_index];
+    int parent_padding = geometry_get_int_attr(geo, attr);
+    int child_val = graphics_keyframe_geo_attr(page, child, attr, keyframe);
 
-    for (int i = 0; i < start; values[i++] = values[start]);
+    switch (attr) {
+        case GEO_WIDTH:
+            child_val += graphics_keyframe_geo_attr(page, child, GEO_REL_X, keyframe);
+            break;
 
-    for (int i = 0; i < num_frames; i++) {
-        if (!frames[i]) {
+        case GEO_HEIGHT:
+            child_val += graphics_keyframe_geo_attr(page, child, GEO_REL_Y, keyframe);
+            break;
+
+        default:
+            log_file(LogWarn, "Graphics", "Expand %s not implemented", attr);
+    }
+
+    if (child_val + parent_padding > current_val && LOG_KEYFRAMES) {
+        log_file(
+            LogMessage, "Graphics", 
+            "\tUpdated to expand for child %d to %d", 
+            child, child_val + parent_padding);
+    }
+
+    page->k_value[frame_index] = MAX(current_val, child_val + parent_padding);
+}
+
+/*
+ * For keyframes which specify expand, resize to 
+ * fit child geometries.
+ */
+void graphics_keyframe_traverse_geometry(IPage *page, int parent, unsigned char *have_keyframe, unsigned char *expand) {
+    int frame_start, frame_index;
+
+    for (int i = 1; i < page->len_geometry; i++) {
+        if (page->geometry[i] == NULL) {
             continue;
         }
 
-        start = i;
+        if (page->geometry[i]->parent != parent) {
+            continue;
+        }
+
+        graphics_keyframe_traverse_geometry(page, i, have_keyframe, expand);
     }
 
-    // forward propagate the final keyframe
-    for (int i = start + 1; i < num_frames; values[i++] = values[start]);
+    if (LOG_KEYFRAMES) {
+        log_file(LogMessage, "Graphics", "Expand geometry %d", parent);
+    }
+
+    for (int key_idx = 0; key_idx < page->max_keyframe; key_idx++) {
+        for (int attr = 0; attr < GEO_NUM; attr++) {
+            frame_index = INDEX(parent, attr, key_idx, GEO_NUM, page->max_keyframe);
+
+            if (!expand[frame_index]) {
+                continue;
+            }
+
+            for (int child_id = 0; child_id < page->len_geometry; child_id++) {
+                if (page->geometry[child_id] == NULL) {
+                    continue;
+                }
+
+                if (page->geometry[child_id]->parent != parent) {
+                    continue;
+                }
+
+                graphics_keyframe_expand_geometry(page, parent, attr, key_idx, child_id);
+            }
+        }
+    }
+
+    for (int attr = 0; attr < GEO_NUM; attr++) {
+        frame_start = INDEX(parent, attr, 0, GEO_NUM, page->max_keyframe);
+
+        if (!page->attr_keyframe[parent * GEO_NUM + attr]) {
+            continue;
+        }
+
+        if (LOG_KEYFRAMES) {
+            log_file(LogMessage, "Graphics", "\t\tAttr %d", attr);
+        }
+
+        graphics_keyframe_default_frames(page, frame_start, have_keyframe);
+    }
+}
+/*
+ * Get a geometry attribute value. 
+ *
+ * If an attribute has a keyframe, return the 
+ * keyframe value, otherwise return the geometry 
+ * attribute value.
+ */
+int graphics_keyframe_geo_attr(IPage *page, int geo_id, int attr, int key_idx) {
+    IGeometry *geo = page->geometry[geo_id];
+    int geo_value = 0;
+    int frame_index;
+
+    if (page->attr_keyframe[geo_id * GEO_NUM + attr]) {
+        frame_index = INDEX(geo_id, attr, key_idx, GEO_NUM, page->max_keyframe);
+        geo_value = page->k_value[frame_index];
+    } else {
+        geo_value = geometry_get_int_attr(geo, attr);
+    }
+
+    return geo_value;
 }
 
 /*
@@ -441,108 +523,3 @@ void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, in
     }
 }
 
-/*
- * For keyframes which specify expand, resize to 
- * fit child geometries.
- */
-void graphics_keyframe_expand_child(IPage *page, int parent, unsigned char *expand) {
-    int frame_index;
-
-    for (int i = 1; i < page->len_geometry; i++) {
-        if (page->geometry[i] == NULL) {
-            continue;
-        }
-
-        if (page->geometry[i]->parent != parent) {
-            continue;
-        }
-
-        graphics_keyframe_expand_child(page, i, expand);
-    }
-
-    if (LOG_KEYFRAMES) {
-        log_file(LogMessage, "Graphics", "Expand geometry %d", parent);
-    }
-
-    for (int key_idx = 0; key_idx < page->max_keyframe; key_idx++) {
-        for (int attr = 0; attr < GEO_NUM; attr++) {
-            frame_index = INDEX(parent, attr, key_idx, GEO_NUM, page->max_keyframe);
-
-            if (!expand[frame_index]) {
-                continue; 
-            }
-
-            for (int child_id = 0; child_id < page->len_geometry; child_id++) {
-                if (page->geometry[child_id] == NULL) {
-                    continue;
-                }
-
-                if (page->geometry[child_id]->parent != parent) {
-                    continue;
-                }
-
-                graphics_keyframe_expand_geometry(page, parent, attr, key_idx, child_id);
-            }
-        }
-    }
-}
-
-/*
- * Calculate the expanded size of the geometry with 
- * index 'parent', for geometry attribute 'attr' at 
- * keyframe 'keyframe' to fit child geometry 'child'
- *
- * Assumes 'child' expansion has been calculated
- */
-void graphics_keyframe_expand_geometry(IPage *page, int parent, int attr, int keyframe, int child) {
-    IGeometry *geo = page->geometry[parent];
-    int frame_index = INDEX(parent, attr, keyframe, GEO_NUM, page->max_keyframe);
-
-    int current_val = page->k_value[frame_index];
-    int parent_padding = geometry_get_int_attr(geo, attr);
-    int child_val = graphics_keyframe_geo_attr(page, child, attr, keyframe);
-
-    switch (attr) {
-        case GEO_WIDTH:
-            child_val += graphics_keyframe_geo_attr(page, child, GEO_REL_X, keyframe);
-            break;
-
-        case GEO_HEIGHT:
-            child_val += graphics_keyframe_geo_attr(page, child, GEO_REL_Y, keyframe);
-            break;
-
-        default:
-            log_file(LogWarn, "Graphics", "Expand %s not implemented", attr);
-    }
-
-    if (child_val + parent_padding > current_val && LOG_KEYFRAMES) {
-        log_file(
-            LogMessage, "Graphics", 
-            "\tUpdated to expand for child %d to %d", 
-            child, child_val + parent_padding);
-    }
-
-    page->k_value[frame_index] = MAX(current_val, child_val + parent_padding);
-}
-
-/*
- * Get a geometry attribute value. 
- *
- * If an attribute has a keyframe, return the 
- * keyframe value, otherwise return the geometry 
- * attribute value.
- */
-int graphics_keyframe_geo_attr(IPage *page, int geo_id, int attr, int key_idx) {
-    IGeometry *geo = page->geometry[geo_id];
-    int geo_value = 0;
-    int frame_index;
-
-    if (page->attr_keyframe[geo_id * GEO_NUM + attr]) {
-        frame_index = INDEX(geo_id, attr, key_idx, GEO_NUM, page->max_keyframe);
-        geo_value = page->k_value[frame_index];
-    } else {
-        geo_value = geometry_get_int_attr(geo, attr);
-    }
-
-    return geo_value;
-}
