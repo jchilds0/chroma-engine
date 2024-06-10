@@ -64,13 +64,13 @@ typedef enum {
     GEO_NUM_NODE,
     GEO_GRAPH_TYPE,
     GEO_IMAGE_ID,
-    GEO_NUM,
     GEO_MASK_X,
     GEO_MASK_Y,
     GEO_X_LOWER,
     GEO_X_UPPER,
     GEO_Y_LOWER,
     GEO_Y_UPPER,
+    GEO_NUM,
 } GeometryAttr;
 
 typedef struct {

@@ -59,6 +59,21 @@ typedef struct {
     IPage             **pages;
 } IGraphics;
 
+typedef struct Node {
+    unsigned char exists;
+    int           value;
+    int           (*f)(int *, unsigned char *, int);
+} Node;
+
+typedef struct {
+    int             num_nodes;
+    int             *value;
+    int             (**node_eval)(int *, unsigned char *, int);
+    unsigned char   *exists;
+
+    unsigned char   *adj_matrix;
+} Graph;
+
 /* gr_hub.c */
 
 // external functions
@@ -84,12 +99,20 @@ IPage        *graphics_new_page(int num_geo, int num_keyframe);
 void         graphics_free_page(IPage *);
 
 /* gr_animation.c */
-int graphics_animate_left_to_right(IPage *page, float time);
-int graphics_animate_right_to_left(IPage *page, float time);
-int graphics_animate_up(IPage *page, float time);
-int graphics_animate_none(IPage *page, float time);
+int          graphics_animate_left_to_right(IPage *page, float time);
+int          graphics_animate_right_to_left(IPage *page, float time);
+int          graphics_animate_up(IPage *page, float time);
+int          graphics_animate_none(IPage *page, float time);
 
 /* gr_keyframe.c */
-int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width);
+int          graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width);
+
+/* gr_graph.c */
+Graph        *graphics_new_graph(int n);
+void         graphics_graph_add_node(Graph *g, int x, int value, int (*f)(int *, unsigned char *, int));
+void         graphics_graph_add_edge(Graph *g, int x, int y);
+void         graphics_graph_free_graph(Graph *g);
+unsigned char graphics_graph_is_dag(Graph *g);
+void graphics_graph_evaluate_dag(Graph *g);
 
 #endif // !GRAPHICS_INTERNAL
