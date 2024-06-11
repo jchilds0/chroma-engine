@@ -24,7 +24,7 @@ extern void parser_check_socket(int server_socket);
 extern int parser_tcp_start_server(char *addr, int port);
 extern int parser_tcp_start_client(char *addr, int port);
 
-extern void parser_parse_graphic(Engine *eng, int *page_num, int *action, int *layer);
+extern int parser_parse_graphic(Engine *eng, PageStatus *status);
 extern void parser_parse_hub(Engine *eng);
 extern void parser_update_template(Engine *eng, int page_num);
 

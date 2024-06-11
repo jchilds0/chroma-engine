@@ -6,7 +6,6 @@
 
 #include "geometry.h"
 #include "gtk/gtk.h"
-#include "parser.h"
 #include "gl_render_internal.h"
 
 #include "chroma-engine.h"
@@ -19,6 +18,9 @@
 
 int action[] = {BLANK, BLANK, BLANK, BLANK, BLANK};
 int page_num[] = {-1, -1, -1, -1, -1};
+int current_page[] = {-1, -1, -1, -1, -1};
+int frame_num[] = {0, 0, 0, 0, 0};
+float frame_time[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
 /* read shader file */
 char *gl_renderer_get_shader_file(char *filename) {
@@ -165,7 +167,7 @@ static float gl_bezier_time_step(float time, float start, float end, int order) 
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
-    int current_page, num_geo;
+    int num_geo;
     float time, bezier_time;
     IPage *page;
     IGeometry *geo, *parent_geo;
@@ -182,61 +184,52 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
 
         page = graphics_hub_get_page(engine.hub, page_num[layer]);
         num_geo = graphics_page_num_geometry(page);
-        
+
         switch (action[layer]) {
-            case BLANK:
-                break;
-            case ANIMATE_ON:
-                time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, 0, 1.0, 3);
-
-                graphics_page_interpolate_geometry(page, bezier_time * ANIM_LENGTH, ANIM_LENGTH);
-
-                time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
-                graphics_hub_set_time(engine.hub, time, layer);
-                graphics_hub_set_current_page_num(engine.hub, page_num[layer], layer);
-
-                break;
-            case CONTINUE:
-                time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, 0, 1.0, 3);
-
-                if (time == 1.0f) {
-                    graphics_page_interpolate_geometry(page, ANIM_LENGTH - 1, ANIM_LENGTH);
-                    break;
-                }
-                graphics_page_interpolate_geometry(page, bezier_time * ANIM_LENGTH, ANIM_LENGTH);
-
-                time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
-                graphics_hub_set_time(engine.hub, time, layer);
-
-                break;
             case ANIMATE_OFF:
-                /*
-                current_page = graphics_hub_get_current_page_num(engine.hub, layer);
-                if (current_page != page_num[layer]) {
+                if (current_page[layer] != page_num[layer]) {
+                    action[layer] = BLANK;
                     break;
                 }
 
-                time = graphics_hub_get_time(engine.hub, layer);
-                bezier_time = gl_bezier_time_step(time, ANIM_LENGTH, 0, 3);
+            case ANIMATE_ON:
+            case CONTINUE:
+                current_page[layer] = page_num[layer];
+                time = frame_time[layer] - frame_num[layer] + 1;
+                bezier_time = gl_bezier_time_step(time, 0, 1, 3);
 
-                time = MIN(time + 1.0f / ANIM_LENGTH, 1.0); 
-                graphics_hub_set_time(engine.hub, time, layer);
-                */
+                if (time < 0 || bezier_time < 0) {
+                    log_file(LogError, "GL Renderer", "Time less than 0: page %d keyframe %d", 
+                             page_num[layer], frame_num[layer] - 1);
+                }
+
+                graphics_page_interpolate_geometry(
+                    page, (bezier_time + frame_num[layer] - 1) * ANIM_LENGTH, ANIM_LENGTH);
+
+                //log_file(LogMessage, "GL Renderer", "Time: %d Frame Time: %f Frame Num: %d", 
+                //         time, frame_time[layer], frame_num[layer]); 
+
+                frame_time[layer] = MIN(frame_time[layer] + 1.0f / ANIM_LENGTH, frame_num[layer]); 
                 break;
+
+            case BLANK:
             case UPDATE:
-                parser_update_template(&engine, page_num[layer]);
                 break;
+
             default:
                 log_file(LogError, "GL Render", "Unknown action %d", action);
         }
 
-        graphics_page_update_geometry(page);
-
-        if (action[layer] == UPDATE) {
+        if (action[layer] == BLANK) {
             continue;
         }
+
+        if (action[layer] == UPDATE) {
+            log_file(LogWarn, "GL Renderer", "Action update not handled before renderer");
+            continue;
+        }
+        
+        graphics_page_update_geometry(page);
 
         for (int geo_num = 0; geo_num < num_geo; geo_num++) {
             geo = graphics_page_get_geometry(page, geo_num);

@@ -22,7 +22,7 @@ static void close_engine(GtkWidget *widget, gpointer data) {
 
 void engine_window(void) {
     GtkWidget *window, *gl_area;
-    int e_page_num = -1, e_action = 0, layer = 0;
+    PageStatus status = {-1, 0, 0, BLANK};
     gtk_init(0, NULL);
     
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -51,10 +51,19 @@ void engine_window(void) {
         // slow frame rate down to CHROMA_FRAMERATE
         gtk_main_iteration_do(FALSE);
         parser_check_socket(engine.server_socket);
-        parser_parse_graphic(&engine, &e_page_num, &e_action, &layer);
+        if (parser_parse_graphic(&engine, &status) < 0) {
+            continue;
+        }
+
+        log_file(LogMessage, "Update status", "%d %d %d", status.temp_id, status.action, status.frame_num);
         
-        page_num[layer] = e_page_num;
-        action[layer] = e_action;
+        page_num[status.layer]  = status.temp_id;
+        action[status.layer]    = status.action;
+        frame_num[status.layer] = status.frame_num;
+
+        if (action[status.layer] == ANIMATE_ON) {
+            frame_time[status.layer] = 0;
+        }
     }
 }
 

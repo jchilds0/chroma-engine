@@ -36,5 +36,7 @@ extern unsigned int gl_text_text_height(char *text, float scale);
 
 extern int action[];
 extern int page_num[];
+extern int frame_num[];
+extern float frame_time[];
 
 #endif // !CHROMA_GL_RENDERER

@@ -4,7 +4,6 @@
 
 #include "chroma-engine.h"
 #include "graphics_internal.h"
-#include "log.h"
 #include <stdlib.h>
 
 Graph *graphics_new_graph(int n) {
@@ -14,7 +13,7 @@ Graph *graphics_new_graph(int n) {
     g->adj_matrix = NEW_ARRAY(n * n, unsigned char);
     g->value = NEW_ARRAY(n, int);
     g->exists = NEW_ARRAY(n, unsigned char);
-    g->node_eval = malloc((size_t)(n) * sizeof(int(*)(int *, unsigned char *, int)));
+    g->node_evals = NEW_ARRAY(n, NodeEval);
 
     for (int i = 0; i < n * n; i++) {
         g->adj_matrix[i] = 0;
@@ -22,15 +21,15 @@ Graph *graphics_new_graph(int n) {
 
     for (int i = 0; i < n; i++) {
         g->exists[i] = 0;
-        g->node_eval[i] = NULL;
+        g->node_evals[i] = NULL;
     }
 
     return g;
 }
 
-void graphics_graph_add_node(Graph *g, int x, int value, int (*f)(int *, unsigned char *, int)) {
+void graphics_graph_add_node(Graph *g, int x, int value, NodeEval f) {
     g->exists[x] = 1;
-    g->node_eval[x] = f;
+    g->node_evals[x] = f;
     g->value[x] = value;
 }
 
@@ -41,7 +40,7 @@ void graphics_graph_add_edge(Graph *g, int x, int y) {
 void graphics_graph_free_graph(Graph *g) {
     free(g->adj_matrix);
     free(g->exists);
-    free(g->node_eval);
+    free(g->node_evals);
     free(g->value);
 
     free(g);
@@ -115,8 +114,10 @@ static void graphics_graph_evaluate_node(Graph *g, unsigned char *eval, int node
         graphics_graph_evaluate_node(g, eval, i);
     }
 
-    if (g->node_eval[node] != NULL) {
-        g->value[node] = (g->node_eval[node])(g->value, have_value, g->num_nodes);
+    if (g->node_evals[node] != NULL) {
+        Node n = {g->num_nodes, node, g->value, have_value};
+
+        g->value[node] = (g->node_evals[node])(n);
     }
 
     eval[node] = 1;

@@ -10,7 +10,6 @@
 #ifndef GRAPHICS_INTERNAL
 #define GRAPHICS_INTERNAL
 
-#include "chroma-engine.h"
 #include "geometry.h"
 
 #define LOG_KEYFRAMES 1
@@ -54,21 +53,22 @@ typedef struct IPage {
 typedef struct {
     unsigned int      num_pages;
     unsigned int      len_pages;
-    unsigned int      current_page[CHROMA_LAYERS];
-    float             time[CHROMA_LAYERS];
     IPage             **pages;
 } IGraphics;
 
 typedef struct Node {
-    unsigned char exists;
-    int           value;
-    int           (*f)(int *, unsigned char *, int);
+    int           num_values;
+    int           node_index;
+    int           *values;
+    unsigned char *have_value;
 } Node;
+
+typedef int (*NodeEval)(Node node);
 
 typedef struct {
     int             num_nodes;
     int             *value;
-    int             (**node_eval)(int *, unsigned char *, int);
+    NodeEval        *node_evals;
     unsigned char   *exists;
 
     unsigned char   *adj_matrix;
@@ -82,10 +82,6 @@ void         graphics_hub_load_example(IGraphics *hub);
 void         graphics_free_graphics_hub(IGraphics *hub);
 IPage        *graphics_hub_add_page(IGraphics *hub, int num_geo, int num_keyframe, int temp_id);
 IPage        *graphics_hub_get_page(IGraphics *hub, int page_num);
-void         graphics_hub_set_time(IGraphics *hub, float time, int layer);
-float        graphics_hub_get_time(IGraphics *hub, int layer);
-int          graphics_hub_get_current_page_num(IGraphics *hub, int layer);
-void         graphics_hub_set_current_page_num(IGraphics *hub, int page_num, int layer);
 
 /* gr_page.c */
 
@@ -109,7 +105,7 @@ int          graphics_keyframe_interpolate_int(int v_start, int v_end, int index
 
 /* gr_graph.c */
 Graph        *graphics_new_graph(int n);
-void         graphics_graph_add_node(Graph *g, int x, int value, int (*f)(int *, unsigned char *, int));
+void         graphics_graph_add_node(Graph *g, int x, int value, NodeEval f);
 void         graphics_graph_add_edge(Graph *g, int x, int y);
 void         graphics_graph_free_graph(Graph *g);
 unsigned char graphics_graph_is_dag(Graph *g);

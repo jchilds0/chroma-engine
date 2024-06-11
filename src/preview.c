@@ -6,12 +6,8 @@
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
 #include "gl_render.h"
-#include "glib-object.h"
-#include "glib.h"
-#include "gtk/gtk.h"
 #include "parser.h"
 #include "log.h"
-#include <X11/Xlib.h>
 #include <sys/socket.h>
 
 static void close_preview(GtkWidget *widget, gpointer data) {
@@ -25,7 +21,7 @@ static void close_preview(GtkWidget *widget, gpointer data) {
 
 void preview_window(int wid) {
     GtkWidget *plug, *gl_area;
-    int p_page_num = -1, p_action = 0, layer = 0;
+    PageStatus status = {-1, 0, 0, BLANK};
     gtk_init(0, NULL);
 
     engine.server_port = 6100;
@@ -47,10 +43,17 @@ void preview_window(int wid) {
     while (TRUE) {
         gtk_main_iteration_do(FALSE);
         parser_check_socket(engine.server_socket);
-        parser_parse_graphic(&engine, &p_page_num, &p_action, &layer);
+        if (parser_parse_graphic(&engine, &status) < 0) {
+            continue;
+        }
 
-        page_num[0] = p_page_num;
-        action[0] = p_action;
+        page_num[status.layer]  = status.temp_id;
+        action[status.layer]    = status.action;
+        frame_num[status.layer] = status.frame_num;
+
+        if (action[status.layer] == ANIMATE_ON) {
+            frame_time[status.layer] = 0;
+        }
     }
 }
 

@@ -227,63 +227,97 @@ void graphics_page_calculate_keyframes(IPage *page) {
     }
 }
 
-static int single_value(int *values, unsigned char *have_value, int num_values) {
+static int single_value(Node node) {
     int value_count = 0;
     int value = 0;
 
-    for (int i = 0; i < num_values; i++) {
-        if (!have_value[i]) {
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
             continue;
         }
 
         value_count++;
-        value = values[i];
+        value = node.values[i];
     }
 
     if (value_count != 1) {
-        log_file(LogError, "Graphics", "Incorrect have_value array, count %d", value_count);
+        log_file(LogError, "Graphics", "Node %d has %d values, expected 1", node.node_index, value_count);
     }
 
     return value;
 }
 
-static int min_value(int *values, unsigned char *have_value, int num_values) {
+static int min_value(Node node) {
     int value = INT_MAX;
 
-    for (int i = 0; i < num_values; i++) {
-        if (!have_value[i]) {
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
             continue;
         }
         
-        value = MIN(value, values[i]);
+        value = MIN(value, node.values[i]);
+    }
+
+    if (value == INT_MAX) {
+        log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
     }
 
     return value;
 }
 
-static int max_value(int *values, unsigned char *have_value, int num_values) {
+static int max_value(Node node) {
     int value = INT_MIN;
 
-    for (int i = 0; i < num_values; i++) {
-        if (!have_value[i]) {
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
             continue;
         }
         
-        value = MAX(value, values[i]);
+        value = MAX(value, node.values[i]);
+    }
+
+    if (value == INT_MIN) {
+        log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
     }
 
     return value;
 }
 
-static int sum_value(int *values, unsigned char *have_value, int num_values) {
-    int value = 0; 
+static int max_value_plus_pad(Node node) {
+    int value = INT_MIN;
 
-    for (int i = 0; i < num_values; i++) {
-        if (!have_value[i]) {
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
             continue;
         }
 
-        value += values[i];
+        if (i == node.node_index) {
+            continue;
+        }
+        
+        value = MAX(value, node.values[i]);
+    }
+
+    if (value == INT_MIN) {
+        log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
+    }
+
+    if (!node.have_value[node.node_index]) {
+        log_file(LogError, "Graphics", "Node %d missing value", node.node_index);
+    }
+
+    return value + node.values[node.node_index];
+}
+
+static int sum_value(Node node) {
+    int value = 0; 
+
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
+            continue;
+        }
+
+        value += node.values[i];
     }
 
     return value;
@@ -406,7 +440,7 @@ void graphics_keyframe_store_value(IPage *page, Graph *g, Keyframe *frame) {
         return;
     }
 
-    graphics_graph_add_node(g, frame_index, g->value[frame_index], max_value);
+    graphics_graph_add_node(g, frame_index, g->value[frame_index], max_value_plus_pad);
     graphics_graph_add_edge(g, frame_index, frame_index);
     int x_upper_index, y_upper_index;
 

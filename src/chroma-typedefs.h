@@ -17,6 +17,13 @@ typedef enum {
     UPDATE,
 } Action;
 
+typedef struct {
+    int     temp_id;
+    int     frame_num;
+    int     layer;
+    Action  action;
+} PageStatus;
+
 /* graphics structs */
 typedef struct {
     int         server_socket;

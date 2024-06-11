@@ -70,6 +70,9 @@ typedef enum {
     GEO_X_UPPER,
     GEO_Y_LOWER,
     GEO_Y_UPPER,
+    GEO_X_PAD,
+    GEO_Y_PAD,
+
     GEO_NUM,
 } GeometryAttr;
 

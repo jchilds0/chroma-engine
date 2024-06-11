@@ -26,11 +26,6 @@ IGraphics *graphics_new_graphics_hub(int num_pages) {
         hub->pages[i] = NULL;
     }
 
-    for (int i = 0; i < CHROMA_LAYERS; i++) {
-        hub->time[i] = 0;
-        hub->current_page[i] = 0;
-    }
-
     return hub;
 }
 
@@ -90,18 +85,3 @@ IPage *graphics_hub_get_page(IGraphics *hub, int page_num) {
     return hub->pages[page_num];
 }
 
-int graphics_hub_get_current_page_num(IGraphics *hub, int layer) {
-    return hub->current_page[layer];
-}
-
-void graphics_hub_set_current_page_num(IGraphics *hub, int page_num, int layer) {
-    hub->current_page[layer] = page_num;
-}
-
-void graphics_hub_set_time(IGraphics *hub, float time, int layer) {
-    hub->time[layer] = time;
-}
-
-float graphics_hub_get_time(IGraphics *hub, int layer) {
-    return hub->time[layer];
-}

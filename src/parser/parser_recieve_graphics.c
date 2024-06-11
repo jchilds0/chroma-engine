@@ -5,6 +5,7 @@
  *
  */
 
+#include "chroma-engine.h"
 #include "geometry.h"
 #include "graphics.h"
 #include "parser_internal.h"
@@ -22,7 +23,7 @@ static int clients[MAX_CONNECTIONS];
 static int socket_client = -1;
 
 void    parser_page(IPage *page);
-void    parser_header(int *temp_id, int *action, int *layer);
+void    parser_header(PageStatus *status);
 Token   parser_get_token(char *value);
 
 static char buf[PARSE_BUF_SIZE];
@@ -72,8 +73,7 @@ void parser_check_socket(int server_socket) {
  *    - If the client closes the connection, close on our end.
  *
  */
-
-void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
+int parser_parse_graphic(Engine *eng, PageStatus *status) {
     ServerResponse rec;
 
     // check if current connection has a message
@@ -120,46 +120,58 @@ void parser_parse_graphic(Engine *eng, int *temp_id, int *action, int *layer) {
         }
     }
 
-    return;
+    return -1;
 
 PAGE:
     log_file(LogMessage, "Parser", "Recieved message from %d", socket_client);
 
     int start = clock();
-    parser_header(temp_id, action, layer);
+    parser_header(status);
 
-    if (*action == UPDATE) {
-        parser_update_template(eng, *temp_id);
+    if (status->action == UPDATE) {
+        parser_update_template(eng, status->temp_id);
 
-        *action = BLANK;
+        status->action = BLANK;
         char attr[PARSE_BUF_SIZE];
         while (parser_get_token(attr) != EOM);
 
-        return;
+        return -1;
     }
 
-    IPage *page = graphics_hub_get_page(eng->hub, *temp_id);
+    IPage *page = graphics_hub_get_page(eng->hub, status->temp_id);
 
     if (page == NULL) {
         // invalid page, reset globals and clear remaining message
-        *temp_id = -1;
-        *action = BLANK;
-        *layer = 0;
+        status->temp_id = -1;
+        status->action = BLANK;
+        status->layer = 0;
 
         char attr[PARSE_BUF_SIZE];
         while (parser_get_token(attr) != EOM);
-        return;
+        return -1;
     }
 
     // Read new page values
     parser_page(page);
 
-    if (*action == ANIMATE_ON) {
-        graphics_hub_set_time(eng->hub, 0.0f, *layer);
-        graphics_page_calculate_keyframes(page);
-    } else if (*action == ANIMATE_OFF) {
-        *temp_id = -1;
-    } 
+    int max_frame = graphics_page_num_frames(page);
+    switch (status->action) {
+        case ANIMATE_ON:
+            graphics_page_calculate_keyframes(page);
+            status->frame_num = 1;
+            break;
+
+        case CONTINUE:
+            status->frame_num = MIN(status->frame_num + 1, max_frame - 1);
+            break;
+
+        case ANIMATE_OFF:
+            status->frame_num = max_frame - 1;
+            break;
+
+        default:
+            break;
+    }
 
     int num_geo = graphics_page_num_geometry(page);
     for (int i = 0; i < num_geo; i++) {
@@ -179,12 +191,14 @@ PAGE:
 
     int end = clock();
     log_file(LogMessage, "Graphics", "Parsed Page in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+
+    return 0;
 }
 
 /*
  * Parse the header of a gui request 
  */
-void parser_header(int *temp_id, int *action, int *layer) {
+void parser_header(PageStatus *status) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
@@ -206,30 +220,38 @@ void parser_header(int *temp_id, int *action, int *layer) {
                     log_file(LogError, "Parser", "Incorrect encoding version v%d.%d, expected v1.4", v_m, v_n);
                 }
 
-                if (LOG_PARSER)
+                if (LOG_PARSER) {
                     log_file(LogMessage, "Parser", "Message v%d.%d", v_m, v_n); 
+                }
                 break;
+
             case LAYER:
-                sscanf(value, "%d", layer);
+                sscanf(value, "%d", &status->layer);
                 parsed_length = 1;
 
-                if (LOG_PARSER)
-                    log_file(LogMessage, "Parser", "Layer %d", *layer); 
+                if (LOG_PARSER) {
+                    log_file(LogMessage, "Parser", "Layer %d", status->layer); 
+                }
                 break;
+
             case ACTION:
-                sscanf(value, "%d", action);
+                sscanf(value, "%d", (int *)&status->action);
                 parsed_action = 1;
 
-                if (LOG_PARSER)
-                    log_file(LogMessage, "Parser", "Action %d", *action); 
+                if (LOG_PARSER) {
+                    log_file(LogMessage, "Parser", "Action %d", status->action); 
+                }
                 break;
+
             case TEMPID:
-                sscanf(value, "%d", temp_id);
+                sscanf(value, "%d", &status->temp_id);
                 parsed_temp_id = 1;
 
-                if (LOG_PARSER)
-                    log_file(LogMessage, "Parser", "Template id %d", *temp_id); 
+                if (LOG_PARSER) {
+                    log_file(LogMessage, "Parser", "Template id %d", status->temp_id); 
+                }
                 break;
+
             default:
                 log_file(LogWarn, "Parser", "Missing header tokens");
         }

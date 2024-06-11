@@ -12,6 +12,7 @@
 #include "chroma-engine.h"
 #include "geometry.h"
 #include "log.h"
+#include <stdio.h>
 #include <string.h>
 
 IPage *graphics_new_page(int num_geo, int num_keyframe) {
@@ -94,6 +95,10 @@ int graphics_page_num_geometry(IPage *page) {
     return page->len_geometry;
 }
 
+int graphics_page_num_frames(IPage *page) {
+    return page->max_keyframe;
+}
+
 static void graphics_geometry_update_absolute_position(IGeometry *parent, IGeometry *child) {
     int parent_x = geometry_get_int_attr(parent, GEO_POS_X);
     int parent_y = geometry_get_int_attr(parent, GEO_POS_Y);
@@ -171,9 +176,8 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
 
     IGeometry *geo;
     int next_value, k_index;
-    int frame_width = width / (page->max_keyframe - 1);
-    int frame_start = index / frame_width;
-    int frame_index = index % frame_width;
+    int frame_start = index / width;
+    int frame_index = index % width;
 
     //log_file(LogMessage, "Graphics", "Interpolating page %d at keyframe %d and index %d", page->temp_id, frame_start, frame_index);
 
@@ -195,10 +199,8 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
                 next_value = page->k_value[k_index];
             } else {
                 next_value = graphics_keyframe_interpolate_int(
-                    page->k_value[k_index],
-                    page->k_value[k_index + 1], 
-                    frame_index,
-                    frame_width
+                    page->k_value[k_index], page->k_value[k_index + 1], 
+                    frame_index, width
                 );
             }
 
