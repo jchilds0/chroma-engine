@@ -51,6 +51,7 @@ typedef enum {
     GEO_REL_X,
     GEO_REL_Y,
     GEO_PARENT,
+    GEO_MASK,
     GEO_WIDTH,
     GEO_HEIGHT,
     GEO_ROUNDING,
@@ -64,8 +65,6 @@ typedef enum {
     GEO_NUM_NODE,
     GEO_GRAPH_TYPE,
     GEO_IMAGE_ID,
-    GEO_MASK_X,
-    GEO_MASK_Y,
     GEO_X_LOWER,
     GEO_X_UPPER,
     GEO_Y_LOWER,
@@ -81,8 +80,7 @@ typedef struct {
     int               parent;
     vec2              pos;
     vec2              rel;
-    unsigned char     mask_x;
-    unsigned char     mask_y;
+    int               mask_geo;
     vec2              bound_lower;
     vec2              bound_upper;
 } IGeometry;

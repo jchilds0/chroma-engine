@@ -27,7 +27,6 @@ typedef struct {
     unsigned int      attr;
     FRAME_TYPE        type;
     int               value;
-    unsigned char     mask;
     unsigned char     expand;
     unsigned int      bind_frame_num;
     unsigned int      bind_geo_id;

@@ -73,8 +73,7 @@ IGeometry *geometry_create_geometry(GeometryType type) {
     geo->rel.x = 0;
     geo->rel.y = 0;
 
-    geo->mask_x = 0;
-    geo->mask_y = 0;
+    geo->mask_geo = 0;
 
     geo->bound_lower.x = 0;
     geo->bound_lower.y = 0;
@@ -145,6 +144,8 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_REL_Y;
     } else if (strncmp(attr, "parent", 6) == 0) {
         g_attr = GEO_PARENT;
+    } else if (strncmp(attr, "mask", 4) == 0) {
+        g_attr = GEO_MASK;
     } else if (strncmp(attr, "color", 5) == 0) {
         g_attr = GEO_COLOR;
     } else if (strncmp(attr, "width", 5) == 0) {
@@ -198,11 +199,8 @@ static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case GEO_PARENT:
             sprintf(value, "%d", geo->parent);
             return;
-        case GEO_MASK_X:
-            sprintf(value, "%d", geo->mask_x);
-            return;
-        case GEO_MASK_Y:
-            sprintf(value, "%d", geo->mask_y);
+        case GEO_MASK:
+            sprintf(value, "%d", geo->mask_geo);
             return;
         case GEO_X_LOWER:
             sprintf(value, "%d", geo->bound_lower.x);
@@ -307,11 +305,8 @@ static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case GEO_PARENT:
             sscanf(value, "%d", &geo->parent);
             return;
-        case GEO_MASK_X:
-            sscanf(value, "%c", &geo->mask_x);
-            return;
-        case GEO_MASK_Y:
-            sscanf(value, "%c", &geo->mask_y);
+        case GEO_MASK:
+            sscanf(value, "%d", &geo->mask_geo);
             return;
         case GEO_X_LOWER:
             sscanf(value, "%d", &geo->bound_lower.x);

@@ -113,12 +113,6 @@ void graphics_page_set_keyframe_attr(IPage *page, int keyframe_index, char *name
         frame->type = keyframeToEnum(value); 
     } else if (strncmp(name, "frame_attr", KEYFRAME_TYPE_LEN) == 0) {
         frame->attr = geometry_char_to_attr(value); 
-    } else if (strncmp(name, "mask", KEYFRAME_TYPE_LEN) == 0) {
-        if (strncmp(value, "true", KEYFRAME_TYPE_LEN) == 0) {
-            frame->mask = 1;
-        } else {
-            frame->mask = 0;
-        }
     } else if (strncmp(name, "expand", KEYFRAME_TYPE_LEN) == 0) {
         if (strncmp(value, "true", KEYFRAME_TYPE_LEN) == 0) {
             frame->expand = 1;

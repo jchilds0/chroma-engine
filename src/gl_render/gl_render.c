@@ -240,10 +240,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             glClear(GL_STENCIL_BUFFER_BIT);
             glStencilFunc(GL_NEVER, 1, 0xFF);
 
-            if (geo->mask_x || geo->mask_y) {
-                glStencilMask(0xFF);
-            } else {
+            if (geo->mask_geo == 0) {
                 glStencilMask(0x00);
+            } else {
+                glStencilMask(0xFF);
             }
 
             parent_geo = graphics_page_get_geometry(page, geo->parent);
@@ -268,10 +268,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                     log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", parent_geo->geo_type);
             }
 
-            if (geo->mask_x || geo->mask_y) {
-                glStencilFunc(GL_EQUAL, 1, 0xFF);
-            } else {
+            if (geo->mask_geo == 0) {
                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            } else {
+                glStencilFunc(GL_EQUAL, 1, 0xFF);
             }
 
             glStencilMask(0xFF);
