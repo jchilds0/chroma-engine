@@ -25,7 +25,7 @@ IPage *graphics_new_page(int num_geo, int max_keyframe) {
     }
 
     page->max_keyframe = MAX(max_keyframe, 1) + 1;
-    int n = page->max_keyframe * page->len_geometry * GEO_NUM;
+    int n = page->max_keyframe * page->len_geometry * GEO_INT_NUM;
 
     page->keyframe_graph = graphics_new_graph(n);
 
@@ -82,13 +82,9 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
             continue;
         }
 
-        for (int attr = 0; attr < GEO_NUM; attr++) {
-            k_index = INDEX(geo_id, attr, frame_start, GEO_NUM, page->max_keyframe);
+        for (int attr = 0; attr < GEO_INT_NUM; attr++) {
+            k_index = INDEX(geo_id, attr, frame_start, GEO_INT_NUM, page->max_keyframe);
             if (!page->keyframe_graph->exists[k_index]) {
-                continue;
-            }
-
-            if (!geometry_is_int_attr(attr)) {
                 continue;
             }
 

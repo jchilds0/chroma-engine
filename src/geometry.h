@@ -45,13 +45,10 @@ typedef enum {
 } GeometryType;
 
 typedef enum {
-    GEO_COLOR,
     GEO_POS_X,
     GEO_POS_Y,
     GEO_REL_X,
     GEO_REL_Y,
-    GEO_PARENT,
-    GEO_MASK,
     GEO_WIDTH,
     GEO_HEIGHT,
     GEO_ROUNDING,
@@ -59,18 +56,22 @@ typedef enum {
     GEO_OUTER_RADIUS,
     GEO_START_ANGLE,
     GEO_END_ANGLE,
+    GEO_X_LOWER,
+    GEO_X_UPPER,
+    GEO_Y_LOWER,
+    GEO_Y_UPPER,
+
+    GEO_INT_NUM,
+
+    GEO_COLOR,
+    GEO_PARENT,
+    GEO_MASK,
     GEO_TEXT,
     GEO_SCALE,
     GEO_GRAPH_NODE,
     GEO_NUM_NODE,
     GEO_GRAPH_TYPE,
     GEO_IMAGE_ID,
-    GEO_X_LOWER,
-    GEO_X_UPPER,
-    GEO_Y_LOWER,
-    GEO_Y_UPPER,
-    GEO_X_PAD,
-    GEO_Y_PAD,
 
     GEO_NUM,
 } GeometryAttr;
@@ -144,7 +145,6 @@ extern void         geometry_free_geometry(IGeometry *geo);
 extern void         geometry_clean_geo(IGeometry *geo);
 
 extern GeometryAttr geometry_char_to_attr(char *attr);
-extern unsigned char geometry_is_int_attr(GeometryAttr attr);
 extern void         geometry_set_attr(IGeometry *geo, char *attr, char *value);
 extern void         geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
 extern void         geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);

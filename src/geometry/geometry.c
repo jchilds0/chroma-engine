@@ -131,22 +131,6 @@ void geometry_clean_geo(IGeometry *geo) {
     }
 }
 
-unsigned char geometry_is_int_attr(GeometryAttr attr) {
-    switch (attr) {
-        case GEO_COLOR:
-        case GEO_TEXT:
-        case GEO_SCALE:
-        case GEO_GRAPH_NODE:
-        case GEO_NUM_NODE:
-        case GEO_GRAPH_TYPE:
-        case GEO_IMAGE_ID:
-        case GEO_NUM:
-            return 0;
-        default:
-            return 1;
-    }
-}
-
 GeometryAttr geometry_char_to_attr(char *attr) {
     GeometryAttr g_attr;
 
@@ -190,6 +174,14 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_GRAPH_TYPE;
     } else if (strncmp(attr, "image_id", 8) == 0) {
         g_attr = GEO_IMAGE_ID;
+    } else if (strncmp(attr, "x_lower", 7) == 0) {
+        g_attr = GEO_X_LOWER;
+    } else if (strncmp(attr, "x_upper", 7) == 0) {
+        g_attr = GEO_X_UPPER;
+    } else if (strncmp(attr, "y_lower", 7) == 0) {
+        g_attr = GEO_Y_LOWER;
+    } else if (strncmp(attr, "y_upper", 7) == 0) {
+        g_attr = GEO_Y_UPPER;
     } else {
         log_file(LogWarn, "Geometry", "Unknown geometry attr (%s)", attr);
         return -1;

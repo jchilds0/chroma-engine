@@ -297,7 +297,7 @@ void parser_parse_page(IPage *page) {
         }
 
         GeometryAttr attr_num = geometry_char_to_attr(attr);
-        int frame_index = INDEX(geo_num, attr_num, 0, GEO_NUM, page->max_keyframe);
+        int frame_index = INDEX(geo_num, attr_num, 0, GEO_INT_NUM, page->max_keyframe);
         geo = page->geometry[geo_num];
 
         if (page->keyframe_graph->exists[frame_index]) {

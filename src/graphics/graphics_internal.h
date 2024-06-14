@@ -12,7 +12,7 @@
 
 #include "graphics.h"
 
-#define LOG_KEYFRAMES         1
+#define LOG_KEYFRAMES         0
 #define KEYFRAME_TYPE_LEN     20
 
 
