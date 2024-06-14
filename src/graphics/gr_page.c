@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-IPage *graphics_new_page(int num_geo, int num_keyframe) {
+IPage *graphics_new_page(int num_geo, int max_keyframe) {
     IPage *page = NEW_STRUCT(IPage);
     page->len_geometry = num_geo + 1;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
@@ -24,13 +24,10 @@ IPage *graphics_new_page(int num_geo, int num_keyframe) {
         page->geometry[i] = NULL;
     }
 
-    page->len_keyframe = num_keyframe;
-    page->num_keyframe = 0;
-    page->keyframe = NEW_ARRAY(page->len_keyframe, Keyframe);
-    page->k_value = NULL;
-    page->attr_keyframe = NEW_ARRAY(page->len_geometry * GEO_NUM, unsigned char);
+    page->max_keyframe = MAX(max_keyframe, 1) + 1;
+    int n = page->max_keyframe * page->len_geometry * GEO_NUM;
 
-    memset(page->attr_keyframe, 0, page->len_geometry * GEO_NUM);
+    page->keyframe_graph = graphics_new_graph(n);
 
     // root 
     IGeometry *geo = graphics_page_add_geometry(page, 0, RECT);
@@ -58,26 +55,6 @@ IGeometry *graphics_page_add_geometry(IPage *page, int id, int type) {
     return geo;
 }
 
-void graphics_page_set_bg_index(IPage *page, int index) {
-    if (index < 0 || index >= page->len_geometry) {
-        log_file(LogWarn, "Graphics", "Background index %d may be out of range", index);
-    } 
-
-    page->bg_index = index;
-}
-
-void graphics_page_set_mask_index(IPage *page, int index) {
-    if (index < 0 || index >= page->len_geometry) {
-        log_file(LogWarn, "Graphics", "Mask index %d may be out of range", index);
-    } 
-
-    page->mask_index = index;
-}
-
-IGeometry *graphics_page_get_geometry(IPage *page, int geo_num) {
-    return page->geometry[geo_num];
-}
-
 void graphics_free_page(IPage *page) {
     if (page == NULL) {
         return;
@@ -91,89 +68,7 @@ void graphics_free_page(IPage *page) {
     free(page);
 }
 
-int graphics_page_num_geometry(IPage *page) {
-    return page->len_geometry;
-}
-
-int graphics_page_num_frames(IPage *page) {
-    return page->max_keyframe;
-}
-
-static void graphics_geometry_update_absolute_position(IGeometry *parent, IGeometry *child) {
-    int parent_x = geometry_get_int_attr(parent, GEO_POS_X);
-    int parent_y = geometry_get_int_attr(parent, GEO_POS_Y);
-    int rel_x = geometry_get_int_attr(child, GEO_REL_X);
-    int rel_y = geometry_get_int_attr(child, GEO_REL_Y);
-
-    geometry_set_int_attr(child, GEO_POS_X, parent_x + rel_x);
-    geometry_set_int_attr(child, GEO_POS_Y, parent_y + rel_y);
-}
-
-static void graphics_geometry_update_mask(IGeometry *parent, IGeometry *child) {
-    int x_lower = geometry_get_int_attr(parent, GEO_X_LOWER);
-    int x_upper = geometry_get_int_attr(parent, GEO_X_UPPER);
-    int y_lower = geometry_get_int_attr(parent, GEO_Y_LOWER);
-    int y_upper = geometry_get_int_attr(parent, GEO_Y_UPPER);
-
-    int pos_x = geometry_get_int_attr(parent, GEO_POS_X);
-    int pos_y = geometry_get_int_attr(parent, GEO_POS_Y);
-    int width = geometry_get_int_attr(parent, GEO_WIDTH);
-    int height = geometry_get_int_attr(parent, GEO_HEIGHT);
-
-    geometry_set_int_attr(child, GEO_X_LOWER, MAX(x_lower, pos_x));
-    geometry_set_int_attr(child, GEO_X_UPPER, MIN(x_upper, pos_x + width));
-    geometry_set_int_attr(child, GEO_Y_LOWER, MAX(y_lower, pos_y));
-    geometry_set_int_attr(child, GEO_Y_UPPER, MIN(y_upper, pos_y + height));
-}
-
-static void graphics_page_update_child_geometry(IPage *page, unsigned int node) {
-    IGeometry *parent, *child;
-    int child_num, parent_num;
-
-    child = page->geometry[node];
-    parent_num = geometry_get_int_attr(child, GEO_PARENT);
-    parent = page->geometry[parent_num];
-
-    graphics_geometry_update_absolute_position(parent, child);
-    graphics_geometry_update_mask(parent, child);
-
-    for (int i = 1; i < page->len_geometry; i++) {
-        if (page->geometry[i] == NULL) {
-            continue ;
-        }
-
-        child_num = geometry_get_int_attr(page->geometry[i], GEO_PARENT);
-        if (child_num != node) {
-            // geo is not a child of the current child
-            continue;
-        }
-
-        graphics_page_update_child_geometry(page, i);
-    }
-}
-
-void graphics_page_update_geometry(IPage *page) {
-    int parent_num;
-
-    for (int i = 1; i < page->len_geometry; i++) {
-        if (page->geometry[i] == NULL) {
-            continue;
-        }
-
-        parent_num = geometry_get_int_attr(page->geometry[i], GEO_PARENT);
-
-        if (parent_num == 0) {
-            graphics_page_update_child_geometry(page, i);
-        }
-    }
-}
-
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
-    if (page->max_keyframe == 1) {
-        //log_file(LogMessage, "Graphics", "No keyframes, skipping interpolation");
-        return;
-    }
-
     IGeometry *geo;
     int next_value, k_index;
     int frame_start = index / width;
@@ -188,18 +83,21 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
         }
 
         for (int attr = 0; attr < GEO_NUM; attr++) {
-            if (!page->attr_keyframe[geo_id * GEO_NUM + attr]) {
+            k_index = INDEX(geo_id, attr, frame_start, GEO_NUM, page->max_keyframe);
+            if (!page->keyframe_graph->exists[k_index]) {
                 continue;
             }
 
-            k_index = geo_id * (page->max_keyframe * GEO_NUM) 
-                + attr * page->max_keyframe + frame_start;
+            if (!geometry_is_int_attr(attr)) {
+                continue;
+            }
 
             if (frame_start == page->max_keyframe - 1) {
-                next_value = page->k_value[k_index];
+                next_value = page->keyframe_graph->value[k_index];
             } else {
                 next_value = graphics_keyframe_interpolate_int(
-                    page->k_value[k_index], page->k_value[k_index + 1], 
+                    page->keyframe_graph->value[k_index], 
+                    page->keyframe_graph->value[k_index + 1], 
                     frame_index, width
                 );
             }

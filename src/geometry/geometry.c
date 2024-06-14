@@ -131,6 +131,22 @@ void geometry_clean_geo(IGeometry *geo) {
     }
 }
 
+unsigned char geometry_is_int_attr(GeometryAttr attr) {
+    switch (attr) {
+        case GEO_COLOR:
+        case GEO_TEXT:
+        case GEO_SCALE:
+        case GEO_GRAPH_NODE:
+        case GEO_NUM_NODE:
+        case GEO_GRAPH_TYPE:
+        case GEO_IMAGE_ID:
+        case GEO_NUM:
+            return 0;
+        default:
+            return 1;
+    }
+}
+
 GeometryAttr geometry_char_to_attr(char *attr) {
     GeometryAttr g_attr;
 
@@ -369,3 +385,32 @@ void geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value) {
     geometry_set_attribute(geo, attr, buf);
 }
 
+void geometry_graph_add_values(IGeometry *geo, void (*add_value)(int)) {
+    add_value(GEO_REL_X);
+    add_value(GEO_REL_Y);
+
+    switch (geo->geo_type) {
+        case RECT:
+            add_value(GEO_WIDTH);
+            add_value(GEO_HEIGHT);
+            break;
+
+        case CIRCLE:
+            add_value(GEO_START_ANGLE);
+            add_value(GEO_END_ANGLE);
+            add_value(GEO_INNER_RADIUS);
+            add_value(GEO_OUTER_RADIUS);
+            break;
+
+        case TEXT:
+            add_value(GEO_WIDTH);
+            add_value(GEO_HEIGHT);
+            break;
+
+        case IMAGE:
+            break;
+
+        default:
+            log_file(LogWarn, "Geometry", "Graph add values not implemented for %d", geo->geo_type);
+    }
+}

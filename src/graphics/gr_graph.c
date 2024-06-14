@@ -12,6 +12,7 @@ Graph *graphics_new_graph(int n) {
     g->num_nodes = n;
     g->adj_matrix = NEW_ARRAY(n * n, unsigned char);
     g->value = NEW_ARRAY(n, int);
+    g->pad_index = NEW_ARRAY(n, int);
     g->exists = NEW_ARRAY(n, unsigned char);
     g->node_evals = NEW_ARRAY(n, NodeEval);
 
@@ -22,15 +23,23 @@ Graph *graphics_new_graph(int n) {
     for (int i = 0; i < n; i++) {
         g->exists[i] = 0;
         g->node_evals[i] = NULL;
+        g->value[i] = 0;
+        g->pad_index[i] = 0;
     }
 
     return g;
 }
 
-void graphics_graph_add_node(Graph *g, int x, int value, NodeEval f) {
+void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f) {
     g->exists[x] = 1;
+    g->pad_index[x] = pad_index;
     g->node_evals[x] = f;
+}
+
+void graphics_graph_add_leaf_node(Graph *g, int x, int value) {
+    g->exists[x] = 1;
     g->value[x] = value;
+    g->node_evals[x] = NULL;
 }
 
 void graphics_graph_add_edge(Graph *g, int x, int y) {
@@ -42,6 +51,7 @@ void graphics_graph_free_graph(Graph *g) {
     free(g->exists);
     free(g->node_evals);
     free(g->value);
+    free(g->pad_index);
 
     free(g);
 }
@@ -115,7 +125,7 @@ static void graphics_graph_evaluate_node(Graph *g, unsigned char *eval, int node
     }
 
     if (g->node_evals[node] != NULL) {
-        Node n = {g->num_nodes, node, g->value, have_value};
+        Node n = {g->num_nodes, node, g->pad_index[node], g->value, have_value};
 
         g->value[node] = (g->node_evals[node])(n);
     }

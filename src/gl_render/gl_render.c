@@ -167,7 +167,6 @@ static float gl_bezier_time_step(float time, float start, float end, int order) 
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
-    int num_geo;
     float time, bezier_time;
     IPage *page;
     IGeometry *geo, *parent_geo;
@@ -183,7 +182,6 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         }
 
         page = graphics_hub_get_page(engine.hub, page_num[layer]);
-        num_geo = graphics_page_num_geometry(page);
 
         switch (action[layer]) {
             case ANIMATE_OFF:
@@ -195,21 +193,20 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             case ANIMATE_ON:
             case CONTINUE:
                 current_page[layer] = page_num[layer];
-                time = frame_time[layer] - frame_num[layer] + 1;
-                bezier_time = gl_bezier_time_step(time, 0, 1, 3);
+                bezier_time = gl_bezier_time_step(frame_time[layer], 0, 1, 3);
+                time = MIN(bezier_time + frame_num[layer], page->max_keyframe - 1);
 
-                if (time < 0 || bezier_time < 0) {
+                if (frame_time[layer] < 0 || bezier_time < 0) {
                     log_file(LogError, "GL Renderer", "Time less than 0: page %d keyframe %d", 
                              page_num[layer], frame_num[layer] - 1);
                 }
 
-                graphics_page_interpolate_geometry(
-                    page, (bezier_time + frame_num[layer] - 1) * ANIM_LENGTH, ANIM_LENGTH);
+                graphics_page_interpolate_geometry(page, time * ANIM_LENGTH, ANIM_LENGTH);
 
-                //log_file(LogMessage, "GL Renderer", "Time: %d Frame Time: %f Frame Num: %d", 
-                //         time, frame_time[layer], frame_num[layer]); 
+                /*log_file(LogMessage, "GL Renderer", "Time: %d Frame Time: %f Frame Num: %d", */
+                /*         time, frame_time[layer], frame_num[layer]); */
 
-                frame_time[layer] = MIN(frame_time[layer] + 1.0f / ANIM_LENGTH, frame_num[layer]); 
+                frame_time[layer] = MIN(frame_time[layer] + 1.0f / ANIM_LENGTH, 1.0); 
                 break;
 
             case BLANK:
@@ -229,10 +226,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             continue;
         }
         
-        graphics_page_update_geometry(page);
+        //graphics_page_update_geometry(page);
 
-        for (int geo_num = 0; geo_num < num_geo; geo_num++) {
-            geo = graphics_page_get_geometry(page, geo_num);
+        for (int geo_num = 0; geo_num < page->len_geometry; geo_num++) {
+            geo = page->geometry[geo_num];
             if (geo == NULL) {
                 continue;
             }
@@ -246,7 +243,10 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 glStencilMask(0xFF);
             }
 
-            parent_geo = graphics_page_get_geometry(page, geo->parent);
+            parent_geo = page->geometry[geo->parent];
+            if (parent_geo == NULL) {
+                log_file(LogError, "GL Renderer", "Missing parent geo %d for geo %d", geo->parent, geo_num);
+            }
 
             switch (parent_geo->geo_type) {
                 case RECT:

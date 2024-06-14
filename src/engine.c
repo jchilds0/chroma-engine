@@ -60,10 +60,7 @@ void engine_window(void) {
         page_num[status.layer]  = status.temp_id;
         action[status.layer]    = status.action;
         frame_num[status.layer] = status.frame_num;
-
-        if (action[status.layer] == ANIMATE_ON) {
-            frame_time[status.layer] = 0;
-        }
+        frame_time[status.layer] = 0.0;
     }
 }
 

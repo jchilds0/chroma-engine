@@ -19,6 +19,7 @@
  *
  */
 
+#include "graphics.h"
 #include "graphics_internal.h"
 #include "chroma-engine.h"
 #include "geometry.h"
@@ -26,11 +27,10 @@
 #include <string.h>
 #include <time.h>
 
-void graphics_page_add_edges(IPage *page, Graph *g);
-void graphics_keyframe_store_value(IPage *page, Graph *g, Keyframe *frame);
+void graphics_page_default_values(IPage *page);
 void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
 
-static int keyframeToEnum(char *name) {
+static FRAME_TYPE keyframeToEnum(char *name) {
     if (strncmp(name, "bind-frame", KEYFRAME_TYPE_LEN) == 0) {
         return BIND_FRAME;
     } else if (strncmp(name, "user-frame", KEYFRAME_TYPE_LEN) == 0) {
@@ -43,143 +43,138 @@ static int keyframeToEnum(char *name) {
     return -1;
 }
 
-/*
- * Next available keyframe index
- */
-unsigned int graphics_page_add_keyframe(IPage *page) {
-    if (page->num_keyframe == page->len_keyframe) {
-        log_file(LogWarn, "Graphics", "Out of keyframe memory");
-        return -1;
-    }
-
-    page->num_keyframe++;
-    return page->num_keyframe - 1;
-}
-
-/*
- * Allocate page keyframe arrays
- */
-void graphics_page_init_keyframe(IPage *page) {
-    page->max_keyframe = 0;
-
-    for (int i = 0; i < page->len_keyframe; i++) {
-        page->max_keyframe = MAX(page->max_keyframe, page->keyframe[i].frame_num);
-    }
-
-    page->max_keyframe++;
-
-    free(page->k_value);
-
-    int n = page->max_keyframe * page->len_geometry * GEO_NUM;
-    page->k_value = NEW_ARRAY(n, int);
-
-    for (int i = 0; i < n; i++) {
-        page->k_value[i] = -1;
-    }
-}
-
-void graphics_page_set_keyframe_int(IPage *page, int keyframe_index, char *name, int value) {
-    if (keyframe_index < 0 || keyframe_index >= page->num_keyframe) {
-        log_file(LogError, "Graphics", "Keyframe index %d out of range", keyframe_index);
-        return;
-    }
-
-    Keyframe *frame = &page->keyframe[keyframe_index];
+void graphics_keyframe_set_int(Keyframe *frame, char *name, int value) {
 
     if (strncmp(name, "frame_num", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->frame_num = value;
+
     } else if (strncmp(name, "frame_geo", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->geo_id = value;
+
     } else if (strncmp(name, "value", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->value = value;
+
     } else if (strncmp(name, "bind_frame", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->bind_frame_num = value;
+
     } else if (strncmp(name, "bind_geo", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->bind_geo_id = value;
+
     } else {
+
         log_file(LogWarn, "Graphics", "Keyframe attr %s is not an int attr", name);
+
     }
 }
 
-void graphics_page_set_keyframe_attr(IPage *page, int keyframe_index, char *name, char *value) {
-    if (keyframe_index < 0 || keyframe_index >= page->num_keyframe) {
-        log_file(LogError, "Graphics", "Keyframe index %d out of range", keyframe_index);
-        return;
-    }
-
-    Keyframe *frame = &page->keyframe[keyframe_index];
-
+void graphics_keyframe_set_attr(Keyframe *frame, char *name, char *value) {
     if (strncmp(name, "frame_type", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->type = keyframeToEnum(value); 
+
     } else if (strncmp(name, "frame_attr", KEYFRAME_TYPE_LEN) == 0) {
+
         frame->attr = geometry_char_to_attr(value); 
+
     } else if (strncmp(name, "expand", KEYFRAME_TYPE_LEN) == 0) {
+
         if (strncmp(value, "true", KEYFRAME_TYPE_LEN) == 0) {
             frame->expand = 1;
         } else {
             frame->expand = 0;
         }
-    } else if (strncmp(name, "user_frame", KEYFRAME_TYPE_LEN) == 0) {
-        frame->type = USER_FRAME;
-    } else if (strncmp(name, "bind_attr", KEYFRAME_TYPE_LEN) == 0) {
-        frame->bind_attr = geometry_char_to_attr(value); 
-    } else {
-        log_file(LogWarn, "Graphics", "Keyframe attr %s is not a string attr", name);
-    }
 
+    } else if (strncmp(name, "user_frame", KEYFRAME_TYPE_LEN) == 0) {
+
+        frame->type = USER_FRAME;
+
+    } else if (strncmp(name, "bind_attr", KEYFRAME_TYPE_LEN) == 0) {
+
+        frame->bind_attr = geometry_char_to_attr(value); 
+
+    } else {
+
+        log_file(LogWarn, "Graphics", "Keyframe attr %s is not a string attr", name);
+
+    }
 }
 
-/*
- * Build a 3D array of the geometry attribute values per 
- * geometry and per keyframe.
- */
-void graphics_page_calculate_keyframes(IPage *page) {
-    int start, end;
-    int n = page->max_keyframe * page->len_geometry * GEO_NUM;
-
-    Graph *g = graphics_new_graph(n);
-
-    {
-        // store geometry relations
-        start = clock();
-
-        graphics_page_add_edges(page, g);
-
-        end = clock();
-        if (LOG_KEYFRAMES) {
-            log_file(LogMessage, "Graphics", "Parsed Keyframes in %f ms", 
-                ((double) (end - start) * 1000) / CLOCKS_PER_SEC
-            );
-        }
-
+static void graphics_log_keyframe(IPage *page) {
+    if (!LOG_KEYFRAMES) {
+        return;
     }
 
+    // print keyframes
+    log_file(LogMessage, "Graphics", "Keyframes");
+
+    for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+        if (page->geometry[geo_id] == NULL) {
+            continue;
+        }
+
+        log_file(LogMessage, "Graphics", "\tGeo ID %d: ", geo_id); 
+
+        for (int attr = 0; attr < GEO_NUM; attr++) {
+            if (!geometry_is_int_attr(attr)) {
+                continue;
+            }
+
+            log_file(LogMessage, "Graphics", "\t\tAttr %d: ", attr);
+
+            for (int frame_index = 0; frame_index < page->max_keyframe; frame_index++) {
+                int i = INDEX(geo_id, attr, frame_index, GEO_NUM, page->max_keyframe);
+
+                log_file(LogMessage, "Graphics", "\t\t\tFrame %d: %d", frame_index, 
+                         page->keyframe_graph->value[i]); 
+            }
+        }
+    }
+}
+
+void graphics_page_calculate_keyframes(IPage *page) {
+    int start, end;
+
     {
-        // store keyframe value
-        start = clock();
-        for (int i = 0; i < page->len_keyframe; i++) {
-            Keyframe *frame = &page->keyframe[i];
+        // derived values
+        IGeometry *geo;
+        int width, height, frame_index;
 
-            graphics_keyframe_store_value(page, g, frame);
+        for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
+            geo = page->geometry[geo_id];
+
+            if (geo == NULL) {
+                continue;
+            }
+
+            if (geo->geo_type != TEXT) {
+                continue;
+            }
+
+            width = geometry_get_int_attr(geo, GEO_WIDTH);
+            frame_index = INDEX(geo_id, GEO_WIDTH, 0, GEO_NUM, page->max_keyframe);
+            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, width);
+
+            height = geometry_get_int_attr(geo, GEO_HEIGHT);
+            frame_index = INDEX(geo_id, GEO_HEIGHT, 0, GEO_NUM, page->max_keyframe);
+            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, height);
+
         }
-
-        end = clock();
-        if (LOG_KEYFRAMES) {
-            log_file(LogMessage, "Graphics", "Parsed Keyframes in %f ms", 
-                ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
-        }
-
     }
 
     {
         // calculate frames
         start = clock();
 
-        if (!graphics_graph_is_dag(g)) {
+        if (!graphics_graph_is_dag(page->keyframe_graph)) {
             log_file(LogError, "Graphics", "Page %d keyframes are not in a dag", page->temp_id);
         }
 
-        graphics_graph_evaluate_dag(g);
+        graphics_graph_evaluate_dag(page->keyframe_graph);
 
         end = clock();
         if (LOG_KEYFRAMES) {
@@ -189,36 +184,7 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
     }
 
-    for (int i = 0; i < n; i++) {
-        page->k_value[i] = g->value[i];
-    }
-
-    graphics_graph_free_graph(g);
-
-    if (!LOG_KEYFRAMES) {
-        return;
-    }
-
-    // print keyframes
-    log_file(LogMessage, "Graphics", "Final Keyframes");
-
-    for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
-        log_file(LogMessage, "Graphics", "\tGeo ID %d: ", geo_id); 
-
-        for (int attr = 0; attr < GEO_NUM; attr++) {
-            if (!page->attr_keyframe[geo_id * GEO_NUM + attr]) {
-                continue;
-            }
-
-            log_file(LogMessage, "Graphics", "\t\tAttr %d: ", attr);
-
-            for (int frame_index = 0; frame_index < page->max_keyframe; frame_index++) {
-                int i = INDEX(geo_id, attr, frame_index, GEO_NUM, page->max_keyframe);
-
-                log_file(LogMessage, "Graphics", "\t\t\tFrame %d: %d", frame_index, page->k_value[i]); 
-            }
-        }
-    }
+    graphics_log_keyframe(page);
 }
 
 static int single_value(Node node) {
@@ -285,7 +251,7 @@ static int max_value_plus_pad(Node node) {
             continue;
         }
 
-        if (i == node.node_index) {
+        if (i == node.pad_index) {
             continue;
         }
         
@@ -296,11 +262,11 @@ static int max_value_plus_pad(Node node) {
         log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
     }
 
-    if (!node.have_value[node.node_index]) {
-        log_file(LogError, "Graphics", "Node %d missing value", node.node_index);
+    if (!node.have_value[node.pad_index]) {
+        log_file(LogError, "Graphics", "Node %d missing pad %d", node.node_index, node.pad_index);
     }
 
-    return value + node.values[node.node_index];
+    return value + node.values[node.pad_index];
 }
 
 static int sum_value(Node node) {
@@ -317,150 +283,214 @@ static int sum_value(Node node) {
     return value;
 }
 
-static void graphics_geometry_add_edges(IGeometry *geo, Graph *g, int geo_id, int frame_num, int num_frames) {
+static void graphics_page_root_node(IPage *page, int geo_id, int frame_num) {
+    int pos_x_index = INDEX(geo_id, GEO_POS_X, frame_num, GEO_NUM, page->max_keyframe);
+    int pos_y_index = INDEX(geo_id, GEO_POS_Y, frame_num, GEO_NUM, page->max_keyframe);
+    int width_index = INDEX(geo_id, GEO_WIDTH, frame_num, GEO_NUM, page->max_keyframe);
+    int height_index = INDEX(geo_id, GEO_HEIGHT, frame_num, GEO_NUM, page->max_keyframe);
+
+    graphics_graph_add_eval_node(page->keyframe_graph, pos_x_index, 0, NULL);
+    graphics_graph_add_eval_node(page->keyframe_graph, pos_y_index, 0, NULL);
+
+    graphics_graph_add_eval_node(page->keyframe_graph, width_index, 1920, NULL);
+    graphics_graph_add_eval_node(page->keyframe_graph, height_index, 1080, NULL);
+}
+
+static void graphics_geometry_relative_position(IPage *page, int geo_id, int frame_num) {
+    IGeometry *geo = page->geometry[geo_id];
     int parent_id = geometry_get_int_attr(geo, GEO_PARENT);
 
     {
         // x edges
-        int pos_x_index     = INDEX(geo_id, GEO_POS_X, frame_num, GEO_NUM, num_frames);
-        int rel_x_index     = INDEX(geo_id, GEO_REL_X, frame_num, GEO_NUM, num_frames);
-        int width_index     = INDEX(geo_id, GEO_WIDTH, frame_num, GEO_NUM, num_frames);
-        int lower_x_index   = INDEX(geo_id, GEO_X_LOWER, frame_num, GEO_NUM, num_frames);
-        int upper_x_index   = INDEX(geo_id, GEO_X_UPPER, frame_num, GEO_NUM, num_frames);
-        int parent_x_index  = INDEX(parent_id, GEO_POS_X, frame_num, GEO_NUM, num_frames);
+        int pos_x_index     = INDEX(geo_id, GEO_POS_X, frame_num, GEO_NUM, page->max_keyframe);
+        int rel_x_index     = INDEX(geo_id, GEO_REL_X, frame_num, GEO_NUM, page->max_keyframe);
+        int width_index     = INDEX(geo_id, GEO_WIDTH, frame_num, GEO_NUM, page->max_keyframe);
+        int lower_x_index   = INDEX(geo_id, GEO_X_LOWER, frame_num, GEO_NUM, page->max_keyframe);
+        int upper_x_index   = INDEX(geo_id, GEO_X_UPPER, frame_num, GEO_NUM, page->max_keyframe);
+        int parent_x_index  = INDEX(parent_id, GEO_POS_X, frame_num, GEO_NUM, page->max_keyframe);
 
-        int rel_x = geometry_get_int_attr(geo, GEO_REL_X);
-        int width = geometry_get_int_attr(geo, GEO_WIDTH);
+        graphics_graph_add_eval_node(page->keyframe_graph, pos_x_index, 0, sum_value);
+        graphics_graph_add_edge(page->keyframe_graph, pos_x_index, rel_x_index);
+        graphics_graph_add_edge(page->keyframe_graph, pos_x_index, parent_x_index);
 
-        graphics_graph_add_node(g, rel_x_index, rel_x, NULL);
-        graphics_graph_add_node(g, width_index, width, NULL);
+        graphics_graph_add_eval_node(page->keyframe_graph, lower_x_index, 0, single_value);
+        graphics_graph_add_edge(page->keyframe_graph, lower_x_index, pos_x_index);
 
-        graphics_graph_add_node(g, pos_x_index, 0, sum_value);
-        graphics_graph_add_edge(g, pos_x_index, rel_x_index);
-        graphics_graph_add_edge(g, pos_x_index, parent_x_index);
-
-        graphics_graph_add_node(g, lower_x_index, 0, single_value);
-        graphics_graph_add_edge(g, lower_x_index, pos_x_index);
-
-        graphics_graph_add_node(g, upper_x_index, 0, sum_value);
-        graphics_graph_add_edge(g, upper_x_index, rel_x_index);
-        graphics_graph_add_edge(g, upper_x_index, width_index);
+        graphics_graph_add_eval_node(page->keyframe_graph, upper_x_index, 0, sum_value);
+        graphics_graph_add_edge(page->keyframe_graph, upper_x_index, rel_x_index);
+        graphics_graph_add_edge(page->keyframe_graph, upper_x_index, width_index);
     }
 
     {
         // y edges
-        int pos_y_index     = INDEX(geo_id, GEO_POS_Y, frame_num, GEO_NUM, num_frames);
-        int rel_y_index     = INDEX(geo_id, GEO_REL_Y, frame_num, GEO_NUM, num_frames);
-        int height_index     = INDEX(geo_id, GEO_HEIGHT, frame_num, GEO_NUM, num_frames);
-        int lower_y_index   = INDEX(geo_id, GEO_Y_LOWER, frame_num, GEO_NUM, num_frames);
-        int upper_y_index   = INDEX(geo_id, GEO_Y_UPPER, frame_num, GEO_NUM, num_frames);
-        int parent_y_index  = INDEX(parent_id, GEO_POS_Y, frame_num, GEO_NUM, num_frames);
+        int pos_y_index     = INDEX(geo_id, GEO_POS_Y, frame_num, GEO_NUM, page->max_keyframe);
+        int rel_y_index     = INDEX(geo_id, GEO_REL_Y, frame_num, GEO_NUM, page->max_keyframe);
+        int height_index     = INDEX(geo_id, GEO_HEIGHT, frame_num, GEO_NUM, page->max_keyframe);
+        int lower_y_index   = INDEX(geo_id, GEO_Y_LOWER, frame_num, GEO_NUM, page->max_keyframe);
+        int upper_y_index   = INDEX(geo_id, GEO_Y_UPPER, frame_num, GEO_NUM, page->max_keyframe);
+        int parent_y_index  = INDEX(parent_id, GEO_POS_Y, frame_num, GEO_NUM, page->max_keyframe);
 
-        int rel_y = geometry_get_int_attr(geo, GEO_REL_Y);
-        int height = geometry_get_int_attr(geo, GEO_HEIGHT);
+        graphics_graph_add_eval_node(page->keyframe_graph, pos_y_index, 0, sum_value);
+        graphics_graph_add_edge(page->keyframe_graph, pos_y_index, rel_y_index);
+        graphics_graph_add_edge(page->keyframe_graph, pos_y_index, parent_y_index);
 
-        graphics_graph_add_node(g, rel_y_index, rel_y, NULL);
-        graphics_graph_add_node(g, height_index, height, NULL);
+        graphics_graph_add_eval_node(page->keyframe_graph, lower_y_index, 0, single_value);
+        graphics_graph_add_edge(page->keyframe_graph, lower_y_index, pos_y_index);
 
-        graphics_graph_add_node(g, pos_y_index, 0, sum_value);
-        graphics_graph_add_edge(g, pos_y_index, rel_y_index);
-        graphics_graph_add_edge(g, pos_y_index, parent_y_index);
-
-        graphics_graph_add_node(g, lower_y_index, 0, single_value);
-        graphics_graph_add_edge(g, lower_y_index, pos_y_index);
-
-        graphics_graph_add_node(g, upper_y_index, 0, sum_value);
-        graphics_graph_add_edge(g, upper_y_index, rel_y_index);
-        graphics_graph_add_edge(g, upper_y_index, height_index);
+        graphics_graph_add_eval_node(page->keyframe_graph, upper_y_index, 0, sum_value);
+        graphics_graph_add_edge(page->keyframe_graph, upper_y_index, rel_y_index);
+        graphics_graph_add_edge(page->keyframe_graph, upper_y_index, height_index);
     }
 }
 
-void graphics_page_add_edges(IPage *page, Graph *g) {
+static void graphics_geometry_default_values(IPage *page, int geo_id, int attr) {
+    for (int frame_num = 1; frame_num < page->max_keyframe; frame_num++) {
+        int base_index = INDEX(geo_id, attr, 0, GEO_NUM, page->max_keyframe);
+        int frame_index = INDEX(geo_id, attr, frame_num, GEO_NUM, page->max_keyframe);
+
+        if (page->keyframe_graph->exists[frame_index]) {
+            continue;
+        }
+
+        graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
+        graphics_graph_add_edge(page->keyframe_graph, frame_index, base_index);
+    }
+}
+
+void graphics_page_default_relations(IPage *page) {
+    // relative positions
     for (int frame_num = 0; frame_num < page->max_keyframe; frame_num++) {
-        for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
-            if (page->geometry[geo_id] == NULL) {
-                continue;
-            }
+        graphics_page_root_node(page, 0, frame_num);
+    }
 
-            if (geo_id == geometry_get_int_attr(page->geometry[geo_id], GEO_PARENT)) {
-                continue;
-            }
+    for (int geo_id = 1; geo_id < page->len_geometry; geo_id++) {
+        if (page->geometry[geo_id] == NULL) {
+            continue;
+        }
 
-            graphics_geometry_add_edges(page->geometry[geo_id], g, geo_id, frame_num, page->max_keyframe);
+        for (int frame_num = 0; frame_num < page->max_keyframe; frame_num++) {
+            graphics_geometry_relative_position(page, geo_id, frame_num);
         }
     }
+
+    // default values
+    graphics_page_default_values(page);
+
+    for (int geo_id = 1; geo_id < page->len_geometry; geo_id++) {
+        for (int attr = 0; attr < GEO_NUM; attr++) {
+            int base_index = INDEX(geo_id, attr, 0, GEO_NUM, page->max_keyframe);
+
+            if (!page->keyframe_graph->exists[base_index]) {
+                continue;
+            }
+
+            graphics_geometry_default_values(page, geo_id, attr);
+        }
+    }
+
+    graphics_log_keyframe(page);
 } 
 
-void graphics_keyframe_store_value(IPage *page, Graph *g, Keyframe *frame) {
-    IGeometry *geo = page->geometry[frame->geo_id];
-    int frame_index = INDEX(frame->geo_id, frame->attr, frame->frame_num, GEO_NUM, page->max_keyframe);
+static IPage *page = NULL;
+static int geo_id = -1;
+
+static void add_attribute(int attr) {
+    if (page == NULL) {
+        log_file(LogError, "Graphics", "Page not set when adding attribute");
+    }
+
+    if (geo_id == -1) {
+        log_file(LogError, "Graphics", "Geo id not set when adding attribute");
+    }
+
+    IGeometry *geo = page->geometry[geo_id];
+    int frame_index = INDEX(geo_id, attr, 0, GEO_NUM, page->max_keyframe);
+    int value = geometry_get_int_attr(geo, attr);
+
+    graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, value);
+}
+
+
+void graphics_page_default_values(IPage *cur_page) {
+    page = cur_page;
+    for (geo_id = 1; geo_id < cur_page->len_geometry; geo_id++) {
+        IGeometry *geo = cur_page->geometry[geo_id];
+        if (geo == NULL) {
+            continue;
+        }
+
+        geometry_graph_add_values(geo, add_attribute);
+    }
+}
+
+void graphics_page_add_keyframe(IPage *page, Keyframe frame) {
+    int frame_index = INDEX(frame.geo_id, frame.attr, frame.frame_num, GEO_NUM, page->max_keyframe);
+    int geo_index = INDEX(frame.geo_id, frame.attr, 0, GEO_NUM, page->max_keyframe);
     int bind_index;
 
-    page->attr_keyframe[frame->geo_id * GEO_NUM + frame->attr] = 1;
-
-    switch (frame->type) {
+    switch (frame.type) {
         case USER_FRAME:
-            graphics_graph_add_node(g, frame_index, geometry_get_int_attr(geo, frame->attr), NULL);
+            graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
+            graphics_graph_add_edge(page->keyframe_graph, frame_index, geo_index);
             break;
 
         case SET_FRAME:
-            graphics_graph_add_node(g, frame_index, frame->value, NULL);
+            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, frame.value);
             break;
 
         case BIND_FRAME:
             bind_index = INDEX(
-                frame->bind_geo_id, frame->bind_attr, frame->bind_frame_num, 
+                frame.bind_geo_id, frame.bind_attr, frame.bind_frame_num, 
                 GEO_NUM, page->max_keyframe
             );
 
-            graphics_graph_add_node(g, frame_index, 0, single_value);
-            graphics_graph_add_edge(g, frame_index, bind_index);
+            graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
+            graphics_graph_add_edge(page->keyframe_graph, frame_index, bind_index);
             break;
 
         default:
-            log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame->type);
+            log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame.type);
     }
 
     if (LOG_KEYFRAMES) {
-        log_file(LogMessage, "Graphics", "Keyframe %d", frame->frame_num);
+        log_file(LogMessage, "Graphics", "Keyframe %d", frame.frame_num);
         log_file(
             LogMessage, "Graphics", 
             "\tInitially set geo %d, attr %d to %d", 
-            frame->geo_id, frame->attr, page->k_value[frame_index]
+            frame.geo_id, frame.attr, page->keyframe_graph->value[frame_index]
         );
     }
 
-    if (!frame->expand) {
+    if (!frame.expand) {
         return;
     }
 
-    graphics_graph_add_node(g, frame_index, g->value[frame_index], max_value_plus_pad);
-    graphics_graph_add_edge(g, frame_index, frame_index);
-    int x_upper_index, y_upper_index;
+    graphics_graph_add_eval_node(page->keyframe_graph, frame_index, geo_index, max_value_plus_pad);
+    graphics_graph_add_edge(page->keyframe_graph, frame_index, geo_index);
 
     for (int child_id = 0; child_id < page->len_geometry; child_id++) {
         if (page->geometry[child_id] == NULL) {
             continue;
         }
 
-        if (frame->geo_id != geometry_get_int_attr(page->geometry[child_id], GEO_PARENT)) {
+        if (frame.geo_id != geometry_get_int_attr(page->geometry[child_id], GEO_PARENT)) {
             continue;
         }
 
-        x_upper_index = INDEX(child_id, GEO_X_UPPER, frame->frame_num, GEO_NUM, page->max_keyframe);
-        y_upper_index = INDEX(child_id, GEO_Y_UPPER, frame->frame_num, GEO_NUM, page->max_keyframe);
+        int x_upper_index = INDEX(child_id, GEO_X_UPPER, frame.frame_num, GEO_NUM, page->max_keyframe);
+        int y_upper_index = INDEX(child_id, GEO_Y_UPPER, frame.frame_num, GEO_NUM, page->max_keyframe);
 
-        switch (frame->attr) {
+        switch (frame.attr) {
             case GEO_WIDTH:
-                graphics_graph_add_edge(g, frame_index, x_upper_index);
+                graphics_graph_add_edge(page->keyframe_graph, frame_index, x_upper_index);
                 break;
 
             case GEO_HEIGHT: 
-                graphics_graph_add_edge(g, frame_index, y_upper_index);
+                graphics_graph_add_edge(page->keyframe_graph, frame_index, y_upper_index);
                 break;
 
             default:
-                log_file(LogWarn, "Graphics", "Expand attr %d not implemented", frame->attr);
+                log_file(LogWarn, "Graphics", "Expand attr %d not implemented", frame.attr);
         }
     }
 }

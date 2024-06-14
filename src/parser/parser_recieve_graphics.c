@@ -8,6 +8,7 @@
 #include "chroma-engine.h"
 #include "geometry.h"
 #include "graphics.h"
+#include "graphics/graphics_internal.h"
 #include "parser_internal.h"
 #include "chroma-typedefs.h"
 #include "log.h"
@@ -22,8 +23,8 @@
 static int clients[MAX_CONNECTIONS];
 static int socket_client = -1;
 
-void    parser_page(IPage *page);
-void    parser_header(PageStatus *status);
+void    parser_parse_page(IPage *page);
+void    parser_parse_header(PageStatus *status);
 Token   parser_get_token(char *value);
 
 static char buf[PARSE_BUF_SIZE];
@@ -126,7 +127,7 @@ PAGE:
     log_file(LogMessage, "Parser", "Recieved message from %d", socket_client);
 
     int start = clock();
-    parser_header(status);
+    parser_parse_header(status);
 
     if (status->action == UPDATE) {
         parser_update_template(eng, status->temp_id);
@@ -152,30 +153,27 @@ PAGE:
     }
 
     // Read new page values
-    parser_page(page);
+    parser_parse_page(page);
 
-    int max_frame = graphics_page_num_frames(page);
     switch (status->action) {
         case ANIMATE_ON:
-            graphics_page_calculate_keyframes(page);
             status->frame_num = 1;
             break;
 
         case CONTINUE:
-            status->frame_num = MIN(status->frame_num + 1, max_frame - 1);
+            status->frame_num = MIN(status->frame_num + 1, page->max_keyframe - 1);
             break;
 
         case ANIMATE_OFF:
-            status->frame_num = max_frame - 1;
+            status->frame_num = page->max_keyframe - 1;
             break;
 
         default:
             break;
     }
 
-    int num_geo = graphics_page_num_geometry(page);
-    for (int i = 0; i < num_geo; i++) {
-        IGeometry *geo = graphics_page_get_geometry(page, i);
+    for (int i = 0; i < page->len_geometry; i++) {
+        IGeometry *geo = page->geometry[i];
         if (geo == NULL) {
             continue;
         }
@@ -192,13 +190,19 @@ PAGE:
     int end = clock();
     log_file(LogMessage, "Graphics", "Parsed Page in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
 
+    start = clock();
+    graphics_page_calculate_keyframes(page);
+    end = clock();
+
+    log_file(LogMessage, "Graphics", "Calculated keyframes in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+
     return 0;
 }
 
 /*
  * Parse the header of a gui request 
  */
-void parser_header(PageStatus *status) {
+void parser_parse_header(PageStatus *status) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
@@ -262,7 +266,7 @@ void parser_header(PageStatus *status) {
     }
 }
 
-void parser_page(IPage *page) {
+void parser_parse_page(IPage *page) {
     char attr[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     Token tok;
     IGeometry *geo;
@@ -292,8 +296,15 @@ void parser_page(IPage *page) {
             log_file(LogError, "Parser", "Didn't find a geo num");
         }
 
-        geo = graphics_page_get_geometry(page, geo_num);
-        geometry_set_attr(geo, attr, value);
+        GeometryAttr attr_num = geometry_char_to_attr(attr);
+        int frame_index = INDEX(geo_num, attr_num, 0, GEO_NUM, page->max_keyframe);
+        geo = page->geometry[geo_num];
+
+        if (page->keyframe_graph->exists[frame_index]) {
+            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, atoi(value));
+        } else {
+            geometry_set_attr(geo, attr, value);
+        }
 
         if (LOG_PARSER) {
             log_file(LogMessage, "Parser", "\tgeo %d; %s = %s", geo_num, attr, value);

@@ -21,7 +21,7 @@ static int c_token;
 static char c_value[PARSE_BUF_SIZE];
 
 void parser_parse_keyframe(IPage *page, int socket_client);
-void parser_parse_template(IPage *page, int socket_client);
+void parser_parse_template(IGraphics *hub, int socket_client);
 void parser_parse_geometry(IPage *page, int socket_client);
 void parser_parse_attribute(IGeometry *geo, int socket_client);
 
@@ -106,7 +106,7 @@ void parser_update_template(Engine *eng, int temp_id) {
 void parser_parse_template(IGraphics *hub, int socket_client) {
     IPage *page = NULL;
     int num_geo = -1, 
-        num_keyframe = -1,
+        max_keyframe = -1,
         temp_id = -1;
 
     parser_match_token('{', socket_client);
@@ -152,14 +152,14 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             }
 
             parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "num_keyframe") == 0) {
+        } else if (strcmp(c_value, "max_keyframe") == 0) {
             // 'num_keyframe': 1234
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
 
-            num_keyframe = atoi(c_value);
+            max_keyframe = atoi(c_value);
             if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\tnum keyframe: %d", num_keyframe);
+                log_file(LogMessage, "Parser", "\tnum keyframe: %d", max_keyframe);
             }
 
             parser_match_token(INT, socket_client);
@@ -168,30 +168,27 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_match_token(':', socket_client);
 
             if (page == NULL) {
-                log_file(LogError, "Parser", "Template ID, num of geom or keyframes not specific");
+                log_file(LogError, "Parser", "Page not initialised");
             }
 
             // 'keyframe': [...]
             parser_match_token('[', socket_client);
-
             parser_parse_keyframe(page, socket_client);
-            graphics_page_init_keyframe(page);
-
             parser_match_token(']', socket_client);
+
         } else if (strcmp(c_value, "geometry") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
             
             if (page == NULL) {
-                log_file(LogError, "Parser", "Template ID, num of geom or keyframes not specific");
+                log_file(LogError, "Parser", "Page not initialised");
             }
 
             // 'geometry': [...]
             parser_match_token('[', socket_client);
-
             parser_parse_geometry(page, socket_client);
-
             parser_match_token(']', socket_client);
+
         } else {
             log_file(LogWarn, "Parser", "Unknown template attribute %s", c_value);
             parser_match_token(STRING, socket_client);
@@ -199,8 +196,8 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
             parser_next_token(socket_client);
         }
 
-        if (temp_id != -1 && num_geo != -1 && num_keyframe != -1 && page == NULL) {
-            page = graphics_hub_add_page(hub, num_geo, num_keyframe, temp_id);
+        if (temp_id != -1 && num_geo != -1 && max_keyframe != -1 && page == NULL) {
+            page = graphics_hub_add_page(hub, num_geo, max_keyframe, temp_id);
         }
 
         if (c_token == ',') {
@@ -209,6 +206,7 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
     }
 
     parser_match_token('}', socket_client);
+    graphics_page_default_relations(page);
 
     if (c_token == ',') {
         parser_match_token(',', socket_client);
@@ -218,14 +216,15 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
 
 // K -> {'frame_num': num, ...
 void parser_parse_keyframe(IPage *page, int socket_client) {
+    static int frameIndex = 0;
+    Keyframe frame;
     char name[GEO_BUF_SIZE];
     int value;
-    unsigned int keyframe_index;
 
     while (c_token == '{') {
         parser_match_token('{', socket_client);
 
-        keyframe_index = graphics_page_add_keyframe(page);
+        frame.expand = 0;
 
         while (c_token == STRING) {
             memcpy(name, c_value, sizeof name);
@@ -233,15 +232,15 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
             parser_match_token(':', socket_client);
 
             if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "keyframe %d: %s = %s", keyframe_index, name, c_value);
+                log_file(LogMessage, "Parser", "keyframe %d: %s = %s", frameIndex, name, c_value);
             }
 
             if (c_token == INT) {
                 value = atoi(c_value);
-                graphics_page_set_keyframe_int(page, keyframe_index, name, value);
+                graphics_keyframe_set_int(&frame, name, value);
                 parser_match_token(INT, socket_client);
             } else if (c_token == STRING) {
-                graphics_page_set_keyframe_attr(page, keyframe_index, name, c_value);
+                graphics_keyframe_set_attr(&frame, name, c_value);
                 parser_match_token(STRING, socket_client);
             } else {
                 log_file(LogWarn, "Parser", "Unknown value type %d", c_token);
@@ -254,6 +253,9 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
         }
 
         parser_match_token('}', socket_client);
+
+        graphics_page_add_keyframe(page, frame);
+        frameIndex++;
 
         if (c_token == ',') {
             parser_match_token(',', socket_client);
@@ -335,11 +337,10 @@ void parser_parse_geometry(IPage *page, int socket_client) {
             }
 
             parser_match_token('[', socket_client);
-
             geo = graphics_page_add_geometry(page, id, geo_type);
             parser_parse_attribute(geo, socket_client);
-
             parser_match_token(']', socket_client);
+
         } else {
             log_file(LogWarn, "Parser", "Unknown geometry attribute %s", c_value);
             parser_match_token(STRING, socket_client);

@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 GeometryRect *geometry_new_rectangle(void) {
     GeometryRect *rect = NEW_STRUCT(GeometryRect);
     rect->geo.geo_type = RECT;

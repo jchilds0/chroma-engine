@@ -21,7 +21,7 @@ static void close_preview(GtkWidget *widget, gpointer data) {
 
 void preview_window(int wid) {
     GtkWidget *plug, *gl_area;
-    PageStatus status = {-1, 0, 0, BLANK};
+    PageStatus status = {-1, 1, 0, BLANK};
     gtk_init(0, NULL);
 
     engine.server_port = 6100;
@@ -50,10 +50,7 @@ void preview_window(int wid) {
         page_num[status.layer]  = status.temp_id;
         action[status.layer]    = status.action;
         frame_num[status.layer] = status.frame_num;
-
-        if (action[status.layer] == ANIMATE_ON) {
-            frame_time[status.layer] = 0;
-        }
+        frame_time[status.layer] = 0.0;
     }
 }
 
