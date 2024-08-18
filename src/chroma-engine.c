@@ -4,6 +4,7 @@
 
 #include "chroma-typedefs.h"
 #include "chroma-prototypes.h"
+#include "config.h"
 #include "log.h"
 #include "parser.h"
 
@@ -15,33 +16,39 @@
 #include <time.h>
 
 Engine engine;
+Config config;
 
 int main(int argc, char **argv) {
-    int x, wid, 
-        port = 9000;
+    int x, wid;
     int hflag = 0;
     int wflag = 0;
-    char *wval, 
-        *gval = "127.0.0.1";
+    int cflag = 0;
+
+    char *wval;
+    char *config_path;
     opterr = 0;
+
+    config.hub_addr = NULL;
+
     log_start(-1);
     parser_init_sockets();
 
-    while ((x = getopt(argc, argv, "g:hw:p:")) != -1) {
+    while ((x = getopt(argc, argv, "c:hw:")) != -1) {
         switch (x) {
-            case 'g':
-                gval = optarg;
+            case 'c':
+                cflag = 1;
+                config_path = optarg;
                 break;
+
             case 'h':
                 hflag = 1;
                 break;
-            case 'p':
-                port = atoi(optarg);
-                break;
+
             case 'w':
                 wval = optarg;
                 wflag = 1;
                 break;
+
             default:
                 log_file(LogError, "Engine", "Invalid Args %d", x);
         }
@@ -49,14 +56,20 @@ int main(int argc, char **argv) {
 
     if (hflag) {
         printf("Usage:\n");
-        printf("  -g [addr]\tGraphics hub address (default: 127.0.0.1) \n");
-        printf("  -p [addr]\tGraphics hub port (default: 9000)\n");
+        printf("  -c [file]\tConfig File\n");
         printf("  -w [id]\tUse preview mode with gtk plug id [id]\n");
         return 0;
     }
 
-    engine.hub_socket = parser_tcp_start_client(gval, port);
-    log_file(LogMessage, "Engine", "Graphics hub %s:%d", gval, port); 
+    if (cflag) {
+        config_parse_file(&config, config_path);
+    } else {
+        log_file(LogMessage, "Config", "No config file specified, loading default " DEFAULT_CONFIG_PATH);
+        config_parse_file(&config, DEFAULT_CONFIG_PATH);
+    }
+
+    engine.hub_socket = parser_tcp_start_client(config.hub_addr, config.hub_port);
+    log_file(LogMessage, "Engine", "Graphics hub %s:%d", config.hub_addr, config.hub_port); 
 
     clock_t start, end;
     start = clock();

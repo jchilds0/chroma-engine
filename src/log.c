@@ -46,7 +46,7 @@ void log_start(EngineType type) {
     }
 }
 
-void log_file(LogType flag, char *module, char *buf, ...) {
+void log_file(LogType flag, const char *module, const char *buf, ...) {
     char time[100];
     char *type;
     char message[512];

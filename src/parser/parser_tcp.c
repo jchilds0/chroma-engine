@@ -83,6 +83,10 @@ int parser_tcp_start_client(char *addr, int port) {
     int socket_desc;
     struct sockaddr_in server_addr;
 
+    if (addr == NULL) {
+        log_file(LogError, "Parser", "Missing tcp addr");
+    }
+
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socket_desc < 0) {
@@ -95,7 +99,7 @@ int parser_tcp_start_client(char *addr, int port) {
     server_addr.sin_addr.s_addr = inet_addr(addr);
 
     if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof server_addr) < 0) {
-        log_file(LogError, "Parser", "Unable to connect to server");
+        log_file(LogError, "Parser", "Unable to connect to server %s:%d", addr, port);
         return -1;
     }
 

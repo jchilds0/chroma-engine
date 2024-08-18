@@ -18,6 +18,6 @@ typedef enum {
 
 /* log.c */
 void log_start(EngineType);
-void log_file(LogType, char *, char *, ...);
+void log_file(LogType, const char *, const char *, ...);
 
 #endif // !CHROMA_LOG

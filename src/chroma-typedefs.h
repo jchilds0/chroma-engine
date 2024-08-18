@@ -5,6 +5,7 @@
 #ifndef CHROMA_TYPEDEFS
 #define CHROMA_TYPEDEFS
 
+#include "config.h"
 #include "graphics.h"
 
 typedef enum {
@@ -29,7 +30,6 @@ typedef struct {
     int         server_socket;
     int         server_port;
     int         hub_socket;
-    int         hub_port;
     IGraphics   *hub;
 } Engine;
 
