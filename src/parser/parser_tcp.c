@@ -11,10 +11,11 @@
 #include "log.h"
 #include "parser_internal.h"
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #define MAX_ATTEMPTS        10
 
-int parser_tcp_start_server(char *addr, int port) {
+int parser_tcp_start_server(int port) {
     int socket_desc = -1;
     int bind_soc = -1;
     int attempts = 0;
@@ -41,7 +42,7 @@ int parser_tcp_start_server(char *addr, int port) {
     // set port and ip 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = inet_addr(addr);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
@@ -51,7 +52,7 @@ int parser_tcp_start_server(char *addr, int port) {
         bind_soc = bind(socket_desc, (struct sockaddr*) &server_addr, sizeof server_addr); 
 
         if (attempts++ > MAX_ATTEMPTS) {
-            log_file(LogError, "Parser", "Too many attemps to bind socket at addr %s to port %d", addr, port);
+            log_file(LogError, "Parser", "Too many attemps to bind socket to port %d", port);
         }
 
         if (bind_soc < 0) {

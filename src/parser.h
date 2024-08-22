@@ -21,7 +21,7 @@
 
 extern void parser_init_sockets(void);
 extern void parser_check_socket(int server_socket);
-extern int parser_tcp_start_server(char *addr, int port);
+extern int parser_tcp_start_server(int port);
 extern int parser_tcp_start_client(char *addr, int port);
 
 extern int parser_parse_graphic(Engine *eng, PageStatus *status);

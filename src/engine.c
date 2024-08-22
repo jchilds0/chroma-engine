@@ -34,7 +34,7 @@ void engine_window(void) {
     gtk_gl_area_set_has_depth_buffer(GTK_GL_AREA(gl_area), gtk_false());
 
     engine.server_port = 6800;
-    engine.server_socket = parser_tcp_start_server("127.0.0.1", engine.server_port);
+    engine.server_socket = parser_tcp_start_server(engine.server_port);
 
     gtk_window_set_title(GTK_WINDOW(window), "Chroma Engine");
     gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1080);
