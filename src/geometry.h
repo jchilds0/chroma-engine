@@ -42,6 +42,7 @@ typedef enum {
     TEXT,
     IMAGE,
     GRAPH,
+    POLYGON,
 } GeometryType;
 
 typedef enum {
@@ -68,8 +69,8 @@ typedef enum {
     GEO_MASK,
     GEO_TEXT,
     GEO_SCALE,
-    GEO_GRAPH_NODE,
-    GEO_NUM_NODE,
+    GEO_POINT,
+    GEO_NUM_POINTS,
     GEO_GRAPH_TYPE,
     GEO_IMAGE_ID,
 
@@ -138,6 +139,13 @@ typedef struct {
     int               cur_image_id;
     unsigned char     *data;
 } GeometryImage;
+
+typedef struct {
+    IGeometry         geo;
+    int               num_vertices;
+    GLfloat           color[4];
+    vec2              vertex[MAX_NODES];
+} GeometryPolygon;
 
 extern GeometryType geometry_char_to_type(char *name);
 extern IGeometry    *geometry_create_geometry(GeometryType type);

@@ -51,4 +51,13 @@ void geometry_clean_image(GeometryImage *image);
 void geometry_image_set_attr(GeometryImage *image, GeometryAttr attr, char *value);
 void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *value);
 
+/* geo_poly.c */
+GeometryPolygon *geometry_new_polygon(void);
+void geometry_free_polygon(GeometryPolygon *poly);
+void geometry_clean_polygon(GeometryPolygon *poly);
+void geometry_polygon_set_attr(GeometryPolygon *poly, GeometryAttr attr, char *value);
+void geometry_polygon_set_point(GeometryPolygon *poly, vec2 vec, int index);
+void geometry_polygon_get_attr(GeometryPolygon *poly, GeometryAttr attr, char *value);
+vec2 geometry_polygon_get_point(GeometryPolygon *poly, int index);
+
 #endif // !GEOMETRY_INTERNAL

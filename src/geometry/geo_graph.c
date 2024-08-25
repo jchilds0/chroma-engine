@@ -7,6 +7,7 @@
  */
 
 #include "chroma-engine.h"
+#include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -44,7 +45,7 @@ void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
                     g->color[2], 
                     g->color[3]);
             break;
-        case GEO_NUM_NODE:
+        case GEO_NUM_POINTS:
             sprintf(value, "%d", g->num_nodes);
             break;
         case GEO_GRAPH_TYPE:
@@ -67,14 +68,14 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
                    &graph->color[2],
                    &graph->color[3]);
             break;
-        case GEO_GRAPH_NODE:
+        case GEO_POINT:
             sscanf(value, "%d %d", &x, &y);
             graph->nodes[graph->node_count].x = x;
             graph->nodes[graph->node_count].y = y;
             graph->node_count++;
 
             break;
-        case GEO_NUM_NODE:
+        case GEO_NUM_POINTS:
             graph->num_nodes = g_value;
             graph->node_count = 0;
             memset(graph->nodes, 0, sizeof graph->nodes);

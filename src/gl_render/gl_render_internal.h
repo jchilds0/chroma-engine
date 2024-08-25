@@ -53,4 +53,9 @@ void gl_image_init_buffers(void);
 void gl_image_init_shaders(void);
 void gl_draw_image(IGeometry *image);
 
+/* gl_poly.c */
+void gl_polygon_init_buffers(void);
+void gl_polygon_init_shaders(void);
+void gl_draw_polygon(IGeometry *poly);
+
 #endif // !GL_RENDER_INTERNAL

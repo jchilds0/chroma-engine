@@ -32,7 +32,9 @@ GeometryType geometry_char_to_type(char *name) {
         return CIRCLE;
     } else if (strncmp(name, "image", MAX_NAME_LEN) == 0) {
         return IMAGE;
-    } 
+    } else if (strncmp(name, "polygon", MAX_NAME_LEN) == 0) {
+        return POLYGON;
+    }
 
     log_file(LogWarn, "Geometry", "Unknown geometry type (%d)", name);
     return -1;
@@ -60,6 +62,10 @@ IGeometry *geometry_create_geometry(GeometryType type) {
 
         case IMAGE:
             geo = (IGeometry *) geometry_new_image();
+            break;
+
+        case POLYGON:
+            geo = (IGeometry *) geometry_new_polygon();
             break;
 
         default:
@@ -92,18 +98,27 @@ void geometry_free_geometry(IGeometry *geo) {
         case RECT:
             geometry_free_rectangle((GeometryRect *)geo);
             break;
+
         case CIRCLE:
             geometry_free_circle((GeometryCircle *)geo);
             break;
+
         case GRAPH:
             geometry_free_graph((GeometryGraph *)geo);
             break;
+
         case TEXT:
             geometry_free_text((GeometryText *)geo);
             break;
+
         case IMAGE:
             geometry_free_image((GeometryImage *)geo);
             break;
+
+        case POLYGON:
+            geometry_free_polygon((GeometryPolygon *)geo);
+            break;
+
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
@@ -114,18 +129,27 @@ void geometry_clean_geo(IGeometry *geo) {
         case RECT:
             geometry_clean_rect((GeometryRect *)geo);
             break;
+
         case CIRCLE:
             geometry_clean_circle((GeometryCircle *)geo);
             break;
+
         case GRAPH:
             geometry_clean_graph((GeometryGraph *)geo);
             break;
+
         case TEXT:
             geometry_clean_text((GeometryText *)geo);
             break;
+
         case IMAGE:
             geometry_clean_image((GeometryImage *)geo);
             break;
+
+        case POLYGON:
+            geometry_clean_polygon((GeometryPolygon *)geo);
+            break;
+
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
@@ -166,10 +190,10 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_TEXT;
     } else if (strncmp(attr, "scale", 5) == 0) {
         g_attr = GEO_SCALE;
-    } else if (strncmp(attr, "graph_node", 10) == 0) {
-        g_attr = GEO_GRAPH_NODE;
-    } else if (strncmp(attr, "num_node", 8) == 0) {
-        g_attr = GEO_NUM_NODE;
+    } else if (strncmp(attr, "point", 5) == 0) {
+        g_attr = GEO_POINT;
+    } else if (strncmp(attr, "num_points", 9) == 0) {
+        g_attr = GEO_NUM_POINTS;
     } else if (strncmp(attr, "graph_type", 10) == 0) {
         g_attr = GEO_GRAPH_TYPE;
     } else if (strncmp(attr, "image_id", 8) == 0) {
@@ -195,33 +219,43 @@ static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case GEO_POS_X:
             sprintf(value, "%d", geo->pos.x);
             return;
+
         case GEO_POS_Y:
             sprintf(value, "%d", geo->pos.y);
             return;
+
         case GEO_REL_X:
             sprintf(value, "%d", geo->rel.x);
             return;
+
         case GEO_REL_Y:
             sprintf(value, "%d", geo->rel.y);
             return;
+
         case GEO_PARENT:
             sprintf(value, "%d", geo->parent);
             return;
+
         case GEO_MASK:
             sprintf(value, "%d", geo->mask_geo);
             return;
+
         case GEO_X_LOWER:
             sprintf(value, "%d", geo->bound_lower.x);
             return;
+
         case GEO_X_UPPER:
             sprintf(value, "%d", geo->bound_upper.x);
             return;
+
         case GEO_Y_LOWER:
             sprintf(value, "%d", geo->bound_lower.y);
             return;
+
         case GEO_Y_UPPER:
             sprintf(value, "%d", geo->bound_upper.y);
             return;
+
         default:
             break;
     }
@@ -230,18 +264,27 @@ static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case RECT:
             geometry_rectangle_get_attr((GeometryRect *)geo, attr, value);
             break;
+
         case CIRCLE:
             geometry_circle_get_attr((GeometryCircle *)geo, attr, value);
             break;
+
         case GRAPH:
             geometry_graph_get_attr((GeometryGraph *)geo, attr, value);
             break;
+
         case TEXT:
             geometry_text_get_attr((GeometryText *)geo, attr, value);
             break;
+
         case IMAGE:
             geometry_image_get_attr((GeometryImage *)geo, attr, value);
             break;
+
+        case POLYGON:
+            geometry_polygon_get_attr((GeometryPolygon *)geo, attr, value);
+            break;
+
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
@@ -273,18 +316,27 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
             case RECT:
                 memcpy(value, "rect", 4);
                 break;
+
             case CIRCLE:
                 memcpy(value, "circle", 6);
                 break;
+
             case GRAPH:
                 memcpy(value, "graph", 5);
                 break;
+
             case TEXT:
                 memcpy(value, "text", 4);
                 break;
+
             case IMAGE:
                 memcpy(value, "image", 5);
                 break;
+
+            case POLYGON:
+                memcpy(value, "polygon", 7);
+                break;
+
             default:
                 log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
         }
@@ -301,33 +353,43 @@ static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case GEO_POS_X:
             sscanf(value, "%d", &geo->pos.x);
             return;
+
         case GEO_POS_Y:
             sscanf(value, "%d", &geo->pos.y);
             return;
+
         case GEO_REL_X:
             sscanf(value, "%d", &geo->rel.x);
             return;
+
         case GEO_REL_Y:
             sscanf(value, "%d", &geo->rel.y);
             return;
+
         case GEO_PARENT:
             sscanf(value, "%d", &geo->parent);
             return;
+
         case GEO_MASK:
             sscanf(value, "%d", &geo->mask_geo);
             return;
+
         case GEO_X_LOWER:
             sscanf(value, "%d", &geo->bound_lower.x);
             return;
+
         case GEO_X_UPPER:
             sscanf(value, "%d", &geo->bound_upper.x);
             return;
+
         case GEO_Y_LOWER:
             sscanf(value, "%d", &geo->bound_lower.y);
             return;
+
         case GEO_Y_UPPER:
             sscanf(value, "%d", &geo->bound_upper.y);
             return;
+
         default:
             break;
     }
@@ -336,18 +398,27 @@ static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *valu
         case RECT:
             geometry_rectangle_set_attr((GeometryRect *)geo, attr, value);
             break;
+
         case CIRCLE:
             geometry_circle_set_attr((GeometryCircle *)geo, attr, value);
             break;
+
         case GRAPH:
             geometry_graph_set_attr((GeometryGraph *)geo, attr, value);
             break;
+
         case TEXT:
             geometry_text_set_attr((GeometryText *)geo, attr, value);
             break;
+
         case IMAGE:
             geometry_image_set_attr((GeometryImage *)geo, attr, value);
             break;
+        
+        case POLYGON:
+            geometry_polygon_set_attr((GeometryPolygon *)geo, attr, value);
+            break;
+
         default:
             log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
     }
@@ -400,6 +471,9 @@ void geometry_graph_add_values(IGeometry *geo, void (*add_value)(int)) {
             break;
 
         case IMAGE:
+            break;
+
+        case POLYGON:
             break;
 
         default:

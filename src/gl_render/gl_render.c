@@ -134,6 +134,9 @@ void gl_realize(GtkWidget *widget) {
 
     gl_image_init_buffers();
     gl_image_init_shaders();
+
+    gl_polygon_init_buffers();
+    gl_polygon_init_shaders();
 }
 
 void gl_renderer_set_scale(GLuint program) {
@@ -252,18 +255,27 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 case RECT:
                     gl_draw_rectangle(parent_geo);
                     break;
+
                 case CIRCLE:
                     gl_draw_circle(parent_geo);
                     break;
+
                 case TEXT:
                     gl_draw_text(parent_geo);
                     break;
+
                 case GRAPH:
                     gl_draw_graph(parent_geo);
                     break;
+
                 case IMAGE:
                     gl_draw_image(parent_geo);
                     break;
+
+                case POLYGON:
+                    gl_draw_polygon(parent_geo);
+                    break;
+
                 default:
                     log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", parent_geo->geo_type);
             }
@@ -281,18 +293,27 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 case RECT:
                     gl_draw_rectangle(geo);
                     break;
+
                 case CIRCLE:
                     gl_draw_circle(geo);
                     break;
+
                 case TEXT:
                     gl_draw_text(geo);
                     break;
+
                 case GRAPH:
                     gl_draw_graph(geo);
                     break;
+
                 case IMAGE:
                     gl_draw_image(geo);
                     break;
+
+                case POLYGON:
+                    gl_draw_polygon(geo);
+                    break;
+
                 default:
                     log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", geo->geo_type);
             }

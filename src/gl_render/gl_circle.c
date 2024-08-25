@@ -25,12 +25,6 @@ void gl_circle_init_buffers(void) {
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
     glGenBuffers(1, &ebo);
-    
-    // bind the vertex array object
-    glBindVertexArray(vao);
-
-    // configure vertex attributes
-    glBindVertexArray(0);
 }
 
 void gl_circle_init_shaders(void) {
