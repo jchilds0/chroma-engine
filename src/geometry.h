@@ -79,7 +79,8 @@ typedef enum {
 
 typedef struct {
     GeometryType      geo_type;
-    int               parent;
+    int               geo_id;
+    int               parent_id;
     vec2              pos;
     vec2              rel;
     int               mask_geo;
@@ -147,7 +148,7 @@ typedef struct {
     vec2              vertex[MAX_NODES];
 } GeometryPolygon;
 
-extern GeometryType geometry_char_to_type(char *name);
+extern GeometryType geometry_geo_type(char *name);
 extern IGeometry    *geometry_create_geometry(GeometryType type);
 extern void         geometry_free_geometry(IGeometry *geo);
 extern void         geometry_clean_geo(IGeometry *geo);

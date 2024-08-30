@@ -30,16 +30,15 @@
 void graphics_page_default_values(IPage *page);
 void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
 
-static FRAME_TYPE keyframeToEnum(char *name) {
-    if (strncmp(name, "bind-frame", KEYFRAME_TYPE_LEN) == 0) {
+FrameType graphics_keyframe_type(char *name) {
+    if (strncmp(name, "BindFrame", KEYFRAME_TYPE_LEN) == 0) {
         return BIND_FRAME;
-    } else if (strncmp(name, "user-frame", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "UserFrame", KEYFRAME_TYPE_LEN) == 0) {
         return USER_FRAME;
-    } else if (strncmp(name, "set-frame", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "SetFrame", KEYFRAME_TYPE_LEN) == 0) {
         return SET_FRAME;
     }
 
-    log_file(LogWarn, "Graphics", "Unknown keyframe type %s", name);
     return -1;
 }
 
@@ -75,7 +74,7 @@ void graphics_keyframe_set_int(Keyframe *frame, char *name, int value) {
 void graphics_keyframe_set_attr(Keyframe *frame, char *name, char *value) {
     if (strncmp(name, "frame_type", KEYFRAME_TYPE_LEN) == 0) {
 
-        frame->type = keyframeToEnum(value); 
+        frame->type = graphics_keyframe_type(value); 
 
     } else if (strncmp(name, "frame_attr", KEYFRAME_TYPE_LEN) == 0) {
 
@@ -419,7 +418,7 @@ void graphics_page_default_values(IPage *cur_page) {
     }
 }
 
-void graphics_page_add_keyframe(IPage *page, Keyframe frame) {
+void graphics_page_gen_frame(IPage *page, Keyframe frame) {
     if (frame.attr >= GEO_INT_NUM) {
         log_file(LogError, "Graphics", "Keyframe for attr %d not implemented", frame.attr);
     }

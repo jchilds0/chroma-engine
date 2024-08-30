@@ -17,6 +17,25 @@
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
 
+#define INSERT_BEFORE(new, old)     {                               \
+                                        (new)->next = (old);        \
+                                        (new)->prev = (old)->prev;  \
+                                        (new)->prev->next = (new);  \
+                                        (new)->next->prev = (new);  \
+                                    }
+
+#define INSERT_AFTER(new, old)      {                               \
+                                        (new)->prev = (old);        \
+                                        (new)->next = (old)->next;  \
+                                        (new)->prev->next = (new);  \
+                                        (new)->next->prev = (new);  \
+                                    }
+
+#define REMOVE_NODE(node)           {                                       \
+                                        (node)->next->prev = (node)->prev;  \
+                                        (node)->prev->next = (node)->next;  \
+                                    }
+
 #define WITHIN(a, x, y)               ((x <= a) && (a <= y))
 #define MIN(a, b)                     (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)                     (((a) > (b)) ? (a) : (b))

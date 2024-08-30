@@ -18,7 +18,7 @@ void parser_incorrect_token(char tok1, char tok2, char *buf, int buf_ptr) {
     log_file(LogMessage, "Parser", "        " "        ^");
 
     if (tok1 < 'a') {
-        log_file(LogError, "Parser", "Couldn't match token %d to token %d", tok1, tok2);
+        log_file(LogError, "Parser", "Couldn't match token %d to token %c", tok1, tok2);
     } else {
         log_file(LogError, "Parser", "Couldn't match token %c to token %c", tok1, tok2);
     }

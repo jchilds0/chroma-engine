@@ -246,9 +246,9 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 glStencilMask(0xFF);
             }
 
-            parent_geo = page->geometry[geo->parent];
+            parent_geo = page->geometry[geo->parent_id];
             if (parent_geo == NULL) {
-                log_file(LogError, "GL Renderer", "Missing parent geo %d for geo %d", geo->parent, geo_num);
+                log_file(LogError, "GL Renderer", "Missing parent geo %d for geo %d", geo->parent_id, geo_num);
             }
 
             switch (parent_geo->geo_type) {

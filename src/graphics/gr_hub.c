@@ -49,11 +49,11 @@ void graphics_free_graphics_hub(IGraphics *hub) {
     free(hub);
 }
 
-IPage *graphics_hub_add_page(IGraphics *hub, int num_geo, int num_keyframe, int id) {
-    if (id < 0 || id >= hub->len_pages) {
+void graphics_hub_add_page(IGraphics *hub, IPage *page) {
+    if (page->temp_id >= hub->len_pages) {
         log_file(LogMessage, "Graphics", "Resizing graphics hub");
 
-        int new_length = MAX(2 * hub->len_pages, id + 1);
+        int new_length = MAX(2 * hub->len_pages, page->temp_id + 1);
         IPage **new_hub = NEW_ARRAY(new_length, IPage *);
         for (int i = 0; i < new_length; i++) {
             new_hub[i] = NULL;
@@ -68,12 +68,8 @@ IPage *graphics_hub_add_page(IGraphics *hub, int num_geo, int num_keyframe, int 
         hub->len_pages = new_length;
     }
 
-    IPage *page = graphics_new_page(num_geo, num_keyframe);
-    page->temp_id = id;
-    hub->pages[id] = page;
+    hub->pages[page->temp_id] = page;
     hub->num_pages++;
-
-    return page;
 }
 
 IPage *graphics_hub_get_page(IGraphics *hub, int page_num) {

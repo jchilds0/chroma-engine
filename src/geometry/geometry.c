@@ -23,20 +23,23 @@
 void geometry_get_attr(IGeometry *geo, char *attr, char *value);
 void geometry_set_attr(IGeometry *geo, char *attr, char *value);
 
-GeometryType geometry_char_to_type(char *name) {
-    if (strncmp(name, "rect", MAX_NAME_LEN) == 0) {
+GeometryType geometry_geo_type(char *name) {
+    if (strcmp(name, "Rectangle") == 0) {
         return RECT;
-    } else if (strncmp(name, "text", MAX_NAME_LEN) == 0) {
+    } else if (strcmp(name, "Text") == 0) {
         return TEXT;
-    } else if (strncmp(name, "circle", MAX_NAME_LEN) == 0) {
+    } else if (strcmp(name, "Circle") == 0) {
         return CIRCLE;
-    } else if (strncmp(name, "image", MAX_NAME_LEN) == 0) {
+    } else if (strcmp(name, "Image") == 0) {
         return IMAGE;
-    } else if (strncmp(name, "polygon", MAX_NAME_LEN) == 0) {
+    } else if (strcmp(name, "Polygon") == 0) {
         return POLYGON;
+    } else if (strcmp(name, "Clock") == 0) {
+        return TEXT;
+    } else if (strcmp(name, "Ticker") == 0) {
+        return TEXT;
     }
 
-    log_file(LogWarn, "Geometry", "Unknown geometry type (%d)", name);
     return -1;
 }
 
@@ -73,7 +76,8 @@ IGeometry *geometry_create_geometry(GeometryType type) {
             return NULL;
     }
 
-    geo->parent = 0;
+    geo->geo_id = 0;
+    geo->parent_id = 0;
     geo->pos.x = 0;
     geo->pos.y = 0;
     geo->rel.x = 0;
@@ -233,7 +237,7 @@ static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *valu
             return;
 
         case GEO_PARENT:
-            sprintf(value, "%d", geo->parent);
+            sprintf(value, "%d", geo->parent_id);
             return;
 
         case GEO_MASK:
@@ -367,7 +371,7 @@ static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *valu
             return;
 
         case GEO_PARENT:
-            sscanf(value, "%d", &geo->parent);
+            sscanf(value, "%d", &geo->parent_id);
             return;
 
         case GEO_MASK:

@@ -15,13 +15,18 @@
 #define LOG_KEYFRAMES         0
 #define KEYFRAME_TYPE_LEN     20
 
+#define PAGE_MIN_GEOMETRY     20
+#define PAGE_MIN_GEOMETRY     20
 
 /* gr_page.c */
-IPage        *graphics_new_page(int num_geo, int num_keyframe);
+IPage        *graphics_new_page(void);
 void         graphics_free_page(IPage *);
+void         graphics_page_generate(IPage *);
 
 /* gr_keyframe.c */
+FrameType    graphics_keyframe_type(char *name);   
 int          graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width);
+void         graphics_page_gen_frame(IPage *page, Keyframe frame);
 
 /* gr_graph.c */
 Graph         *graphics_new_graph(int n);
