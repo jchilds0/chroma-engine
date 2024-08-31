@@ -55,8 +55,14 @@ IGeometry *graphics_page_add_geometry(IPage *page, int type) {
 
 Keyframe *graphics_page_add_keyframe(IPage *page) {
     KeyframeNode *node = NEW_STRUCT(KeyframeNode);
-    node->frame = NEW_STRUCT(Keyframe);
-    node->frame->frame_num = 0;
+    Keyframe *frame = NEW_STRUCT(Keyframe);
+    node->frame = frame;
+    
+    frame->frame_num = 0;
+    frame->bind_frame_num = 0;
+    frame->type = -1;
+    frame->attr = -1;
+    frame->bind_attr = -1;
 
     INSERT_BEFORE(node, &page->frame_tail);
     return node->frame;

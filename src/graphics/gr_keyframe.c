@@ -420,7 +420,7 @@ void graphics_page_default_values(IPage *cur_page) {
 
 void graphics_page_gen_frame(IPage *page, Keyframe frame) {
     if (frame.attr >= GEO_INT_NUM) {
-        log_file(LogError, "Graphics", "Keyframe for attr %d not implemented", frame.attr);
+        log_file(LogError, "Graphics", "Keyframe %d: Attr %d not implemented", frame.frame_num, frame.attr);
     }
 
     int frame_index = INDEX(frame.geo_id, frame.attr, frame.frame_num, GEO_INT_NUM, page->max_keyframe);
@@ -444,7 +444,7 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
             );
 
             if (frame.bind_attr >= GEO_INT_NUM) {
-                log_file(LogError, "Graphics", "Keyframe bind for attr %d not implemented", frame.bind_attr);
+                log_file(LogError, "Graphics", "Keyframe %d: Bind attr %d not implemented", frame.frame_num, frame.bind_attr);
             }
 
             graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);

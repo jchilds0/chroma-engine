@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #define MAX_BUF_SIZE      1024
 
@@ -215,13 +216,18 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
     }
 
     static int frameIndex = 0;
-    Keyframe *frame = graphics_page_add_keyframe(page);
+    Keyframe *frame = NULL;
     char name[GEO_BUF_SIZE];
     int value;
 
     while (c_token == '{') {
         parser_match_token('{', socket_client);
 
+        if (LOG_TEMPLATE) {
+            log_file(LogMessage, "Parser", "Keyframe %d:", frameIndex);
+        }
+
+        frame = graphics_page_add_keyframe(page);
         frame->expand = 0;
 
         while (c_token == STRING) {
@@ -230,12 +236,11 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
             parser_match_token(':', socket_client);
 
             if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "keyframe %d: %s = %s", frameIndex, name, c_value);
+                log_file(LogMessage, "Parser", "\t%s = %s", name, c_value);
             }
 
-            if (strcmp(c_value, "Bind") == 0) {
-                parser_match_token(STRING, socket_client);
-                parser_match_token(':', socket_client);
+            if (strcmp(name, "Bind") == 0) {
+
                 parser_parse_bind_keyframe(page, frame, socket_client);
 
             } else if (c_token == INT) {
@@ -265,7 +270,6 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
     }
 }
 
-// K -> {'frame_num': num, ...
 void parser_parse_bind_keyframe(IPage *page, Keyframe *frame, int socket_client) {
     char name[GEO_BUF_SIZE];
     parser_match_token('{', socket_client);
@@ -275,15 +279,19 @@ void parser_parse_bind_keyframe(IPage *page, Keyframe *frame, int socket_client)
         parser_match_token(STRING, socket_client);
         parser_match_token(':', socket_client);
 
-        if (strcmp(c_value, "FrameNum") == 0) {
+        if (LOG_TEMPLATE) {
+            log_file(LogMessage, "Parser", "\t%s = %s", name, c_value);
+        }
+
+        if (strcmp(name, "FrameNum") == 0) {
             frame->bind_frame_num = atoi(c_value);
             parser_match_token(INT, socket_client);
 
-        } else if (strcmp(c_value, "GeoID") == 0) {
+        } else if (strcmp(name, "GeoID") == 0) {
             frame->bind_geo_id = atoi(c_value);
             parser_match_token(INT, socket_client);
 
-        } else if (strcmp(c_value, "GeoAttr") == 0) {
+        } else if (strcmp(name, "GeoAttr") == 0) {
             frame->bind_attr = geometry_char_to_attr(c_value);
             parser_match_token(STRING, socket_client);
         } else {
