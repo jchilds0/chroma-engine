@@ -22,6 +22,7 @@ static int c_token;
 static char c_value[PARSE_BUF_SIZE];
 
 void parser_parse_keyframe(IPage *page, int socket_client);
+void parser_parse_bind_keyframe(IPage *page, Keyframe *frame, int socket_client);
 void parser_parse_template(IGraphics *hub, int socket_client);
 void parser_parse_geometry(IPage *page, int socket_client, int geo_type);
 void parser_parse_attribute(IGeometry *geo, int socket_client);
@@ -197,6 +198,7 @@ void parser_parse_template(IGraphics *hub, int socket_client) {
     }
 
     parser_match_token('}', socket_client);
+    graphics_hub_add_page(hub, page);
     graphics_page_generate(page);
     graphics_page_default_relations(page);
 
@@ -231,13 +233,18 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
                 log_file(LogMessage, "Parser", "keyframe %d: %s = %s", frameIndex, name, c_value);
             }
 
-            if (c_token == INT) {
+            if (strcmp(c_value, "Bind") == 0) {
+                parser_match_token(STRING, socket_client);
+                parser_match_token(':', socket_client);
+                parser_parse_bind_keyframe(page, frame, socket_client);
+
+            } else if (c_token == INT) {
                 value = atoi(c_value);
                 graphics_keyframe_set_int(frame, name, value);
                 parser_match_token(INT, socket_client);
-            } else if (c_token == STRING) {
+            } else if (c_token == STRING || c_token == BOOL) {
                 graphics_keyframe_set_attr(frame, name, c_value);
-                parser_match_token(STRING, socket_client);
+                parser_next_token(socket_client);
             } else {
                 log_file(LogWarn, "Parser", "Unknown value type %d", c_token);
                 parser_next_token(socket_client);
@@ -256,6 +263,39 @@ void parser_parse_keyframe(IPage *page, int socket_client) {
             parser_match_token(',', socket_client);
         }
     }
+}
+
+// K -> {'frame_num': num, ...
+void parser_parse_bind_keyframe(IPage *page, Keyframe *frame, int socket_client) {
+    char name[GEO_BUF_SIZE];
+    parser_match_token('{', socket_client);
+
+    while (c_token == STRING) {
+        memcpy(name, c_value, sizeof name);
+        parser_match_token(STRING, socket_client);
+        parser_match_token(':', socket_client);
+
+        if (strcmp(c_value, "FrameNum") == 0) {
+            frame->bind_frame_num = atoi(c_value);
+            parser_match_token(INT, socket_client);
+
+        } else if (strcmp(c_value, "GeoID") == 0) {
+            frame->bind_geo_id = atoi(c_value);
+            parser_match_token(INT, socket_client);
+
+        } else if (strcmp(c_value, "GeoAttr") == 0) {
+            frame->bind_attr = geometry_char_to_attr(c_value);
+            parser_match_token(STRING, socket_client);
+        } else {
+            parser_next_token(socket_client);
+        }
+
+        if (c_token == ',') {
+            parser_match_token(',', socket_client);
+        }
+    }
+
+    parser_match_token('}', socket_client);
 }
 
 // G -> {'id': num, 'type': string, 'attr': [A]} | G, G
@@ -320,7 +360,6 @@ void parser_parse_geometry(IPage *page, int socket_client, int geo_type) {
 void parser_parse_attribute(IGeometry *geo, int socket_client) {
     char name[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     int got_name = 0, got_value = 0;
-
     memset(name, '\0', sizeof name);
     memset(value, '\0', sizeof value);
 
@@ -338,6 +377,34 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             parser_match_token(STRING, socket_client);
 
             got_name = 1;
+        } else if (strcmp(c_value, "Red") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            geometry_set_color(geo, atof(c_value), 0);
+            parser_next_token(socket_client);
+        
+        } else if (strcmp(c_value, "Green") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            geometry_set_color(geo, atof(c_value), 1);
+            parser_next_token(socket_client);
+        
+        } else if (strcmp(c_value, "Blue") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            geometry_set_color(geo, atof(c_value), 2);
+            parser_next_token(socket_client);
+        
+        } else if (strcmp(c_value, "Alpha") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            geometry_set_color(geo, atof(c_value), 3);
+            parser_next_token(socket_client);
+
         } else if (strcmp(c_value, "Value") == 0) {
             parser_match_token(STRING, socket_client);
             parser_match_token(':', socket_client);
@@ -363,12 +430,9 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
 
     parser_match_token('}', socket_client);
 
-    if (!got_name || !got_value) {
-        log_file(LogWarn, "Parser", "Missing attributes for geometry attribute");
-        return;
+    if (got_name && got_value) {
+        geometry_set_attr(geo, name, value);
     }
-
-    geometry_set_attr(geo, name, value);
 }
 
 void parser_match_token(int t, int socket_client) {
@@ -377,6 +441,14 @@ void parser_match_token(int t, int socket_client) {
     } else {
         parser_incorrect_token(t, c_token, buf, buf_ptr);
     }
+}
+
+static void parser_match_char(int socket_client, char c1, char c2) {
+    if (c1 == c2) {
+        return ;
+    } 
+
+    log_file(LogError, "Parser", "Couldn't match char %c to char %c", c1, c2);
 }
 
 void parser_next_token(int socket_client) {
@@ -405,7 +477,6 @@ void parser_next_token(int socket_client) {
 
         c = -1;
         c_token = STRING;
-        //log_file(LogMessage, "Parser", "String: %s", c_value);
         return;
     } else if (c == '"') {
         // attr 
@@ -419,24 +490,67 @@ void parser_next_token(int socket_client) {
 
         c = -1;
         c_token = STRING;
-        //log_file(LogMessage, "Parser", "String: %s", c_value);
         return;
     } else if ((c >= '0' && c <= '9') || c == '-') {
         // number
+        c_token = INT;
+
         while (1) {
             c_value[i++] = c;
             c = parser_get_char(socket_client, &buf_ptr, buf);
 
-            if (c < '0' || c > '9') {
-                c_token = INT;
-                //log_file(LogMessage, "Parser", "Int: %s", c_value);
+            if (c == '.') {
+                c_token = FLOAT;
+            } else if (c < '0' || c > '9') {
                 return;
             }
         }
+    } else if (c == 't' || c == 'T') {
+        c_value[i++] = c;
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 'r');
+        c_value[i++] = c;
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 'u');
+        c_value[i++] = c;
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 'e');
+        c_value[i++] = c;
+
+        c = -1;
+        c_token = BOOL;
+        return;
+
+    } else if (c == 'f' || c == 'F') {
+        c_value[i++] = 'f';
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 'a');
+        c_value[i++] = c;
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 'l');
+        c_value[i++] = c;
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 's');
+        c_value[i++] = c;
+
+        c = parser_get_char(socket_client, &buf_ptr, buf);
+        parser_match_char(socket_client, c, 'e');
+        c_value[i++] = c;
+
+        c = -1;
+        c_token = BOOL;
+
+        return;
     }
 
     c_token = c;
     c = -1;
-    //log_file(LogMessage, "Parser", "Token: %d", c_token);
 }
+
 

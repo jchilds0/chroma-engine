@@ -452,6 +452,34 @@ void geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value) {
     geometry_set_attribute(geo, attr, buf);
 }
 
+void geometry_set_color(IGeometry *geo, float color, int index) {
+    switch (geo->geo_type) {
+        case RECT:
+            ((GeometryRect *)geo)->color[index] = color;
+            break;
+
+        case CIRCLE:
+            ((GeometryCircle*)geo)->color[index] = color;
+            break;
+
+        case GRAPH:
+            ((GeometryGraph*)geo)->color[index] = color;
+            break;
+
+        case TEXT:
+            ((GeometryText*)geo)->color[index] = color;
+            break;
+
+        case POLYGON:
+            ((GeometryPolygon*)geo)->color[index] = color;
+            break;
+
+        default:
+            log_file(LogWarn, "Geometry", "Geo type %d does not have a color attribute", geo->geo_type);
+    }
+
+}
+
 void geometry_graph_add_values(IGeometry *geo, void (*add_value)(int)) {
     add_value(GEO_REL_X);
     add_value(GEO_REL_Y);

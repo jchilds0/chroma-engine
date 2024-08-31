@@ -157,6 +157,7 @@ extern GeometryAttr geometry_char_to_attr(char *attr);
 extern void         geometry_set_attr(IGeometry *geo, char *attr, char *value);
 extern void         geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
 extern void         geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);
+extern void         geometry_set_color(IGeometry *geo, float color, int index);
 
 extern void         geometry_get_attr(IGeometry *geo, char *attr, char *value);
 extern int          geometry_get_int_attr(IGeometry *geo, GeometryAttr attr);

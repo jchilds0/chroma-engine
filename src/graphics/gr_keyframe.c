@@ -44,23 +44,23 @@ FrameType graphics_keyframe_type(char *name) {
 
 void graphics_keyframe_set_int(Keyframe *frame, char *name, int value) {
 
-    if (strncmp(name, "frame_num", KEYFRAME_TYPE_LEN) == 0) {
+    if (strncmp(name, "FrameNum", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->frame_num = value;
 
-    } else if (strncmp(name, "frame_geo", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "GeoID", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->geo_id = value;
 
-    } else if (strncmp(name, "value", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "Value", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->value = value;
 
-    } else if (strncmp(name, "bind_frame", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "BindFrame", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->bind_frame_num = value;
 
-    } else if (strncmp(name, "bind_geo", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "BindGeo", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->bind_geo_id = value;
 
@@ -72,15 +72,15 @@ void graphics_keyframe_set_int(Keyframe *frame, char *name, int value) {
 }
 
 void graphics_keyframe_set_attr(Keyframe *frame, char *name, char *value) {
-    if (strncmp(name, "frame_type", KEYFRAME_TYPE_LEN) == 0) {
+    if (strncmp(name, "Type", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->type = graphics_keyframe_type(value); 
 
-    } else if (strncmp(name, "frame_attr", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "GeoAttr", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->attr = geometry_char_to_attr(value); 
 
-    } else if (strncmp(name, "expand", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "Expand", KEYFRAME_TYPE_LEN) == 0) {
 
         if (strncmp(value, "true", KEYFRAME_TYPE_LEN) == 0) {
             frame->expand = 1;
@@ -88,11 +88,11 @@ void graphics_keyframe_set_attr(Keyframe *frame, char *name, char *value) {
             frame->expand = 0;
         }
 
-    } else if (strncmp(name, "user_frame", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "UserFrame", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->type = USER_FRAME;
 
-    } else if (strncmp(name, "bind_attr", KEYFRAME_TYPE_LEN) == 0) {
+    } else if (strncmp(name, "BindAttr", KEYFRAME_TYPE_LEN) == 0) {
 
         frame->bind_attr = geometry_char_to_attr(value); 
 

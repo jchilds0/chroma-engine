@@ -40,6 +40,8 @@ typedef enum {
     /* hub */ 
     STRING, 
     INT,
+    FLOAT,
+    BOOL,
 } Token;
 
 ServerResponse  parser_tcp_timeout_listen(int server_sock);

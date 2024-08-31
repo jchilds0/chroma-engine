@@ -341,7 +341,7 @@ EQUAL:
     // We found an attribute 
 
     // First check if it part of the message header
-    if (strcmp(value, "ver") == 0) {
+    if (strcmp(value, "version") == 0) {
         return VERSION;
     } else if (strcmp(value, "layer") == 0) {
         return LAYER;
