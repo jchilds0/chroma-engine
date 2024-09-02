@@ -34,6 +34,12 @@ void parser_next_token(int socket_client);
 // S -> {'num_temp': num, 'templates': [T]}
 void parser_parse_hub(Engine *eng) {
     parser_next_token(eng->hub_socket);
+
+    if (c_token == END_OF_MESSAGE || c_token == 6) {
+        log_file(LogMessage, "Parser", "No hub received");
+        return;
+    }
+
     parser_match_token('{', eng->hub_socket);
 
     while (c_token == STRING) {
@@ -97,7 +103,7 @@ void parser_update_template(Engine *eng, int temp_id) {
     parser_clean_buffer(&buf_ptr, buf);
     parser_next_token(eng->hub_socket);
 
-    if (c_token == END_OF_MESSAGE) {
+    if (c_token == END_OF_MESSAGE || c_token == 6) {
         log_file(LogMessage, "Parser", "Error in chroma hub");
         return;
     }

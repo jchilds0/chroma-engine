@@ -93,7 +93,7 @@ void graphics_page_generate(IPage *page) {
             continue;
         }
 
-        page->max_keyframe = MAX(page->max_keyframe, node->frame->frame_num);
+        page->max_keyframe = MAX(page->max_keyframe, node->frame->frame_num + 1);
     }
 
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
