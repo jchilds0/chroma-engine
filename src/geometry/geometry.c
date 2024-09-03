@@ -36,7 +36,7 @@ GeometryType geometry_geo_type(char *name) {
         return POLYGON;
     } else if (strcmp(name, "Clock") == 0) {
         return TEXT;
-    } else if (strcmp(name, "Ticker") == 0) {
+    } else if (strcmp(name, "List") == 0) {
         return TEXT;
     }
 
