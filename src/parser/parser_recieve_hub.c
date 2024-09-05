@@ -430,6 +430,17 @@ void parser_parse_attribute(IGeometry *geo, int socket_client) {
             parser_next_token(socket_client);
 
             got_value = 1;
+        } else if (strcmp(c_value, "Rows") == 0) {
+            parser_match_token(STRING, socket_client);
+            parser_match_token(':', socket_client);
+
+            // skip rows 
+            parser_match_token('{', socket_client);
+            while (c_token != '}') {
+                parser_next_token(socket_client);
+            }
+            parser_match_token('}', socket_client);
+
         } else {
             // skip attr
             parser_match_token(STRING, socket_client);
