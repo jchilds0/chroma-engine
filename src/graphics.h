@@ -25,18 +25,6 @@ typedef struct {
     unsigned int      bind_attr;
 } Keyframe;
 
-typedef struct GeometryNode {
-    IGeometry *geo;
-    struct GeometryNode *next;
-    struct GeometryNode *prev;
-} GeometryNode;
-
-typedef struct KeyframeNode {
-    Keyframe *frame;
-    struct KeyframeNode *next;
-    struct KeyframeNode *prev;
-} KeyframeNode;
-
 typedef struct {
     int           num_values;
     int           node_index;
@@ -60,18 +48,14 @@ typedef struct {
 typedef struct {
     unsigned int      temp_id;
 
-    GeometryNode      geo_head;
-    GeometryNode      geo_tail;
     unsigned int      len_geometry;
     IGeometry         **geometry;
 
-    KeyframeNode      frame_head;
-    KeyframeNode      frame_tail;
     unsigned int      max_keyframe;
     Graph             *keyframe_graph;
 } IPage;
 
-extern IGeometry    *graphics_page_add_geometry(IPage *page, int type);
+extern IGeometry    *graphics_page_add_geometry(IPage *page, int type, int geo_id);
 
 typedef struct {
     unsigned int      num_pages;

@@ -2,11 +2,13 @@
  * parser_recieve_hub.c
  */
 
+#include "chroma-engine.h"
 #include "chroma-typedefs.h"
 #include "geometry.h"
 #include "graphics.h"
 #include "graphics/graphics_internal.h"
 #include "log.h"
+#include "parser/parser_json.h"
 #include "parser_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,81 +16,58 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define MAX_BUF_SIZE      1024
+void parser_parse_template(JSONObject *template, IGraphics *hub);
+void parser_parse_geometry(JSONObject *geo, IPage *page);
+void parser_parse_attribute(JSONObject *attr, IGeometry *geo);
 
-static char buf[PARSE_BUF_SIZE];
-static int buf_ptr = 0;
+void parser_parse_user_frame(JSONObject *frame, IPage *page);
+void parser_parse_bind_frame(JSONObject *frame, IPage *page);
+void parser_parse_set_frame(JSONObject *frame, IPage *page);
 
-static int c_token;
-static char c_value[PARSE_BUF_SIZE];
+#define JSON_ARRAY(array_obj, data, f)                                                         \
+    do {                                                                                       \
+        log_assert((array_obj)->type == JSON_ARRAY, "Parser", "Node is not a JSON_ARRAY");     \
+        JSONArray *array = &(array_obj)->array;                                                \
+        for (JSONArrayNode *obj = array->head.next; obj != &array->tail; obj = obj->next) {    \
+            if ((obj)->node->type != JSON_OBJECT) {                                            \
+                continue;                                                                      \
+            }                                                                                  \
+            f(&(obj)->node->object, (data));                                                   \
+        }                                                                                      \
+    } while (0);                                                                               \
 
-void parser_parse_keyframe(IPage *page, int socket_client);
-void parser_parse_bind_keyframe(IPage *page, Keyframe *frame, int socket_client);
-void parser_parse_template(IGraphics *hub, int socket_client);
-void parser_parse_geometry(IPage *page, int socket_client, int geo_type);
-void parser_parse_attribute(IGeometry *geo, int socket_client);
 
-void parser_match_token(int t, int socket_client);
-void parser_next_token(int socket_client);
-
+    
 // S -> {'num_temp': num, 'templates': [T]}
 void parser_parse_hub(Engine *eng) {
-    parser_next_token(eng->hub_socket);
+    char *msg = "ver 0 1 full;";
+    if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
+        log_file(LogError, "Parser", "Error requesting graphics hub"); 
+    }
 
-    if (c_token == END_OF_MESSAGE || c_token == 6) {
+    JSONNode *root = parser_receive_json(eng->hub_socket);
+    if (root->type != JSON_OBJECT) {
         log_file(LogMessage, "Parser", "No hub received");
         return;
     }
 
-    parser_match_token('{', eng->hub_socket);
+    JSONObject obj = root->object;
+    JSONNode *num_temp = parser_json_attribute(&obj, "NumTemplates");
+    log_assert(num_temp->type == JSON_INT, "Parser", "NumTemplates is not a JSON Int");
 
-    while (c_token == STRING) {
-        if (strcmp(c_value, "NumTemplates") == 0) {
-            // 'num_temp': 1234...
-            parser_match_token(STRING, eng->hub_socket);
-            parser_match_token(':', eng->hub_socket);
-            int n = atoi(c_value);
-
-            parser_match_token(INT, eng->hub_socket);
-            eng->hub = graphics_new_graphics_hub(n);
-            
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "Num Templates: %d", n);
-            }
-
-            parser_match_token(',', eng->hub_socket);
-        } else if (strcmp(c_value, "Templates") == 0) {
-            // 'templates': [...]
-            parser_match_token(STRING, eng->hub_socket);
-            parser_match_token(':', eng->hub_socket);
-            parser_match_token('[', eng->hub_socket);
-            if (c_token == ']') {
-                parser_match_token(']', eng->hub_socket);
-                break;
-            }
-
-            parser_parse_template(eng->hub, eng->hub_socket);
-
-            parser_match_token(']', eng->hub_socket);
-        } else {
-            log_file(LogWarn, "Parser", "Unknown template attribute %s", c_value);
-            parser_match_token(STRING, eng->hub_socket);
-            parser_match_token(':', eng->hub_socket);
-            parser_next_token(eng->hub_socket);
-        }
-
-        if (c_token == ',') {
-            parser_match_token(',', eng->hub_socket);
-        }
+    eng->hub = graphics_new_graphics_hub(num_temp->integer);
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "Num Templates: %d", num_temp->integer);
     }
 
-    if (c_token != '}') {
-        log_file(LogError, "Parser", "Couldn't match token %d to token %d", c_token, '}');
-    }
+    JSONNode *templates = parser_json_attribute(&obj, "Templates");
+    JSON_ARRAY(templates, eng->hub, parser_parse_template);
+
+    parser_json_free_node(root);
 }
 
 void parser_update_template(Engine *eng, int temp_id) {
-    char msg[MAX_BUF_SIZE];
+    char msg[100];
     memset(msg, '\0', sizeof msg);
 
     graphics_hub_free_page(eng->hub, temp_id);
@@ -98,484 +77,240 @@ void parser_update_template(Engine *eng, int temp_id) {
         log_file(LogError, "Parser", "Error requesting template %d", temp_id); 
     }
 
-    log_file(LogMessage, "Parser", "Requesting template %d", temp_id);
-
-    parser_clean_buffer(&buf_ptr, buf);
-    parser_next_token(eng->hub_socket);
-
-    if (c_token == END_OF_MESSAGE || c_token == 6) {
+    JSONNode *template = parser_receive_json(eng->hub_socket);
+    if (template->type != JSON_OBJECT) {
         log_file(LogMessage, "Parser", "Error in chroma hub");
         return;
     }
 
-    parser_parse_template(eng->hub, eng->hub_socket);
+    parser_parse_template(&template->object, eng->hub); 
 }
 
+static int geo_type;
+
 // T -> {'id': num, 'num_geo': num, 'geometry': [G]} | T, T
-void parser_parse_template(IGraphics *hub, int socket_client) {
-    IPage *page = graphics_new_page();
-    int geo_type, key_type;
+void parser_parse_template(JSONObject *template, IGraphics *hub) {
+    JSONNode *max_geo = parser_json_attribute(template, "MaxGeometry");
+    log_assert(max_geo->type == JSON_INT, "Parser", "Num geometry is not a JSON Int");
 
-    parser_match_token('{', socket_client);
-
-    while (c_token == STRING) {
-        if (strcmp(c_value, "TempID") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            page->temp_id = atoi(c_value);
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\ttemplate id: %d", page->temp_id);
-            }
-
-            parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "Name") == 0) {
-            // skip attr
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\tname: %s", c_value);
-            }
-
-            parser_match_token(STRING, socket_client);
-        } else if (strcmp(c_value, "Layer") == 0) {
-            // skip attr
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\tlayer: %s", c_value);
-            }
-
-            parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "NumGeometry") == 0) {
-            // 'num_geo': 1234..
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\tnum geometery: %d", atoi(c_value));
-            }
-
-            parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "NumKeyframe") == 0) {
-            // 'num_keyframe': 1234
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\tnum keyframe: %d", atoi(c_value));
-            }
-
-            parser_match_token(INT, socket_client);
-        } else if ((key_type = graphics_keyframe_type(c_value)) >= 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            if (page == NULL) {
-                log_file(LogError, "Parser", "Page not initialised");
-            }
-
-            // 'keyframe': [...]
-            parser_match_token('[', socket_client);
-            parser_parse_keyframe(page, socket_client);
-            parser_match_token(']', socket_client);
-
-        } else if ((geo_type = geometry_geo_type(c_value)) >= 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            
-            if (page == NULL) {
-                log_file(LogError, "Parser", "Page not initialised");
-            }
-
-            // 'geometry': [...]
-            parser_match_token('[', socket_client);
-            parser_parse_geometry(page, socket_client, geo_type);
-            parser_match_token(']', socket_client);
-        } else {
-            log_file(LogWarn, "Parser", "Unknown template attribute %s", c_value);
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            parser_next_token(socket_client);
-        }
-
-        if (c_token == ',') {
-            parser_match_token(',', socket_client);
-        }
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tnum geometery: %d", max_geo->integer);
     }
 
-    parser_match_token('}', socket_client);
-    graphics_hub_add_page(hub, page);
-    graphics_page_generate(page);
-    graphics_page_default_relations(page);
+    JSONNode *max_key = parser_json_attribute(template, "MaxKeyframe");
+    log_assert(max_geo->type == JSON_INT, "Parser", "Num geometry is not a JSON Int");
 
-    if (c_token == ',') {
-        parser_match_token(',', socket_client);
-        parser_parse_template(hub, socket_client);
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tnum keyframe: %d", max_key->integer);
+    }
+
+    IPage *page = graphics_new_page(max_geo->integer, max_key->integer);
+
+    JSONNode *tempID = parser_json_attribute(template, "TempID");
+    log_assert(tempID->type == JSON_INT, "Parser", "Template ID is not a JSON Int");
+    page->temp_id = tempID->integer;
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\ttemplate id: %d", page->temp_id);
+    }
+
+    {
+        // geometry 
+        int num_geo = 7;
+        int geo_types[] = {RECT, TEXT, CIRCLE, IMAGE, POLYGON, TEXT, TEXT};
+        char *geo_names[] = {"Rectangle", "Text", "Circle", "Image", "Polygon", "Clock", "List"};
+
+        for (int i = 0; i < num_geo; i++) {
+            JSONNode *node = parser_json_attribute(template, geo_names[i]);
+            geo_type = geo_types[i];
+            JSON_ARRAY(node, page, parser_parse_geometry);
+        }
+
+    }
+
+    {
+        // keyframes
+        JSONNode *node = parser_json_attribute(template, "UserFrame");
+        JSON_ARRAY(node, page, parser_parse_user_frame);
+
+        node = parser_json_attribute(template, "SetFrame");
+        JSON_ARRAY(node, page, parser_parse_set_frame);
+
+        node = parser_json_attribute(template, "BindFrame");
+        JSON_ARRAY(node, page, parser_parse_bind_frame);
+
+    }
+
+    graphics_hub_add_page(hub, page);
+    graphics_page_default_relations(page);
+}
+
+static void parser_parse_keyframe(JSONObject *frame_obj, Keyframe *frame) {
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "Keyframe");
+    }
+
+    JSONNode *frame_num = parser_json_attribute(frame_obj, "FrameNum");
+    log_assert(frame_num->type == JSON_INT, "Parser", "Frame Num is not a JSON Int");
+    frame->frame_num = frame_num->integer;
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tFrame Num: %d", frame->frame_num);
+    }
+
+    JSONNode *geo_id = parser_json_attribute(frame_obj, "GeoID");
+    log_assert(geo_id->type == JSON_INT, "Parser", "Geo ID is not a JSON Int");
+    frame->geo_id = geo_id->integer;
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tGeo ID: %d", frame->geo_id);
+    }
+
+    JSONNode *geo_attr = parser_json_attribute(frame_obj, "GeoAttr");
+    log_assert(geo_attr->type == JSON_STRING, "Parser", "Geo Attr is not a JSON String");
+    frame->attr = geometry_char_to_attr(geo_attr->string);
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tGeo Attr: %s", geo_attr->string);
+    }
+
+    JSONNode *expand = parser_json_attribute(frame_obj, "Expand");
+    log_assert(expand->type == JSON_BOOL, "Parser", "Expand is not a JSON Bool");
+    frame->expand = expand->boolean;
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tGeo Attr: %s", geo_attr->string);
     }
 }
 
 // K -> {'frame_num': num, ...
-void parser_parse_keyframe(IPage *page, int socket_client) {
-    if (c_token == ']') {
-        return;
+void parser_parse_set_frame(JSONObject *frame_obj, IPage *page) {
+    Keyframe frame;
+    parser_parse_keyframe(frame_obj, &frame);
+    frame.type = SET_FRAME;
+
+    JSONNode *value = parser_json_attribute(frame_obj, "Value");
+    log_assert(value->type == JSON_INT, "Parser", "Value node is not a JSON Int");
+    frame.value = value->integer;
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tValue: %d", frame.value);
     }
 
-    static int frameIndex = 0;
-    Keyframe *frame = NULL;
-    char name[GEO_BUF_SIZE];
-    int value;
-
-    while (c_token == '{') {
-        parser_match_token('{', socket_client);
-
-        if (LOG_TEMPLATE) {
-            log_file(LogMessage, "Parser", "Keyframe %d:", frameIndex);
-        }
-
-        frame = graphics_page_add_keyframe(page);
-        frame->expand = 0;
-
-        while (c_token == STRING) {
-            memcpy(name, c_value, sizeof name);
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\t%s = %s", name, c_value);
-            }
-
-            if (strcmp(name, "Bind") == 0) {
-
-                parser_parse_bind_keyframe(page, frame, socket_client);
-
-            } else if (c_token == INT) {
-                value = atoi(c_value);
-                graphics_keyframe_set_int(frame, name, value);
-                parser_match_token(INT, socket_client);
-            } else if (c_token == STRING || c_token == BOOL) {
-                graphics_keyframe_set_attr(frame, name, c_value);
-                parser_next_token(socket_client);
-            } else {
-                log_file(LogWarn, "Parser", "Unknown value type %d", c_token);
-                parser_next_token(socket_client);
-            }
-
-            if (c_token == ',') {
-                parser_match_token(',', socket_client);
-            }
-        }
-
-        parser_match_token('}', socket_client);
-
-        frameIndex++;
-
-        if (c_token == ',') {
-            parser_match_token(',', socket_client);
-        }
-    }
+    graphics_page_gen_frame(page, frame);
 }
 
-void parser_parse_bind_keyframe(IPage *page, Keyframe *frame, int socket_client) {
-    char name[GEO_BUF_SIZE];
-    parser_match_token('{', socket_client);
+void parser_parse_bind_frame(JSONObject *frame_obj, IPage *page) {
+    Keyframe frame;
+    parser_parse_keyframe(frame_obj, &frame);
+    frame.type = BIND_FRAME;
 
-    while (c_token == STRING) {
-        memcpy(name, c_value, sizeof name);
-        parser_match_token(STRING, socket_client);
-        parser_match_token(':', socket_client);
-
-        if (LOG_TEMPLATE) {
-            log_file(LogMessage, "Parser", "\t%s = %s", name, c_value);
-        }
-
-        if (strcmp(name, "FrameNum") == 0) {
-            frame->bind_frame_num = atoi(c_value);
-            parser_match_token(INT, socket_client);
-
-        } else if (strcmp(name, "GeoID") == 0) {
-            frame->bind_geo_id = atoi(c_value);
-            parser_match_token(INT, socket_client);
-
-        } else if (strcmp(name, "GeoAttr") == 0) {
-            frame->bind_attr = geometry_char_to_attr(c_value);
-            parser_match_token(STRING, socket_client);
-        } else {
-            parser_next_token(socket_client);
-        }
-
-        if (c_token == ',') {
-            parser_match_token(',', socket_client);
-        }
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "Bind Frame");
     }
 
-    parser_match_token('}', socket_client);
+    Keyframe bind_frame;
+    JSONNode *bind_obj = parser_json_attribute(frame_obj, "BindFrame");
+    log_assert(bind_obj->type == JSON_OBJECT, "Parser", "Bind frame node is not a JSON Object");
+    parser_parse_keyframe(&bind_obj->object, &bind_frame);
+
+    frame.bind_frame_num = bind_frame.frame_num;
+    frame.bind_geo_id = bind_frame.geo_id;
+    frame.bind_attr = bind_frame.attr;
+
+    graphics_page_gen_frame(page, frame);
+}
+
+void parser_parse_user_frame(JSONObject *frame_obj, IPage *page) {
+    Keyframe frame;
+    parser_parse_keyframe(frame_obj, &frame);
+    frame.type = USER_FRAME;
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tUser Frame");
+    }
+
+    graphics_page_gen_frame(page, frame);
 }
 
 // G -> {'id': num, 'type': string, 'attr': [A]} | G, G
-void parser_parse_geometry(IPage *page, int socket_client, int geo_type) {
-    if (c_token == ']') {
-        return;
+void parser_parse_geometry(JSONObject *geo_obj, IPage *page) {
+    JSONNode *geo_id = parser_json_attribute(geo_obj, "GeometryID");
+    log_assert(geo_id->type == JSON_INT, "Parser", "Geometry ID is not a JSON Int");
+
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\tGeometry ID: %d", geo_id->integer);
     }
 
-    IGeometry *geo = graphics_page_add_geometry(page, geo_type);
-    parser_match_token('{', socket_client);
+    IGeometry *geo = graphics_page_add_geometry(page, geo_type, geo_id->integer);
 
-    while (c_token == STRING) {
-        if (strcmp(c_value, "GeometryID") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            geo->geo_id = atoi(c_value);
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\tgeometry id: %d", geo->geo_id);
-            }
-
-            parser_match_token(INT, socket_client);
-        } else if (strcmp(c_value, "Name") == 0) {
-            // skip attr
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\t\tname: %s", c_value);
-            }
-
-            parser_match_token(STRING, socket_client);
-        } else if (strcmp(c_value, "GeoType") == 0) {
-            // skip attr
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\t\tgeo type: %s", c_value);
-            }
-
-            parser_match_token(STRING, socket_client);
-
-        } else {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            parser_parse_attribute(geo, socket_client);
+    for (JSONAttributeNode *attr = geo_obj->head.next; attr != &geo_obj->tail; attr = attr->next) {
+        if (strcmp(attr->name, "Name") == 0) {
+            continue;
+        } else if (strcmp(attr->name, "GeometryID") == 0) {
+            continue;
+        } else if (strcmp(attr->name, "GeoType") == 0) {
+            continue;
         }
 
-        if (c_token == ',') {
-            parser_match_token(',', socket_client);
+        if (attr->node->type != JSON_OBJECT) {
+            continue;
         }
-    }
 
-    parser_match_token('}', socket_client);
-
-    if (c_token == ',') {
-        parser_match_token(',', socket_client);
-        parser_parse_geometry(page, socket_client, geo_type);
+        parser_parse_attribute(&attr->node->object, geo);
     }
 }
 
 // A -> {'name': string, 'value': string} | A, A
-void parser_parse_attribute(IGeometry *geo, int socket_client) {
-    char name[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
-    int got_name = 0, got_value = 0;
-    memset(name, '\0', sizeof name);
-    memset(value, '\0', sizeof value);
+void parser_parse_attribute(JSONObject *attr, IGeometry *geo) {
+    JSONNode *name = parser_json_attribute(attr, "Name");
+    log_assert(name->type == JSON_STRING, "Parser", "Name is not a JSON String"); 
 
-    parser_match_token('{', socket_client);
+    if (LOG_TEMPLATE) {
+        log_file(LogMessage, "Parser", "\t\t%s:", name->string);
+    }
 
-    while (c_token == STRING) {
-        if (strcmp(c_value, "Name") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            memcpy(name, c_value, PARSE_BUF_SIZE);
+    JSONNode *value = parser_json_attribute(attr, "Value");
+    if (value != NULL) {
+        if (value->type == JSON_STRING) {
+            geometry_set_attr(geo, name->string, value->string);
+
             if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\t\t\tname: %s", name);
+                log_file(LogMessage, "Parser", "\t\t\tValue: %s", value->string);
             }
 
-            parser_match_token(STRING, socket_client);
+        } else if (value->type == JSON_INT) {
+            int geo_attr = geometry_char_to_attr(name->string);
+            geometry_set_int_attr(geo, geo_attr, value->integer);
 
-            got_name = 1;
-        } else if (strcmp(c_value, "Red") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            geometry_set_color(geo, atof(c_value), 0);
-            parser_next_token(socket_client);
-        
-        } else if (strcmp(c_value, "Green") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            geometry_set_color(geo, atof(c_value), 1);
-            parser_next_token(socket_client);
-        
-        } else if (strcmp(c_value, "Blue") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            geometry_set_color(geo, atof(c_value), 2);
-            parser_next_token(socket_client);
-        
-        } else if (strcmp(c_value, "Alpha") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-
-            geometry_set_color(geo, atof(c_value), 3);
-            parser_next_token(socket_client);
-
-        } else if (strcmp(c_value, "Value") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            memcpy(value, c_value, PARSE_BUF_SIZE);
             if (LOG_TEMPLATE) {
-                log_file(LogMessage, "Parser", "\t\t\tvalue: %s", value);
+                log_file(LogMessage, "Parser", "\t\t\tValue: %d", value->integer);
             }
-            
-            parser_next_token(socket_client);
 
-            got_value = 1;
-        } else if (strcmp(c_value, "Rows") == 0) {
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
+        } else if (value->type == JSON_FLOAT) {
+            char buf[100];
+            memset(buf, '\0', sizeof buf);
+            sprintf(buf, "%f", value->f);
 
-            // skip rows 
-            parser_match_token('{', socket_client);
-            while (c_token != '}') {
-                parser_next_token(socket_client);
+            geometry_set_attr(geo, name->string, buf);
+
+            if (LOG_TEMPLATE) {
+                log_file(LogMessage, "Parser", "\t\t\tValue: %f", value->f);
             }
-            parser_match_token('}', socket_client);
-
-        } else {
-            // skip attr
-            parser_match_token(STRING, socket_client);
-            parser_match_token(':', socket_client);
-            parser_next_token(socket_client);
-        }
-
-        if (c_token == ',') {
-            parser_match_token(',', socket_client);
         }
     }
 
-    parser_match_token('}', socket_client);
+    char *color_attrs[] = {"Red", "Green", "Blue", "Alpha"};
+    for (int i = 0; i < 4; i++) {
+        JSONNode *node = parser_json_attribute(attr, color_attrs[i]);
+        if (node == NULL) {
+            continue;
+        }
 
-    if (got_name && got_value) {
-        geometry_set_attr(geo, name, value);
+        if (node->type == JSON_FLOAT) {
+            geometry_set_color(geo, node->f, i);
+        } else if (node->type == JSON_INT) {
+            geometry_set_color(geo, node->integer, i);
+        }
     }
 }
-
-void parser_match_token(int t, int socket_client) {
-    if (t == c_token) {
-        parser_next_token(socket_client);
-    } else {
-        parser_incorrect_token(t, c_token, buf, buf_ptr);
-    }
-}
-
-static void parser_match_char(int socket_client, char c1, char c2) {
-    if (c1 == c2) {
-        return ;
-    } 
-
-    log_file(LogError, "Parser", "Couldn't match char %c to char %c", c1, c2);
-}
-
-void parser_next_token(int socket_client) {
-    static char c = -1;
-    int i = 0;
-    memset(c_value, '\0', PARSE_BUF_SIZE);
-
-    if (c == -1) {
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-    }
-
-    // skip whitespace
-    while (c == ' ' || c == '\t' || c == '\n') {
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-    }
-
-    if (c == '\'') {
-        // attr 
-        while ((c = parser_get_char(socket_client, &buf_ptr, buf)) != '\'') {
-            if (i >= PARSE_BUF_SIZE) {
-                log_file(LogError, "Parser", "Parser ran out of memory");
-            }
-
-            c_value[i++] = c;
-        }
-
-        c = -1;
-        c_token = STRING;
-        return;
-    } else if (c == '"') {
-        // attr 
-        while ((c = parser_get_char(socket_client, &buf_ptr, buf)) != '"') {
-            if (i >= PARSE_BUF_SIZE) {
-                log_file(LogError, "Parser", "Parser ran out of memory");
-            }
-
-            c_value[i++] = c;
-        }
-
-        c = -1;
-        c_token = STRING;
-        return;
-    } else if ((c >= '0' && c <= '9') || c == '-') {
-        // number
-        c_token = INT;
-
-        while (1) {
-            c_value[i++] = c;
-            c = parser_get_char(socket_client, &buf_ptr, buf);
-
-            if (c == '.') {
-                c_token = FLOAT;
-            } else if (c < '0' || c > '9') {
-                return;
-            }
-        }
-    } else if (c == 't' || c == 'T') {
-        c_value[i++] = c;
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 'r');
-        c_value[i++] = c;
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 'u');
-        c_value[i++] = c;
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 'e');
-        c_value[i++] = c;
-
-        c = -1;
-        c_token = BOOL;
-        return;
-
-    } else if (c == 'f' || c == 'F') {
-        c_value[i++] = 'f';
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 'a');
-        c_value[i++] = c;
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 'l');
-        c_value[i++] = c;
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 's');
-        c_value[i++] = c;
-
-        c = parser_get_char(socket_client, &buf_ptr, buf);
-        parser_match_char(socket_client, c, 'e');
-        c_value[i++] = c;
-
-        c = -1;
-        c_token = BOOL;
-
-        return;
-    }
-
-    c_token = c;
-    c = -1;
-}
-
-

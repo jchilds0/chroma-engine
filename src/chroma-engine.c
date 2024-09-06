@@ -74,12 +74,8 @@ int main(int argc, char **argv) {
     clock_t start, end;
     start = clock();
 
-    char *msg = "ver 0 1 full;";
-    if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
-        log_file(LogError, "Parser", "Error requesting graphics hub"); 
-    }
-
     parser_parse_hub(&engine);
+
     end = clock();
 
     log_file(LogMessage, "Parser", "Imported Chroma Hub in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);

@@ -1,0 +1,5 @@
+# Chroma Hub parser benchmarks
+
+No JSON, 100 templates, 100 geometries: 1s
+
+

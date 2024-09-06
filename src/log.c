@@ -46,6 +46,14 @@ void log_start(EngineType type) {
     }
 }
 
+void log_assert(int cond, const char *module, const char *buf) {
+    if (cond) {
+        return;
+    }
+
+    log_file(LogError, module, buf);
+}
+
 void log_file(LogType flag, const char *module, const char *buf, ...) {
     char time[100];
     char *type;
