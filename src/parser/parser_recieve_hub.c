@@ -52,12 +52,10 @@ void parser_parse_hub(Engine *eng) {
     }
 
     JSONObject obj = root->object;
-    JSONNode *num_temp = parser_json_attribute(&obj, "NumTemplates");
-    log_assert(num_temp->type == JSON_INT, "Parser", "NumTemplates is not a JSON Int");
-
-    eng->hub = graphics_new_graphics_hub(num_temp->integer);
+    int num_temp = parser_json_get_int(&obj, "NumTemplates");
+    eng->hub = graphics_new_graphics_hub(num_temp);
     if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "Num Templates: %d", num_temp->integer);
+        log_file(LogMessage, "Parser", "Num Templates: %d", num_temp);
     }
 
     JSONNode *templates = parser_json_attribute(&obj, "Templates");
@@ -90,25 +88,19 @@ static int geo_type;
 
 // T -> {'id': num, 'num_geo': num, 'geometry': [G]} | T, T
 void parser_parse_template(JSONObject *template, IGraphics *hub) {
-    JSONNode *max_geo = parser_json_attribute(template, "MaxGeometry");
-    log_assert(max_geo->type == JSON_INT, "Parser", "Num geometry is not a JSON Int");
-
+    int max_geo = parser_json_get_int(template, "MaxGeometry");
     if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "\tnum geometery: %d", max_geo->integer);
+        log_file(LogMessage, "Parser", "\tnum geometery: %d", max_geo);
     }
 
-    JSONNode *max_key = parser_json_attribute(template, "MaxKeyframe");
-    log_assert(max_geo->type == JSON_INT, "Parser", "Num geometry is not a JSON Int");
-
+    int max_key = parser_json_get_int(template, "MaxKeyframe");
     if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "\tnum keyframe: %d", max_key->integer);
+        log_file(LogMessage, "Parser", "\tnum keyframe: %d", max_key);
     }
 
-    IPage *page = graphics_new_page(max_geo->integer, max_key->integer);
 
-    JSONNode *tempID = parser_json_attribute(template, "TempID");
-    log_assert(tempID->type == JSON_INT, "Parser", "Template ID is not a JSON Int");
-    page->temp_id = tempID->integer;
+    IPage *page = graphics_new_page(max_geo, max_key);
+    page->temp_id = parser_json_get_int(template, "TempID");
 
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\ttemplate id: %d", page->temp_id);
@@ -146,40 +138,33 @@ void parser_parse_template(JSONObject *template, IGraphics *hub) {
 }
 
 static void parser_parse_keyframe(JSONObject *frame_obj, Keyframe *frame) {
+    if (frame_obj == NULL) {
+        log_file(LogWarn, "Parser", "Keyframe is null");
+        return;
+    }
+
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "Keyframe");
     }
 
-    JSONNode *frame_num = parser_json_attribute(frame_obj, "FrameNum");
-    log_assert(frame_num->type == JSON_INT, "Parser", "Frame Num is not a JSON Int");
-    frame->frame_num = frame_num->integer;
-
+    frame->frame_num = parser_json_get_int(frame_obj, "FrameNum");
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\tFrame Num: %d", frame->frame_num);
     }
 
-    JSONNode *geo_id = parser_json_attribute(frame_obj, "GeoID");
-    log_assert(geo_id->type == JSON_INT, "Parser", "Geo ID is not a JSON Int");
-    frame->geo_id = geo_id->integer;
-
+    frame->geo_id = parser_json_get_int(frame_obj, "GeoID");
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\tGeo ID: %d", frame->geo_id);
     }
 
-    JSONNode *geo_attr = parser_json_attribute(frame_obj, "GeoAttr");
-    log_assert(geo_attr->type == JSON_STRING, "Parser", "Geo Attr is not a JSON String");
-    frame->attr = geometry_char_to_attr(geo_attr->string);
-
+    frame->attr = geometry_char_to_attr(parser_json_get_string(frame_obj, "GeoAttr"));
     if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "\tGeo Attr: %s", geo_attr->string);
+        log_file(LogMessage, "Parser", "\tGeo Attr: %s", parser_json_get_string(frame_obj, "GeoAttr"));
     }
 
-    JSONNode *expand = parser_json_attribute(frame_obj, "Expand");
-    log_assert(expand->type == JSON_BOOL, "Parser", "Expand is not a JSON Bool");
-    frame->expand = expand->boolean;
-
+    frame->expand = parser_json_get_bool(frame_obj, "Expand");
     if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "\tGeo Attr: %s", geo_attr->string);
+        log_file(LogMessage, "Parser", "\tExpand: %s", frame->expand);
     }
 }
 
@@ -189,10 +174,7 @@ void parser_parse_set_frame(JSONObject *frame_obj, IPage *page) {
     parser_parse_keyframe(frame_obj, &frame);
     frame.type = SET_FRAME;
 
-    JSONNode *value = parser_json_attribute(frame_obj, "Value");
-    log_assert(value->type == JSON_INT, "Parser", "Value node is not a JSON Int");
-    frame.value = value->integer;
-
+    frame.value = parser_json_get_int(frame_obj, "Value");
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\tValue: %d", frame.value);
     }
@@ -210,7 +192,8 @@ void parser_parse_bind_frame(JSONObject *frame_obj, IPage *page) {
     }
 
     Keyframe bind_frame;
-    JSONNode *bind_obj = parser_json_attribute(frame_obj, "BindFrame");
+    JSONNode *bind_obj = parser_json_attribute(frame_obj, "Bind");
+    log_assert(bind_obj != NULL, "Parser", "Bind frame is null");
     log_assert(bind_obj->type == JSON_OBJECT, "Parser", "Bind frame node is not a JSON Object");
     parser_parse_keyframe(&bind_obj->object, &bind_frame);
 

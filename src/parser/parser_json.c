@@ -56,6 +56,46 @@ JSONNode *parser_json_attribute(JSONObject *node, const char *name) {
     return NULL;
 }
 
+int parser_json_get_int(JSONObject *obj, char *name) {
+    JSONNode *node = parser_json_attribute(obj, name);
+    if (node == NULL || node->type != JSON_INT) {
+        log_file(LogWarn, "Parser", "Error: %s is not a JSON Integer", name);
+        return 0;
+    }
+
+    return node->integer;
+}
+
+char *parser_json_get_string(JSONObject *obj, char *name) {
+    JSONNode *node = parser_json_attribute(obj, name);
+    if (node == NULL || node->type != JSON_STRING) {
+        log_file(LogWarn, "Parser", "Error: %s is not a JSON String", name);
+        return NULL;
+    }
+
+    return node->string;
+}
+
+float parser_json_get_float(JSONObject *obj, char *name) {
+    JSONNode *node = parser_json_attribute(obj, name);
+    if (node == NULL || node->type != JSON_FLOAT) {
+        log_file(LogWarn, "Parser", "Error: %s is not a JSON Float", name);
+        return 0.0;
+    }
+
+    return node->f;
+}
+
+unsigned char parser_json_get_bool(JSONObject *obj, char *name) {
+    JSONNode *node = parser_json_attribute(obj, name);
+    if (node == NULL || node->type != JSON_BOOL) {
+        log_file(LogWarn, "Parser", "Error: %s is not a JSON Bool", name);
+        return 0;
+    }
+
+    return node->boolean;
+}
+
 JSONNode *parser_receive_json(int socket_client) {
     JSONNode *root = NEW_STRUCT(JSONNode);
     parser_clean_buffer(&buf_ptr, buf);
@@ -75,6 +115,11 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
 
         case T_STRING:
             node->type = JSON_STRING;
+            
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "String %s", c_value);
+            }
+
             memset(node->string, '\0', sizeof node->string);
             memcpy(node->string, c_value, sizeof node->string);
             parser_json_next_token(socket_client);
@@ -83,38 +128,70 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
         case T_INT:
             node->type = JSON_INT;
             node->integer = atoi(c_value);
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "Int %d", node->integer);
+            }
+
             parser_json_next_token(socket_client);
             break;
 
         case T_FLOAT:
             node->type = JSON_FLOAT;
             node->f = atof(c_value);
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "Float %f", node->f);
+            }
+
             parser_json_next_token(socket_client);
             break;
 
         case T_FALSE:
             node->type = JSON_BOOL;
             node->boolean = 0;
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "Bool False");
+            }
+
             parser_json_next_token(socket_client);
             break;
 
         case T_TRUE:
             node->type = JSON_BOOL;
             node->boolean = 1;
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "Bool True");
+            }
+
             parser_json_next_token(socket_client);
             break;
 
         case '{':
             node->type = JSON_OBJECT;
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "JSON Object Start");
+            }
+
             parser_json_next_token(socket_client);
             parser_json_parse_object(&node->object, socket_client);
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "JSON Object End");
+            }
+
             parser_match_token('}', socket_client);
             break;
 
         case '[':
             node->type = JSON_ARRAY;
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "JSON Array Start");
+            }
+
             parser_json_next_token(socket_client);
             parser_json_parse_array(&node->array, socket_client);
+            if (LOG_JSON) {
+                log_file(LogMessage, "Parser", "JSON Array End");
+            }
+
             parser_match_token(']', socket_client);
             break;
 

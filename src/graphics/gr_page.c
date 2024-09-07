@@ -19,6 +19,7 @@
 IPage *graphics_new_page(int num_geo, int max_keyframe) {
     IPage *page = NEW_STRUCT(IPage);
     page->len_geometry = num_geo;
+    page->max_keyframe = max_keyframe;
     page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
 
     for (int i = 0; i < page->len_geometry; i++) {

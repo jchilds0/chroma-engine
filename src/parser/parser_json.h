@@ -74,5 +74,9 @@ JSONNode *parser_receive_json(int socket_client);
 void parser_json_free_node(JSONNode *node);
 
 JSONNode *parser_json_attribute(JSONObject *node, const char *attr);
+int parser_json_get_int(JSONObject *obj, char *name);
+char *parser_json_get_string(JSONObject *obj, char *name);
+float parser_json_get_float(JSONObject *obj, char *name);
+unsigned char parser_json_get_bool(JSONObject *obj, char *name);
 
 #endif // !PARSER_JSON
