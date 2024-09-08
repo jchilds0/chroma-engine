@@ -164,7 +164,7 @@ static void parser_parse_keyframe(JSONObject *frame_obj, Keyframe *frame) {
 
     frame->expand = parser_json_get_bool(frame_obj, "Expand");
     if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "\tExpand: %s", frame->expand);
+        log_file(LogMessage, "Parser", "\tExpand: %d", frame->expand);
     }
 }
 

@@ -50,6 +50,10 @@ void gl_draw_polygon(IGeometry *poly) {
     int pos_y = geometry_get_int_attr(poly, GEO_POS_Y); 
     int num_points = geometry_get_int_attr(poly, GEO_NUM_POINTS);
 
+    if (num_points == 0) {
+        return;
+    }
+
     GeometryPolygon *g_poly = (GeometryPolygon *)poly;
 
     int center_x = 0, center_y = 0;

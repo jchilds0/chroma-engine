@@ -9,6 +9,7 @@
 #include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
+#include <stdio.h>
 
 GeometryPolygon *geometry_new_polygon(void) {
     GeometryPolygon *poly = NEW_STRUCT(GeometryPolygon);
@@ -63,6 +64,8 @@ vec2 geometry_polygon_get_point(GeometryPolygon *poly, int index) {
 }
 
 void geometry_polygon_set_attr(GeometryPolygon *poly, GeometryAttr attr, char *value) {
+    int i, x, y;
+
     switch (attr) {
         case GEO_COLOR:
             sscanf(value, "%f %f %f %f", 
@@ -74,6 +77,12 @@ void geometry_polygon_set_attr(GeometryPolygon *poly, GeometryAttr attr, char *v
 
         case GEO_NUM_POINTS:
             poly->num_vertices = atoi(value);
+            break;
+
+        case GEO_POINT:
+            sscanf(value, "%d %d %d", &i, &x, &y);
+            poly->vertex[i].x = x;
+            poly->vertex[i].y = y;
             break;
 
         default:
