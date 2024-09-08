@@ -246,24 +246,23 @@ void parser_parse_geometry(JSONObject *geo_obj, IPage *page) {
 
 // A -> {'name': string, 'value': string} | A, A
 void parser_parse_attribute(JSONObject *attr, IGeometry *geo) {
-    JSONNode *name = parser_json_attribute(attr, "Name");
-    log_assert(name->type == JSON_STRING, "Parser", "Name is not a JSON String"); 
+    char *name = parser_json_get_string(attr, "Name");
 
-    if (LOG_TEMPLATE) {
-        log_file(LogMessage, "Parser", "\t\t%s:", name->string);
+    if (LOG_TEMPLATE && name != NULL) {
+        log_file(LogMessage, "Parser", "\t\t%s:", name);
     }
 
     JSONNode *value = parser_json_attribute(attr, "Value");
-    if (value != NULL) {
+    if (value != NULL && name != NULL) {
         if (value->type == JSON_STRING) {
-            geometry_set_attr(geo, name->string, value->string);
+            geometry_set_attr(geo, name, value->string);
 
             if (LOG_TEMPLATE) {
                 log_file(LogMessage, "Parser", "\t\t\tValue: %s", value->string);
             }
 
         } else if (value->type == JSON_INT) {
-            int geo_attr = geometry_char_to_attr(name->string);
+            int geo_attr = geometry_char_to_attr(name);
             geometry_set_int_attr(geo, geo_attr, value->integer);
 
             if (LOG_TEMPLATE) {
@@ -275,7 +274,7 @@ void parser_parse_attribute(JSONObject *attr, IGeometry *geo) {
             memset(buf, '\0', sizeof buf);
             sprintf(buf, "%f", value->f);
 
-            geometry_set_attr(geo, name->string, buf);
+            geometry_set_attr(geo, name, buf);
 
             if (LOG_TEMPLATE) {
                 log_file(LogMessage, "Parser", "\t\t\tValue: %f", value->f);
