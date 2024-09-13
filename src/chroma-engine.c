@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
         config_parse_file(&config, DEFAULT_CONFIG_PATH);
     }
 
+    sprintf(engine.hub_addr, "%s:%d", config.hub_addr, config.hub_port); 
     engine.hub_socket = parser_tcp_start_client(config.hub_addr, config.hub_port);
     log_file(LogMessage, "Engine", "Graphics hub %s:%d", config.hub_addr, config.hub_port); 
 

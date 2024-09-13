@@ -65,7 +65,7 @@ int parser_tcp_start_server(int port) {
 
     struct timeval tv;
     tv.tv_sec = 0;
-    tv.tv_usec = 100 / CHROMA_FRAMERATE;
+    tv.tv_usec = 1000 / CHROMA_FRAMERATE;
 
     setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 

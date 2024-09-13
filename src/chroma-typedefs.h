@@ -29,7 +29,9 @@ typedef struct {
 typedef struct {
     int         server_socket;
     int         server_port;
+
     int         hub_socket;
+    char        hub_addr[100];
     IGraphics   *hub;
 } Engine;
 

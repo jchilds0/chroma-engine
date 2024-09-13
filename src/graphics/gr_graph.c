@@ -10,6 +10,7 @@ Graph *graphics_new_graph(int n) {
     Graph *g = NEW_STRUCT(Graph);
 
     g->num_nodes = n;
+    g->num_edges = 0;
     g->adj_matrix = NEW_ARRAY(n * n, unsigned char);
     g->value = NEW_ARRAY(n, int);
     g->pad_index = NEW_ARRAY(n, int);
@@ -44,6 +45,7 @@ void graphics_graph_add_leaf_node(Graph *g, int x, int value) {
 
 void graphics_graph_add_edge(Graph *g, int x, int y) {
     g->adj_matrix[x * g->num_nodes + y] = 1;
+    g->num_edges++;
 }
 
 void graphics_graph_free_graph(Graph *g) {

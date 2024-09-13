@@ -14,7 +14,7 @@
 #include "log.h"
 #include <time.h>
 
-#define ANIM_LENGTH     60
+#define ANIM_LENGTH     120
 
 int action[] = {BLANK, BLANK, BLANK, BLANK, BLANK};
 int page_num[] = {-1, -1, -1, -1, -1};

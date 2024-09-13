@@ -16,7 +16,7 @@
 #define PARSE_BUF_SIZE      1024
 #define MAX_CONNECTIONS     10
 #define LOG_PARSER          1
-#define LOG_TEMPLATE        1
+#define LOG_TEMPLATE        0
 #define LOG_JSON            1
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
@@ -50,7 +50,9 @@ ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
 ServerResponse  parser_recieve_image(int hub_socket, GeometryImage *img);
 
 void            parser_update_template(Engine *eng, int page_num);
-void            parser_incorrect_token(char tok1, char tok2, char *buf, int buf_ptr);
+
+void            parser_http_header(int socket_client, int *buf_ptr, char *buf);
+void            parser_incorrect_token(char tok1, char tok2, int buf_ptr, char *buf);
 char            parser_get_char(int socket_client, int *buf_ptr, char *buf);
 void            parser_clean_buffer(int *buf_ptr, char *buf);
 ServerResponse  parser_get_message(int socket_client, int *buf_ptr, char *buf);

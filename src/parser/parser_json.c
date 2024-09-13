@@ -7,6 +7,10 @@
 #include "chroma-engine.h"
 #include "log.h"
 #include "parser_internal.h"
+#include <string.h>
+
+static int indent = 0;
+static char line[PARSE_BUF_SIZE];
 
 static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
@@ -21,6 +25,17 @@ static void parser_json_parse_array(JSONArray *array, int socket_client);
 static void parser_match_token(int t, int socket_client);
 static void parser_match_char(int socket_client, char c2);
 static void parser_json_next_token(int socket_client);
+
+static void format_line(const char *text) {
+    memset(line, '\0', sizeof line);
+
+    for (int i = 0; i < indent; i++) {
+        line[i] = '\t';
+    }
+
+    memcpy(&line[indent], text, strlen(text));
+    log_file(LogMessage, "Parser", line);
+}
 
 void parser_json_free_node(JSONNode *node) {
     if (node->type == JSON_ARRAY) {
@@ -99,8 +114,9 @@ unsigned char parser_json_get_bool(JSONObject *obj, char *name) {
 JSONNode *parser_receive_json(int socket_client) {
     JSONNode *root = NEW_STRUCT(JSONNode);
     parser_clean_buffer(&buf_ptr, buf);
-    parser_json_next_token(socket_client);
 
+    parser_http_header(socket_client, &buf_ptr, buf);
+    parser_json_next_token(socket_client);
     parser_json_parse_node(root, socket_client);
 
     return root;
@@ -251,7 +267,7 @@ static void parser_match_token(int t, int socket_client) {
     if (t == c_token) {
         parser_json_next_token(socket_client);
     } else {
-        parser_incorrect_token(t, c_token, buf, buf_ptr);
+        parser_incorrect_token(t, c_token, buf_ptr, buf);
     }
 }
 

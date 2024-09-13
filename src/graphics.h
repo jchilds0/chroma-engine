@@ -37,6 +37,7 @@ typedef int (*NodeEval)(Node node);
 
 typedef struct {
     int             num_nodes;
+    int             num_edges;
     int             *value;
     int             *pad_index;
     NodeEval        *node_evals;

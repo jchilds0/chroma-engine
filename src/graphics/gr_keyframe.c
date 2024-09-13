@@ -107,6 +107,11 @@ void graphics_page_calculate_keyframes(IPage *page) {
     }
 
     graphics_log_keyframe(page);
+
+    if (LOG_KEYFRAMES) {
+        log_file(LogMessage, "Graphics", "Keyframe Graph: %d nodes, %d edges", 
+                 page->keyframe_graph->num_nodes, page->keyframe_graph->num_edges);
+    }
 }
 
 static int single_value(Node node) {

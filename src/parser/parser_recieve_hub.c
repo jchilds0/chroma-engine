@@ -40,7 +40,8 @@ void parser_parse_set_frame(JSONObject *frame, IPage *page);
     
 // S -> {'num_temp': num, 'templates': [T]}
 void parser_parse_hub(Engine *eng) {
-    char *msg = "ver 0 1 full;";
+    char msg[PARSE_BUF_SIZE];
+    sprintf(msg, "GET http://%s/templates HTTP/1.1\nHost: ChromaViz\n\n", eng->hub_addr);
     if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
         log_file(LogError, "Parser", "Error requesting graphics hub"); 
     }
@@ -65,13 +66,11 @@ void parser_parse_hub(Engine *eng) {
 }
 
 void parser_update_template(Engine *eng, int temp_id) {
-    char msg[100];
-    memset(msg, '\0', sizeof msg);
-
     graphics_hub_free_page(eng->hub, temp_id);
 
-    sprintf(msg, "ver 0 1 temp %d;", temp_id);
-    if (send(eng->hub_socket, msg, strlen(msg), 0) < 0) {
+    char msg[PARSE_BUF_SIZE];
+    sprintf(msg, "GET http://%s/template/%d HTTP/1.1\nHost: ChromaViz\n\n", eng->hub_addr, temp_id);
+    if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
         log_file(LogError, "Parser", "Error requesting template %d", temp_id); 
     }
 
