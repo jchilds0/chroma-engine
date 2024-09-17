@@ -116,7 +116,11 @@ JSONNode *parser_receive_json(int socket_client) {
     parser_clean_buffer(&buf_ptr, buf);
 
     parser_http_header(socket_client, &buf_ptr, buf);
-    parser_json_next_token(socket_client);
+
+    while (c_token != '{') {
+        parser_json_next_token(socket_client);
+    }
+
     parser_json_parse_node(root, socket_client);
 
     return root;

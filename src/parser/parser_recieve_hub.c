@@ -40,11 +40,11 @@ void parser_parse_set_frame(JSONObject *frame, IPage *page);
     
 // S -> {'num_temp': num, 'templates': [T]}
 void parser_parse_hub(Engine *eng) {
-    char msg[PARSE_BUF_SIZE];
-    sprintf(msg, "GET http://%s/templates HTTP/1.1\nHost: ChromaViz\n\n", eng->hub_addr);
-    if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
-        log_file(LogError, "Parser", "Error requesting graphics hub"); 
-    }
+    char addr[PARSE_BUF_SIZE];
+
+    memset(addr, '\0', sizeof addr);
+    sprintf(addr, "%s/templates", eng->hub_addr);
+    parser_http_get(eng->hub_socket, addr);
 
     JSONNode *root = parser_receive_json(eng->hub_socket);
     if (root->type != JSON_OBJECT) {
@@ -68,11 +68,10 @@ void parser_parse_hub(Engine *eng) {
 void parser_update_template(Engine *eng, int temp_id) {
     graphics_hub_free_page(eng->hub, temp_id);
 
-    char msg[PARSE_BUF_SIZE];
-    sprintf(msg, "GET http://%s/template/%d HTTP/1.1\nHost: ChromaViz\n\n", eng->hub_addr, temp_id);
-    if (send(engine.hub_socket, msg, strlen(msg), 0) < 0) {
-        log_file(LogError, "Parser", "Error requesting template %d", temp_id); 
-    }
+    char addr[PARSE_BUF_SIZE];
+    memset(addr, '\0', sizeof addr);
+    sprintf(addr, "%s/template/%d", eng->hub_addr, temp_id);
+    parser_http_get(eng->hub_socket, addr);
 
     JSONNode *template = parser_receive_json(eng->hub_socket);
     if (template->type != JSON_OBJECT) {

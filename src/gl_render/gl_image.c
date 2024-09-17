@@ -9,7 +9,6 @@
 #include "chroma-engine.h"
 #include "geometry.h"
 #include "gl_render_internal.h"
-#include "log.h"
 
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -28,8 +27,6 @@ static GLuint indices[] = {
     0, 1, 3, // first triangle 
     1, 2, 3, // second triangle
 };
-
-unsigned char *parser_load_image(char *filename, int *w, int *h);
 
 void gl_image_init_buffers(void) {
     glGenVertexArrays(1, &vao);

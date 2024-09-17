@@ -65,10 +65,10 @@ void gl_draw_circle(IGeometry *circle) {
 
     int inner_radius = geometry_get_int_attr(circle, GEO_INNER_RADIUS);
     int outer_radius = geometry_get_int_attr(circle, GEO_OUTER_RADIUS);
-    float start_angle = geometry_get_int_attr(circle, GEO_START_ANGLE) * M_PI / 180;
-    float end_angle = geometry_get_int_attr(circle, GEO_END_ANGLE) * M_PI / 180;
+    double start_angle = geometry_get_int_attr(circle, GEO_START_ANGLE) * M_PI / 180;
+    double end_angle = geometry_get_int_attr(circle, GEO_END_ANGLE) * M_PI / 180;
 
-    float cos_theta, sin_theta;
+    double cos_theta, sin_theta;
 
     int n = gl_circle_tri_num(outer_radius, start_angle, end_angle);
     if (num_nodes != n) {
@@ -80,7 +80,7 @@ void gl_draw_circle(IGeometry *circle) {
         indices   = NEW_ARRAY(6 * n, unsigned int);
     }
 
-    float theta = (float)(end_angle - start_angle) / n;
+    double theta = (double)(end_angle - start_angle) / n;
 
     /*
      * Create a quadrilateral out of the 4 points 

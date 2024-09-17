@@ -15,9 +15,9 @@
 
 #define PARSE_BUF_SIZE      1024
 #define MAX_CONNECTIONS     10
-#define LOG_PARSER          1
+#define LOG_PARSER          0
 #define LOG_TEMPLATE        0
-#define LOG_JSON            1
+#define LOG_JSON            0
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
 typedef enum {
@@ -45,17 +45,21 @@ typedef enum {
     BOOL,
 } Token;
 
-ServerResponse  parser_tcp_timeout_listen(int server_sock);
 ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
-ServerResponse  parser_recieve_image(int hub_socket, GeometryImage *img);
+ServerResponse  parser_recieve_image(Engine *eng, GeometryImage *img);
+
+// parser_http.c
+void            parser_http_get(int socket_client, const char *addr);
+void            parser_http_header(int socket_client, int *buf_ptr, char *buf);
 
 void            parser_update_template(Engine *eng, int page_num);
 
-void            parser_http_header(int socket_client, int *buf_ptr, char *buf);
+// parser_util.c
 void            parser_incorrect_token(char tok1, char tok2, int buf_ptr, char *buf);
 char            parser_get_char(int socket_client, int *buf_ptr, char *buf);
 void            parser_clean_buffer(int *buf_ptr, char *buf);
 ServerResponse  parser_get_message(int socket_client, int *buf_ptr, char *buf);
+
 
 #endif // !PARSER_INTERNAL
 

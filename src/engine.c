@@ -55,8 +55,6 @@ void engine_window(void) {
             continue;
         }
 
-        log_file(LogMessage, "Update status", "%d %d %d", status.temp_id, status.action, status.frame_num);
-        
         page_num[status.layer]  = status.temp_id;
         action[status.layer]    = status.action;
         frame_num[status.layer] = status.frame_num;

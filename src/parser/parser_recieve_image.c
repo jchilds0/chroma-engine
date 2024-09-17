@@ -13,7 +13,9 @@
 #include <sys/socket.h>
 
 static int socket_client = 0;
-static int img_length = 0;
+
+static char buf[PARSE_BUF_SIZE];
+static int buf_ptr = 0;
 
 union png_size {
     unsigned char bytes[4];
@@ -24,54 +26,26 @@ void free_row_pointers(int, png_bytep *);
 int parser_read_image(int *, int *, png_byte *, png_byte *, png_bytep **);
 void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length);
 
-// ver=%d,%d#
-ServerResponse parser_recieve_image(int hub_socket, GeometryImage *img) {
-    char msg[1024];
-
+ServerResponse parser_recieve_image(Engine *eng, GeometryImage *img) {
     if (img->cur_image_id == img->image_id) {
         return SERVER_MESSAGE;
     }
 
+    char addr[PARSE_BUF_SIZE];
+    memset(addr, '\0', sizeof addr);
+    sprintf(addr, "%s/asset/%d", eng->hub_addr, img->image_id);
     img->cur_image_id = img->image_id;
-    socket_client = hub_socket;
-    memset(msg, '\0', sizeof msg);
-    sprintf(msg, "ver 0 1 img %d;", img->image_id);
 
     if (LOG_PARSER) {
         log_file(LogMessage, "Parser", "Request image %d", img->image_id);
     }
 
-    if (send(hub_socket, msg, sizeof( msg ), 0) < 0) {
-        log_file(LogError, "Parser", "Error requesting image %d from hub", img->image_id); 
-    }
+    socket_client = eng->hub_socket;
+    parser_http_get(socket_client, addr);
+    parser_http_header(socket_client, &buf_ptr, buf);
 
     png_byte color_type, bit_depth;
     png_bytep *row_pointers = NULL;
-
-    char ver[4] = {0, 0, 0, 0};
-    if (recv(hub_socket, ver, sizeof ver, 0) < 0) {
-        log_file(LogWarn, "Parser", "Error receiving image %d version", img->image_id);
-    }
-
-    if (ver[0] != 0 || ver[1] != 1) {
-        log_file(LogError, "Parser", "Incorrect image parser version", img->image_id);
-    }
-
-    union png_size length;
-    length.size = 0;
-    if (recv(hub_socket, length.bytes, sizeof length, 0) < 0) {
-        log_file(LogWarn, "Parser", "Error receiving image %d length", img->image_id);
-    }
-
-    if (length.size == 0) {
-        free(img->data);
-        img->data = NULL;
-        if (LOG_PARSER) {
-            log_file(LogMessage, "Parser", "Image %d does not exist", img->image_id);
-        }
-
-        return SERVER_MESSAGE;
-    }
 
     if (parser_read_image(&img->w, &img->h, &color_type, &bit_depth, &row_pointers) < 0) {
         //log_file(LogWarn, "GL Render", "Error reading png");
@@ -154,6 +128,15 @@ int parser_read_image(int *w, int *h, png_byte *color_type,
     return 0;
 }
 
+static ServerResponse parser_get_bytes() {
+    if (buf_ptr < PARSE_BUF_SIZE) {
+        return SERVER_MESSAGE;
+    }
+
+    parser_clean_buffer(&buf_ptr, buf);
+    return parser_tcp_recieve_message(socket_client, buf);
+}
+
 void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length) {
     if (png_ptr == NULL) {
         return;
@@ -165,15 +148,18 @@ void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length) {
 
     int len, idx = 0;
     while (length != 0) {
-        len = recv(socket_client, &data[idx], length, 0);
-        if (len < 0) {
+        if (parser_get_bytes() != SERVER_MESSAGE) {
             log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
             continue;
         }
 
+        len = MIN(PARSE_BUF_SIZE - buf_ptr, length);
+        memcpy(&data[idx], &buf[buf_ptr], len);
+
         idx += len;
+        buf_ptr += len;
+
         length -= len;
-        img_length -= len;
     }
 }
 

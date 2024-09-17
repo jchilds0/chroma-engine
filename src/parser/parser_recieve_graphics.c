@@ -182,7 +182,7 @@ PAGE:
             continue;
         }
 
-        if (parser_recieve_image(eng->hub_socket, (GeometryImage *)geo) != SERVER_MESSAGE) {
+        if (parser_recieve_image(eng, (GeometryImage *)geo) != SERVER_MESSAGE) {
             log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
         }
     }
