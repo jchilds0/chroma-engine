@@ -9,6 +9,7 @@
 #include "graphics/graphics_internal.h"
 #include "log.h"
 #include "parser/parser_json.h"
+#include "parser/parser_http.h"
 #include "parser_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +38,6 @@ void parser_parse_set_frame(JSONObject *frame, IPage *page);
     } while (0);                                                                               \
 
 
-    
 // S -> {'num_temp': num, 'templates': [T]}
 void parser_parse_hub(Engine *eng) {
     char addr[PARSE_BUF_SIZE];
@@ -66,8 +66,6 @@ void parser_parse_hub(Engine *eng) {
 }
 
 void parser_update_template(Engine *eng, int temp_id) {
-    graphics_hub_free_page(eng->hub, temp_id);
-
     char addr[PARSE_BUF_SIZE];
     memset(addr, '\0', sizeof addr);
     sprintf(addr, "%s/template/%d", eng->hub_addr, temp_id);
@@ -75,11 +73,13 @@ void parser_update_template(Engine *eng, int temp_id) {
 
     JSONNode *template = parser_receive_json(eng->hub_socket);
     if (template->type != JSON_OBJECT) {
-        log_file(LogMessage, "Parser", "Error in chroma hub");
+        log_file(LogMessage, "Parser", "No template received");
         return;
     }
 
     parser_parse_template(&template->object, eng->hub); 
+
+    parser_json_free_node(template);
 }
 
 static int geo_type;

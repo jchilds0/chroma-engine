@@ -58,7 +58,7 @@ void log_file(LogType flag, const char *module, const char *buf, ...) {
     char time[100];
     char *type;
     char message[512];
-    va_list argptr;
+    va_list argptr = {0};
     va_start(argptr, buf);
     vsnprintf(message, sizeof message, buf, argptr);
     FILE *pfile;

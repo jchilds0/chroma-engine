@@ -68,6 +68,10 @@ void graphics_hub_add_page(IGraphics *hub, IPage *page) {
         hub->len_pages = new_length;
     }
 
+    if (hub->pages[page->temp_id] != NULL) {
+        graphics_free_page(hub->pages[page->temp_id]);
+    }
+
     hub->pages[page->temp_id] = page;
     hub->num_pages++;
 }

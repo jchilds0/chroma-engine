@@ -4,6 +4,7 @@
 
 #include "chroma-engine.h"
 #include "graphics_internal.h"
+#include "log.h"
 #include <stdlib.h>
 
 Graph *graphics_new_graph(int n) {
@@ -32,29 +33,48 @@ Graph *graphics_new_graph(int n) {
 }
 
 void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f) {
+    if (x < 0 || x >= g->num_nodes) {
+        log_file(LogError, "Graph", "Index out of range: adding eval node %d", x);
+    }
+
     g->exists[x] = 1;
     g->pad_index[x] = pad_index;
     g->node_evals[x] = f;
 }
 
 void graphics_graph_add_leaf_node(Graph *g, int x, int value) {
+    if (x < 0 || x >= g->num_nodes) {
+        log_file(LogError, "Graph", "Index out of range: adding leaf node %d", x);
+    }
+
     g->exists[x] = 1;
     g->value[x] = value;
     g->node_evals[x] = NULL;
 }
 
 void graphics_graph_add_edge(Graph *g, int x, int y) {
+    if (x < 0 || x >= g->num_nodes) {
+        log_file(LogError, "Graph", "Index out of range: adding edge from %d", x);
+    }
+
+    if (y < 0 || y >= g->num_nodes) {
+        log_file(LogError, "Graph", "Index out of range: adding edge to %d", y);
+    }
+
     g->adj_matrix[x * g->num_nodes + y] = 1;
     g->num_edges++;
 }
 
 void graphics_graph_free_graph(Graph *g) {
+    if (g == NULL) {
+        return;
+    }
+
     free(g->adj_matrix);
     free(g->exists);
     free(g->node_evals);
     free(g->value);
     free(g->pad_index);
-
     free(g);
 }
 

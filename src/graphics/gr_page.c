@@ -59,6 +59,7 @@ void graphics_free_page(IPage *page) {
         return;
     }
 
+    graphics_graph_free_graph(page->keyframe_graph);
     free(page);
 }
 

@@ -62,6 +62,7 @@ static LineType config_line_type(const char *buf) {
 
 static Table config_parse_category(const char *buf) {
     char name[FILE_LINE_MAX_LEN];
+    memset(name, '\0', FILE_LINE_MAX_LEN);
     int i = 0;
 
     while (buf[i++] != '[');

@@ -6,6 +6,7 @@
 #include "parser_json.h"
 #include "chroma-engine.h"
 #include "log.h"
+#include "parser/parser_http.h"
 #include "parser_internal.h"
 #include <string.h>
 
@@ -18,13 +19,13 @@ static int buf_ptr = 0;
 static int c_token;
 static char c_value[PARSE_BUF_SIZE];
 
-static void parser_json_parse_node(JSONNode *node, int socket_client);
-static void parser_json_parse_object(JSONObject *obj, int socket_client);
-static void parser_json_parse_array(JSONArray *array, int socket_client);
+static void parser_json_parse_node(JSONNode *node, HTTPHeader *header);
+static void parser_json_parse_object(JSONObject *obj, HTTPHeader *header);
+static void parser_json_parse_array(JSONArray *array, HTTPHeader *header);
 
-static void parser_match_token(int t, int socket_client);
-static void parser_match_char(int socket_client, char c2);
-static void parser_json_next_token(int socket_client);
+static void parser_match_token(int t, HTTPHeader *header);
+static void parser_match_char(HTTPHeader *header, char c2);
+static void parser_json_next_token(HTTPHeader *header);
 
 static void format_line(const char *text) {
     memset(line, '\0', sizeof line);
@@ -115,22 +116,21 @@ JSONNode *parser_receive_json(int socket_client) {
     JSONNode *root = NEW_STRUCT(JSONNode);
     parser_clean_buffer(&buf_ptr, buf);
 
-    parser_http_header(socket_client, &buf_ptr, buf);
+    HTTPHeader *header = parser_http_new_header(socket_client);
+    parser_http_header(header, &buf_ptr, buf);
 
-    c_token = 0;
-    while (c_token != '{') {
-        c_token = parser_get_char(socket_client, &buf_ptr, buf);
-    }
+    parser_json_next_token(header);
+    parser_json_parse_node(root, header);
 
-    parser_json_parse_node(root, socket_client);
+    parser_http_free_header(header);
 
     return root;
 }
 
-static void parser_json_parse_node(JSONNode *node, int socket_client) {
+static void parser_json_parse_node(JSONNode *node, HTTPHeader *header) {
     switch (c_token) {
         case T_NONE:
-            parser_json_next_token(socket_client);
+            parser_json_next_token(header);
             node->type = JSON_NULL;
             break;
 
@@ -143,7 +143,7 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
 
             memset(node->string, '\0', sizeof node->string);
             memcpy(node->string, c_value, sizeof node->string);
-            parser_json_next_token(socket_client);
+            parser_json_next_token(header);
             break;
 
         case T_INT:
@@ -153,7 +153,7 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
                 log_file(LogMessage, "Parser", "Int %d", node->integer);
             }
 
-            parser_json_next_token(socket_client);
+            parser_json_next_token(header);
             break;
 
         case T_FLOAT:
@@ -163,7 +163,7 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
                 log_file(LogMessage, "Parser", "Float %f", node->f);
             }
 
-            parser_json_next_token(socket_client);
+            parser_json_next_token(header);
             break;
 
         case T_FALSE:
@@ -173,7 +173,7 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
                 log_file(LogMessage, "Parser", "Bool False");
             }
 
-            parser_json_next_token(socket_client);
+            parser_json_next_token(header);
             break;
 
         case T_TRUE:
@@ -183,7 +183,7 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
                 log_file(LogMessage, "Parser", "Bool True");
             }
 
-            parser_json_next_token(socket_client);
+            parser_json_next_token(header);
             break;
 
         case '{':
@@ -192,13 +192,13 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
                 log_file(LogMessage, "Parser", "JSON Object Start");
             }
 
-            parser_json_next_token(socket_client);
-            parser_json_parse_object(&node->object, socket_client);
+            parser_json_next_token(header);
+            parser_json_parse_object(&node->object, header);
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "JSON Object End");
             }
 
-            parser_match_token('}', socket_client);
+            parser_match_token('}', header);
             break;
 
         case '[':
@@ -207,13 +207,13 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
                 log_file(LogMessage, "Parser", "JSON Array Start");
             }
 
-            parser_json_next_token(socket_client);
-            parser_json_parse_array(&node->array, socket_client);
+            parser_json_next_token(header);
+            parser_json_parse_array(&node->array, header);
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "JSON Array End");
             }
 
-            parser_match_token(']', socket_client);
+            parser_match_token(']', header);
             break;
 
         case T_EOM:
@@ -225,7 +225,7 @@ static void parser_json_parse_node(JSONNode *node, int socket_client) {
     }
 }
 
-static void parser_json_parse_array(JSONArray *array, int socket_client) {
+static void parser_json_parse_array(JSONArray *array, HTTPHeader *header) {
     array->head.next = &array->tail;
     array->head.prev = NULL;
     array->tail.next = NULL;
@@ -235,15 +235,15 @@ static void parser_json_parse_array(JSONArray *array, int socket_client) {
         JSONArrayNode *array_node = NEW_STRUCT(JSONArrayNode);
         array_node->node = NEW_STRUCT(JSONNode);
         INSERT_BEFORE(array_node, &array->tail);
-        parser_json_parse_node(array_node->node, socket_client);
+        parser_json_parse_node(array_node->node, header);
 
         if (c_token == ',') {
-            parser_match_token(',', socket_client);
+            parser_match_token(',', header);
         }
     }
 }
 
-static void parser_json_parse_object(JSONObject *obj, int socket_client) {
+static void parser_json_parse_object(JSONObject *obj, HTTPHeader *header) {
     JSONAttributeNode *attr;
     obj->head.next = &obj->tail;
     obj->head.prev = NULL;
@@ -258,26 +258,26 @@ static void parser_json_parse_object(JSONObject *obj, int socket_client) {
         memset(attr->name, '\0', sizeof attr->name);
         memcpy(attr->name, c_value, sizeof attr->name);
 
-        parser_match_token(T_STRING, socket_client);
-        parser_match_token(':', socket_client);
-        parser_json_parse_node(attr->node, socket_client);
+        parser_match_token(T_STRING, header);
+        parser_match_token(':', header);
+        parser_json_parse_node(attr->node, header);
 
         if (c_token == ',') {
-            parser_match_token(',', socket_client);
+            parser_match_token(',', header);
         }
     }
 }
 
-static void parser_match_token(int t, int socket_client) {
+static void parser_match_token(int t, HTTPHeader *header) {
     if (t == c_token) {
-        parser_json_next_token(socket_client);
+        parser_json_next_token(header);
     } else {
         parser_incorrect_token(t, c_token, buf_ptr, buf);
     }
 }
 
-static void parser_match_char(int socket_client, char c2) {
-    char c1 = parser_get_char(socket_client, &buf_ptr, buf);
+static void parser_match_char(HTTPHeader *header, char c2) {
+    char c1 = parser_http_get_char(header, &buf_ptr, buf);
 
     if (c1 == c2) {
         return ;
@@ -286,23 +286,23 @@ static void parser_match_char(int socket_client, char c2) {
     log_file(LogError, "Parser", "Couldn't match char %c to char %c", c1, c2);
 }
 
-static void parser_json_next_token(int socket_client) {
+static void parser_json_next_token(HTTPHeader *header) {
     static char c = -1;
     int i = 0;
     memset(c_value, '\0', PARSE_BUF_SIZE);
 
     if (c == -1) {
-        c = parser_get_char(socket_client, &buf_ptr, buf);
+        c = parser_http_get_char(header, &buf_ptr, buf);
     }
 
     // skip whitespace
-    while (c == ' ' || c == '\t' || c == '\n') {
-        c = parser_get_char(socket_client, &buf_ptr, buf);
+    while (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+        c = parser_http_get_char(header, &buf_ptr, buf);
     }
 
     if (c == '\'') {
         // attr 
-        while ((c = parser_get_char(socket_client, &buf_ptr, buf)) != '\'') {
+        while ((c = parser_http_get_char(header, &buf_ptr, buf)) != '\'') {
             if (i >= PARSE_BUF_SIZE) {
                 log_file(LogError, "Parser", "Parser ran out of memory");
             }
@@ -316,7 +316,7 @@ static void parser_json_next_token(int socket_client) {
         return;
     } else if (c == '"') {
         // attr 
-        while ((c = parser_get_char(socket_client, &buf_ptr, buf)) != '"') {
+        while ((c = parser_http_get_char(header, &buf_ptr, buf)) != '"') {
             if (i >= PARSE_BUF_SIZE) {
                 log_file(LogError, "Parser", "Parser ran out of memory");
             }
@@ -334,7 +334,7 @@ static void parser_json_next_token(int socket_client) {
 
         while (1) {
             c_value[i++] = c;
-            c = parser_get_char(socket_client, &buf_ptr, buf);
+            c = parser_http_get_char(header, &buf_ptr, buf);
 
             if (c == '.') {
                 c_token = T_FLOAT;
@@ -344,26 +344,26 @@ static void parser_json_next_token(int socket_client) {
             }
         }
     } else if (c == 't' || c == 'T') {
-        parser_match_char(socket_client, 'r');
-        parser_match_char(socket_client, 'u');
-        parser_match_char(socket_client, 'e');
+        parser_match_char(header, 'r');
+        parser_match_char(header, 'u');
+        parser_match_char(header, 'e');
         c = -1;
         c_token = T_TRUE;
 
         return;
     } else if (c == 'f' || c == 'F') {
-        parser_match_char(socket_client, 'a');
-        parser_match_char(socket_client, 'l');
-        parser_match_char(socket_client, 's');
-        parser_match_char(socket_client, 'e');
+        parser_match_char(header, 'a');
+        parser_match_char(header, 'l');
+        parser_match_char(header, 's');
+        parser_match_char(header, 'e');
         c = -1;
         c_token = T_FALSE;
 
         return;
     } else if (c == 'n') {
-        parser_match_char(socket_client, 'u');
-        parser_match_char(socket_client, 'l');
-        parser_match_char(socket_client, 'l');
+        parser_match_char(header, 'u');
+        parser_match_char(header, 'l');
+        parser_match_char(header, 'l');
         c = -1;
         c_token = T_NONE;
 

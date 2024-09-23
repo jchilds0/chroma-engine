@@ -6,6 +6,7 @@
 #include "geometry.h"
 #include "log.h"
 #include "parser/parser_internal.h"
+#include "parser/parser_http.h"
 #include <png.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include <sys/socket.h>
 
 static int socket_client = 0;
+static HTTPHeader *header;
 
 static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
@@ -42,7 +44,9 @@ ServerResponse parser_recieve_image(Engine *eng, GeometryImage *img) {
 
     socket_client = eng->hub_socket;
     parser_http_get(socket_client, addr);
-    parser_http_header(socket_client, &buf_ptr, buf);
+
+    header = parser_http_new_header(socket_client);
+    parser_http_header(header, &buf_ptr, buf);
 
     png_byte color_type, bit_depth;
     png_bytep *row_pointers = NULL;
@@ -61,6 +65,7 @@ ServerResponse parser_recieve_image(Engine *eng, GeometryImage *img) {
     }
 
     free_row_pointers(img->h, row_pointers);
+    parser_http_free_header(header);
 
     return SERVER_MESSAGE;
 }

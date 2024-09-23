@@ -300,7 +300,7 @@ void parser_parse_page(IPage *page) {
         int frame_index = INDEX(geo_num, attr_num, 0, GEO_INT_NUM, page->max_keyframe);
         geo = page->geometry[geo_num];
 
-        if (page->keyframe_graph->exists[frame_index] && attr_num < GEO_INT_NUM) {
+        if (attr_num < GEO_INT_NUM && page->keyframe_graph->exists[frame_index]) {
             graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, atoi(value));
         } else {
             geometry_set_attr(geo, attr, value);

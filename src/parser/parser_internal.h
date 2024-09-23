@@ -15,7 +15,7 @@
 
 #define PARSE_BUF_SIZE      1024
 #define MAX_CONNECTIONS     10
-#define LOG_PARSER          0
+#define LOG_PARSER          1
 #define LOG_TEMPLATE        0
 #define LOG_JSON            0
 
@@ -49,9 +49,6 @@ ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
 ServerResponse  parser_recieve_image(Engine *eng, GeometryImage *img);
 
 // parser_http.c
-void            parser_http_get(int socket_client, const char *addr);
-void            parser_http_header(int socket_client, int *buf_ptr, char *buf);
-
 void            parser_update_template(Engine *eng, int page_num);
 
 // parser_util.c

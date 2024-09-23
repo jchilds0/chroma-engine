@@ -171,7 +171,7 @@ static int max_value(Node node) {
 }
 
 static int max_value_plus_pad(Node node) {
-    int value = INT_MIN;
+    int value = 0;
 
     for (int i = 0; i < node.num_values; i++) {
         if (!node.have_value[i]) {
@@ -183,10 +183,6 @@ static int max_value_plus_pad(Node node) {
         }
         
         value = MAX(value, node.values[i]);
-    }
-
-    if (value == INT_MIN) {
-        log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
     }
 
     if (!node.have_value[node.pad_index]) {
@@ -376,7 +372,8 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
             );
 
             if (frame.bind_attr >= GEO_INT_NUM) {
-                log_file(LogError, "Graphics", "Keyframe %d: Bind attr %d not implemented", frame.frame_num, frame.bind_attr);
+                log_file(LogWarn, "Graphics", "Keyframe %d: Bind attr %d not implemented", frame.frame_num, frame.bind_attr);
+                return;
             }
 
             graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
