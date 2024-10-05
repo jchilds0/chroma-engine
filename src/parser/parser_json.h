@@ -6,6 +6,8 @@
 #ifndef PARSER_JSON
 #define PARSER_JSON
 
+#include "chroma-engine.h"
+#include <stdio.h>
 #define MAX_NAME_LENGTH     128
 
 typedef enum {
@@ -26,55 +28,50 @@ typedef enum {
     JSON_STRING,
     JSON_INT,
     JSON_FLOAT,
-    JSON_BOOL,
+    JSON_TRUE,
+    JSON_FALSE,
 } JSONType;
 
-typedef struct JSONAttributeNode {
-    char name[MAX_NAME_LENGTH];
-    struct JSONNode *node;
-
-    struct JSONAttributeNode *next;
-    struct JSONAttributeNode *prev;
-} JSONAttributeNode;
-
 typedef struct {
-    JSONAttributeNode head;
-    JSONAttributeNode tail;
-} JSONObject;
-
-typedef struct JSONArrayNode {
-    struct JSONNode *node;
-
-    struct JSONArrayNode *next;
-    struct JSONArrayNode *prev;
-} JSONArrayNode;
-
-typedef struct {
-    JSONArrayNode head;
-    JSONArrayNode tail;
+    size_t start;
+    size_t num_items;
 } JSONArray;
 
-typedef struct JSONNode {
+typedef struct {
     JSONType type;
+    char name[MAX_NAME_LENGTH];
 
     union {
-        JSONObject object;
         JSONArray array;
 
         char string[MAX_NAME_LENGTH];
         int integer;
-        unsigned char boolean;
         float f;
     };
 } JSONNode;
 
-JSONNode *parser_receive_json(int socket_client);
-void parser_json_free_node(JSONNode *node);
+typedef struct {
+    size_t count;
+    size_t capacity;
+    size_t *items;
+} JSONIndices;
 
-JSONNode *parser_json_attribute(JSONObject *node, const char *attr);
-int parser_json_get_int(JSONObject *obj, char *name);
-char *parser_json_get_string(JSONObject *obj, char *name);
-float parser_json_get_float(JSONObject *obj, char *name);
-unsigned char parser_json_get_bool(JSONObject *obj, char *name);
+typedef struct {
+    size_t   count;
+    size_t   capacity;
+    JSONNode *items;
+    JSONIndices objects;
+} JSONArena;
+
+extern JSONArena json_arena;
+
+JSONNode *parser_receive_json(int socket_client);
+void parser_clean_json(void);
+
+JSONNode *parser_json_attribute(JSONNode *obj, const char *attr);
+int parser_json_get_int(JSONNode *obj, char *name);
+char *parser_json_get_string(JSONNode *obj, char *name);
+float parser_json_get_float(JSONNode *obj, char *name);
+unsigned char parser_json_get_bool(JSONNode *obj, char *name);
 
 #endif // !PARSER_JSON

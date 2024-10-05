@@ -2,7 +2,6 @@
  * parser_recieve_hub.c
  */
 
-#include "chroma-engine.h"
 #include "chroma-typedefs.h"
 #include "geometry.h"
 #include "graphics.h"
@@ -17,25 +16,23 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void parser_parse_template(JSONObject *template, IGraphics *hub);
-void parser_parse_geometry(JSONObject *geo, IPage *page);
-void parser_parse_attribute(JSONObject *attr, IGeometry *geo);
+void parser_parse_template(JSONNode *template, IGraphics *hub);
+void parser_parse_geometry(JSONNode *geo, IPage *page);
+void parser_parse_attribute(JSONNode *attr, IGeometry *geo);
 
-void parser_parse_user_frame(JSONObject *frame, IPage *page);
-void parser_parse_bind_frame(JSONObject *frame, IPage *page);
-void parser_parse_set_frame(JSONObject *frame, IPage *page);
+void parser_parse_user_frame(JSONNode *frame, IPage *page);
+void parser_parse_bind_frame(JSONNode *frame, IPage *page);
+void parser_parse_set_frame(JSONNode *frame, IPage *page);
 
-#define JSON_ARRAY(array_obj, data, f)                                                         \
-    do {                                                                                       \
-        log_assert((array_obj)->type == JSON_ARRAY, "Parser", "Node is not a JSON_ARRAY");     \
-        JSONArray *array = &(array_obj)->array;                                                \
-        for (JSONArrayNode *obj = array->head.next; obj != &array->tail; obj = obj->next) {    \
-            if ((obj)->node->type != JSON_OBJECT) {                                            \
-                continue;                                                                      \
-            }                                                                                  \
-            f(&(obj)->node->object, (data));                                                   \
-        }                                                                                      \
-    } while (0);                                                                               \
+#define JSON_ARRAY(array_obj, data, f)                                                     \
+    do {                                                                                   \
+        log_assert((array_obj)->type == JSON_ARRAY, "Parser", "Node is not a JSON_ARRAY"); \
+        for (int i = 0; i < (array_obj)->array.num_items; i++) {                           \
+            size_t node_index = json_arena.objects.items[(array_obj)->array.start + i];    \
+            JSONNode *node = &json_arena.items[node_index];                                \
+            f((node), (data));                                                             \
+        }                                                                                  \
+    } while (0);                                                                           \
 
 
 // S -> {'num_temp': num, 'templates': [T]}
@@ -47,22 +44,26 @@ void parser_parse_hub(Engine *eng) {
     parser_http_get(eng->hub_socket, addr);
 
     JSONNode *root = parser_receive_json(eng->hub_socket);
-    if (root->type != JSON_OBJECT) {
+    if (root == NULL || root->type != JSON_OBJECT) {
         log_file(LogMessage, "Parser", "No hub received");
         return;
     }
 
-    JSONObject obj = root->object;
-    int num_temp = parser_json_get_int(&obj, "NumTemplates");
+    int num_temp = parser_json_get_int(root, "NumTemplates");
     eng->hub = graphics_new_graphics_hub(num_temp);
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "Num Templates: %d", num_temp);
     }
 
-    JSONNode *templates = parser_json_attribute(&obj, "Templates");
-    JSON_ARRAY(templates, eng->hub, parser_parse_template);
+    JSONNode *templates = parser_json_attribute(root, "Templates");
+    if (templates == NULL || templates->type != JSON_ARRAY) {
+        log_file(LogWarn, "Parser", "No templates received");
+        parser_clean_json();
+        return;
+    }
 
-    parser_json_free_node(root);
+    JSON_ARRAY(templates, eng->hub, parser_parse_template);
+    parser_clean_json();
 }
 
 void parser_update_template(Engine *eng, int temp_id) {
@@ -72,20 +73,20 @@ void parser_update_template(Engine *eng, int temp_id) {
     parser_http_get(eng->hub_socket, addr);
 
     JSONNode *template = parser_receive_json(eng->hub_socket);
-    if (template->type != JSON_OBJECT) {
+    if (template == NULL || template->type != JSON_OBJECT) {
         log_file(LogMessage, "Parser", "No template received");
+        parser_clean_json();
         return;
     }
 
-    parser_parse_template(&template->object, eng->hub); 
-
-    parser_json_free_node(template);
+    parser_parse_template(template, eng->hub); 
+    parser_clean_json();
 }
 
 static int geo_type;
 
 // T -> {'id': num, 'num_geo': num, 'geometry': [G]} | T, T
-void parser_parse_template(JSONObject *template, IGraphics *hub) {
+void parser_parse_template(JSONNode *template, IGraphics *hub) {
     int max_geo = parser_json_get_int(template, "MaxGeometry");
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\tnum geometery: %d", max_geo);
@@ -135,7 +136,7 @@ void parser_parse_template(JSONObject *template, IGraphics *hub) {
     graphics_page_default_relations(page);
 }
 
-static void parser_parse_keyframe(JSONObject *frame_obj, Keyframe *frame) {
+static void parser_parse_keyframe(JSONNode *frame_obj, Keyframe *frame) {
     if (frame_obj == NULL) {
         log_file(LogWarn, "Parser", "Keyframe is null");
         return;
@@ -167,7 +168,7 @@ static void parser_parse_keyframe(JSONObject *frame_obj, Keyframe *frame) {
 }
 
 // K -> {'frame_num': num, ...
-void parser_parse_set_frame(JSONObject *frame_obj, IPage *page) {
+void parser_parse_set_frame(JSONNode *frame_obj, IPage *page) {
     Keyframe frame;
     parser_parse_keyframe(frame_obj, &frame);
     frame.type = SET_FRAME;
@@ -180,7 +181,7 @@ void parser_parse_set_frame(JSONObject *frame_obj, IPage *page) {
     graphics_page_gen_frame(page, frame);
 }
 
-void parser_parse_bind_frame(JSONObject *frame_obj, IPage *page) {
+void parser_parse_bind_frame(JSONNode *frame_obj, IPage *page) {
     Keyframe frame;
     parser_parse_keyframe(frame_obj, &frame);
     frame.type = BIND_FRAME;
@@ -193,7 +194,7 @@ void parser_parse_bind_frame(JSONObject *frame_obj, IPage *page) {
     JSONNode *bind_obj = parser_json_attribute(frame_obj, "Bind");
     log_assert(bind_obj != NULL, "Parser", "Bind frame is null");
     log_assert(bind_obj->type == JSON_OBJECT, "Parser", "Bind frame node is not a JSON Object");
-    parser_parse_keyframe(&bind_obj->object, &bind_frame);
+    parser_parse_keyframe(bind_obj, &bind_frame);
 
     frame.bind_frame_num = bind_frame.frame_num;
     frame.bind_geo_id = bind_frame.geo_id;
@@ -202,7 +203,7 @@ void parser_parse_bind_frame(JSONObject *frame_obj, IPage *page) {
     graphics_page_gen_frame(page, frame);
 }
 
-void parser_parse_user_frame(JSONObject *frame_obj, IPage *page) {
+void parser_parse_user_frame(JSONNode *frame_obj, IPage *page) {
     Keyframe frame;
     parser_parse_keyframe(frame_obj, &frame);
     frame.type = USER_FRAME;
@@ -215,7 +216,7 @@ void parser_parse_user_frame(JSONObject *frame_obj, IPage *page) {
 }
 
 // G -> {'id': num, 'type': string, 'attr': [A]} | G, G
-void parser_parse_geometry(JSONObject *geo_obj, IPage *page) {
+void parser_parse_geometry(JSONNode *geo_obj, IPage *page) {
     JSONNode *geo_id = parser_json_attribute(geo_obj, "GeometryID");
     log_assert(geo_id->type == JSON_INT, "Parser", "Geometry ID is not a JSON Int");
 
@@ -225,7 +226,9 @@ void parser_parse_geometry(JSONObject *geo_obj, IPage *page) {
 
     IGeometry *geo = graphics_page_add_geometry(page, geo_type, geo_id->integer);
 
-    for (JSONAttributeNode *attr = geo_obj->head.next; attr != &geo_obj->tail; attr = attr->next) {
+    for (int i = 0; i < geo_obj->array.num_items; i++) {
+        JSONNode *attr = &json_arena.items[geo_obj->array.start + i];
+
         if (strcmp(attr->name, "Name") == 0) {
             continue;
         } else if (strcmp(attr->name, "GeometryID") == 0) {
@@ -234,16 +237,16 @@ void parser_parse_geometry(JSONObject *geo_obj, IPage *page) {
             continue;
         }
 
-        if (attr->node->type != JSON_OBJECT) {
+        if (attr->type != JSON_OBJECT) {
             continue;
         }
 
-        parser_parse_attribute(&attr->node->object, geo);
+        parser_parse_attribute(attr, geo);
     }
 }
 
 // A -> {'name': string, 'value': string} | A, A
-void parser_parse_attribute(JSONObject *attr, IGeometry *geo) {
+void parser_parse_attribute(JSONNode *attr, IGeometry *geo) {
     char *name = parser_json_get_string(attr, "Name");
 
     if (LOG_TEMPLATE && name != NULL) {

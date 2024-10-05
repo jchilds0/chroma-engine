@@ -17,6 +17,28 @@
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
 
+// Dynamic Array Macros
+#define DA_INIT_CAPACITY                 8192
+#define DA_REALLOC(oldptr, old_sz, new_sz) realloc(oldptr, new_sz)
+#define DA_APPEND(da, item)                                                                              \
+    do {                                                                                                 \
+        if ((da)->count >= (da)->capacity) {                                                             \
+            size_t new_capacity = (da)->capacity * 2;                                                    \
+            if (new_capacity == 0) {                                                                     \
+                new_capacity = DA_INIT_CAPACITY;                                                         \
+            }                                                                                            \
+                                                                                                         \
+            size_t item_size = sizeof( (da)->items[0] );                                                 \
+                                                                                                         \
+            (da)->items = DA_REALLOC((da)->items, (da)->capacity * item_size, new_capacity * item_size); \
+            (da)->capacity = new_capacity;                                                               \
+        }                                                                                                \
+                                                                                                         \
+        (da)->items[(da)->count++] = (item);                                                             \
+    } while (0)
+
+
+// Linked List Macros
 #define INSERT_BEFORE(new, old)     {                               \
                                         (new)->next = (old);        \
                                         (new)->prev = (old)->prev;  \

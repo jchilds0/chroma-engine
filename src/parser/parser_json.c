@@ -8,10 +8,10 @@
 #include "log.h"
 #include "parser/parser_http.h"
 #include "parser_internal.h"
+#include <stdio.h>
 #include <string.h>
 
-static int indent = 0;
-static char line[PARSE_BUF_SIZE];
+JSONArena json_arena = {0, DA_INIT_CAPACITY, NULL, {0, DA_INIT_CAPACITY, NULL}};
 
 static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
@@ -19,156 +19,164 @@ static int buf_ptr = 0;
 static int c_token;
 static char c_value[PARSE_BUF_SIZE];
 
-static void parser_json_parse_node(JSONNode *node, HTTPHeader *header);
-static void parser_json_parse_object(JSONObject *obj, HTTPHeader *header);
-static void parser_json_parse_array(JSONArray *array, HTTPHeader *header);
+static size_t parser_json_parse_node(HTTPHeader *header);
+static void parser_json_parse_object(HTTPHeader *header, JSONNode *node);
+static void parser_json_parse_array(HTTPHeader *header, JSONNode *node);
 
 static void parser_match_token(int t, HTTPHeader *header);
 static void parser_match_char(HTTPHeader *header, char c2);
 static void parser_json_next_token(HTTPHeader *header);
 
-static void format_line(const char *text) {
-    memset(line, '\0', sizeof line);
+#define JSON_ARRAY(array_obj, data, f)                                                     \
+    do {                                                                                   \
+        log_assert((array_obj)->type == JSON_ARRAY, "Parser", "Node is not a JSON_ARRAY"); \
+        for (int i = 0; i < (array_obj)->array.num_items; i++) {                           \
+            size_t node_index = json_arena.objects.items[(array_obj)->array.start + i];    \
+            JSONNode *node = &json_arena.items[node_index];                                \
+            f((node), (data));                                                             \
+        }                                                                                  \
+    } while (0);                                                                           \
 
-    for (int i = 0; i < indent; i++) {
-        line[i] = '\t';
+
+JSONNode *parser_json_attribute(JSONNode *obj, const char *name) {
+    if (obj == NULL || obj->type != JSON_OBJECT) {
+        log_file(LogError, "Parser", "JSON node is not an object");
+        return NULL;
     }
 
-    memcpy(&line[indent], text, strlen(text));
-    log_file(LogMessage, "Parser", line);
-}
+    for (int i = 0; i < obj->array.num_items; i++) {
+        size_t index = json_arena.objects.items[obj->array.start + i];
+        JSONNode *attr_node = &json_arena.items[index];
 
-void parser_json_free_node(JSONNode *node) {
-    if (node->type == JSON_ARRAY) {
-        JSONArray *array = &node->array;
-
-        while (array->head.next != &array->tail) {
-            JSONArrayNode *n = array->head.next;
-            parser_json_free_node(n->node);
-            REMOVE_NODE(n);
-        }
-    } else if (node->type == JSON_OBJECT) {
-        JSONObject *obj = &node->object;
-
-        while (obj->head.next != &obj->tail) {
-            JSONAttributeNode *attr = obj->head.next;
-            parser_json_free_node(attr->node);
-            REMOVE_NODE(attr);
-        }
-    }
-
-    free(node);
-}
-
-JSONNode *parser_json_attribute(JSONObject *node, const char *name) {
-    for (JSONAttributeNode *attr = node->head.next; attr != &node->tail; attr = attr->next) {
-        if (strncmp(attr->name, name, MAX_NAME_LENGTH)) {
+        if (strncmp(attr_node->name, name, MAX_NAME_LENGTH)) {
             continue;
         }
 
-        return attr->node;
+        return attr_node;
     }
 
     return NULL;
 }
 
-int parser_json_get_int(JSONObject *obj, char *name) {
+int parser_json_get_int(JSONNode *obj, char *name) {
     JSONNode *node = parser_json_attribute(obj, name);
     if (node == NULL || node->type != JSON_INT) {
-        log_file(LogWarn, "Parser", "Error: %s is not a JSON Integer", name);
+        log_file(LogWarn, "Parser", "%s is not a JSON Integer", name);
         return 0;
     }
 
     return node->integer;
 }
 
-char *parser_json_get_string(JSONObject *obj, char *name) {
+char *parser_json_get_string(JSONNode *obj, char *name) {
     JSONNode *node = parser_json_attribute(obj, name);
     if (node == NULL || node->type != JSON_STRING) {
-        log_file(LogWarn, "Parser", "Error: %s is not a JSON String", name);
+        log_file(LogWarn, "Parser", "%s is not a JSON String", name);
         return NULL;
     }
 
     return node->string;
 }
 
-float parser_json_get_float(JSONObject *obj, char *name) {
+float parser_json_get_float(JSONNode *obj, char *name) {
     JSONNode *node = parser_json_attribute(obj, name);
     if (node == NULL || node->type != JSON_FLOAT) {
-        log_file(LogWarn, "Parser", "Error: %s is not a JSON Float", name);
-        return 0.0;
+        log_file(LogWarn, "Parser", "%s is not a JSON Float", name);
+        return 0;
     }
 
     return node->f;
 }
 
-unsigned char parser_json_get_bool(JSONObject *obj, char *name) {
+unsigned char parser_json_get_bool(JSONNode *obj, char *name) {
     JSONNode *node = parser_json_attribute(obj, name);
-    if (node == NULL || node->type != JSON_BOOL) {
-        log_file(LogWarn, "Parser", "Error: %s is not a JSON Bool", name);
+    if (node == NULL) {
+        log_file(LogWarn, "Parser", "%s is not a JSON Bool", name);
         return 0;
     }
 
-    return node->boolean;
+    if (node->type == JSON_TRUE) {
+        return 1;
+    } else if (node->type == JSON_FALSE) {
+        return 0;
+    } else {
+        log_file(LogWarn, "Parser", "%s is not a JSON Bool", name);
+        return 0;
+    }
 }
 
 JSONNode *parser_receive_json(int socket_client) {
-    JSONNode *root = NEW_STRUCT(JSONNode);
+    if (json_arena.items == NULL) {
+        json_arena.items = NEW_ARRAY(DA_INIT_CAPACITY, JSONNode);
+        json_arena.objects.items = NEW_ARRAY(DA_INIT_CAPACITY, size_t);
+    }
+
+    log_assert(json_arena.count == 0, "Parser", "JSON Arena was not cleaned up");
     parser_clean_buffer(&buf_ptr, buf);
 
     HTTPHeader *header = parser_http_new_header(socket_client);
     parser_http_header(header, &buf_ptr, buf);
 
     parser_json_next_token(header);
-    parser_json_parse_node(root, header);
-
+    size_t root_index = parser_json_parse_node(header);
     parser_http_free_header(header);
 
-    return root;
+    return &json_arena.items[root_index];
 }
 
-static void parser_json_parse_node(JSONNode *node, HTTPHeader *header) {
+void parser_clean_json(void) {
+    if (json_arena.items == NULL || json_arena.objects.items == NULL) {
+        return;
+    }
+
+    json_arena.count = 0;
+    json_arena.objects.count = 0;
+}
+
+static size_t parser_json_parse_node(HTTPHeader *header) {
+    JSONNode node;
+    memset(node.name, '\0', sizeof node.name);
+
     switch (c_token) {
         case T_NONE:
             parser_json_next_token(header);
-            node->type = JSON_NULL;
+            node.type = JSON_NULL;
             break;
 
         case T_STRING:
-            node->type = JSON_STRING;
+            node.type = JSON_STRING;
             
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "String %s", c_value);
             }
 
-            memset(node->string, '\0', sizeof node->string);
-            memcpy(node->string, c_value, sizeof node->string);
+            memset(node.string, '\0', sizeof node.string);
+            memcpy(node.string, c_value, sizeof node.string);
             parser_json_next_token(header);
             break;
 
         case T_INT:
-            node->type = JSON_INT;
-            node->integer = atoi(c_value);
+            node.type = JSON_INT;
+            node.integer = atoi(c_value);
             if (LOG_JSON) {
-                log_file(LogMessage, "Parser", "Int %d", node->integer);
+                log_file(LogMessage, "Parser", "Int %d", node.integer);
             }
 
             parser_json_next_token(header);
             break;
 
         case T_FLOAT:
-            node->type = JSON_FLOAT;
-            node->f = atof(c_value);
+            node.type = JSON_FLOAT;
+            node.f = atof(c_value);
             if (LOG_JSON) {
-                log_file(LogMessage, "Parser", "Float %f", node->f);
+                log_file(LogMessage, "Parser", "Float %f", node.f);
             }
 
             parser_json_next_token(header);
             break;
 
         case T_FALSE:
-            node->type = JSON_BOOL;
-            node->boolean = 0;
+            node.type = JSON_FALSE;
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "Bool False");
             }
@@ -177,8 +185,7 @@ static void parser_json_parse_node(JSONNode *node, HTTPHeader *header) {
             break;
 
         case T_TRUE:
-            node->type = JSON_BOOL;
-            node->boolean = 1;
+            node.type = JSON_TRUE;
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "Bool True");
             }
@@ -187,13 +194,12 @@ static void parser_json_parse_node(JSONNode *node, HTTPHeader *header) {
             break;
 
         case '{':
-            node->type = JSON_OBJECT;
+            node.type = JSON_OBJECT;
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "JSON Object Start");
             }
 
-            parser_json_next_token(header);
-            parser_json_parse_object(&node->object, header);
+            parser_json_parse_object(header, &node);
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "JSON Object End");
             }
@@ -202,13 +208,12 @@ static void parser_json_parse_node(JSONNode *node, HTTPHeader *header) {
             break;
 
         case '[':
-            node->type = JSON_ARRAY;
+            node.type = JSON_ARRAY;
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "JSON Array Start");
             }
 
-            parser_json_next_token(header);
-            parser_json_parse_array(&node->array, header);
+            parser_json_parse_array(header, &node);
             if (LOG_JSON) {
                 log_file(LogMessage, "Parser", "JSON Array End");
             }
@@ -223,48 +228,67 @@ static void parser_json_parse_node(JSONNode *node, HTTPHeader *header) {
         default:
             log_file(LogError, "Parser", "Unknown json token %c", c_token); 
     }
+
+    size_t index = json_arena.count;
+    DA_APPEND(&json_arena, node);
+    return index;
 }
 
-static void parser_json_parse_array(JSONArray *array, HTTPHeader *header) {
-    array->head.next = &array->tail;
-    array->head.prev = NULL;
-    array->tail.next = NULL;
-    array->tail.prev = &array->head;
+static void parser_json_parse_array(HTTPHeader *header, JSONNode *node) {
+    parser_match_token('[', header);
+    JSONIndices indices;
+    indices.count = 0;
+    indices.capacity = 128;
+    indices.items = NEW_ARRAY(indices.capacity, size_t);
 
     while (c_token != ']') {
-        JSONArrayNode *array_node = NEW_STRUCT(JSONArrayNode);
-        array_node->node = NEW_STRUCT(JSONNode);
-        INSERT_BEFORE(array_node, &array->tail);
-        parser_json_parse_node(array_node->node, header);
+        size_t item_index = parser_json_parse_node(header);
+        DA_APPEND(&indices, item_index);
+        if (c_token == ',') {
+            parser_match_token(',', header);
+        }
+    }
+
+    node->array.start = json_arena.objects.count;
+    node->array.num_items = indices.count;
+
+    for (int i = 0; i < indices.count; i++) {
+        DA_APPEND(&json_arena.objects, indices.items[i]);
+    }
+}
+
+static void parser_json_parse_object(HTTPHeader *header, JSONNode *node) {
+    JSONIndices indices;
+    char attr_name[MAX_NAME_LENGTH];
+    indices.count = 0;
+    indices.capacity = 128;
+    indices.items = NEW_ARRAY(indices.capacity, size_t);
+
+    parser_match_token('{', header);
+
+    while (c_token != '}') {
+        memset(attr_name, '\0', sizeof attr_name);
+        memcpy(attr_name, c_value, sizeof attr_name);
+
+        parser_match_token(T_STRING, header);
+        parser_match_token(':', header);
+
+        size_t item_index = parser_json_parse_node(header);
+        DA_APPEND(&indices, item_index);
+
+        char *name = json_arena.items[item_index].name;
+        memcpy(name, attr_name, sizeof attr_name);
 
         if (c_token == ',') {
             parser_match_token(',', header);
         }
     }
-}
 
-static void parser_json_parse_object(JSONObject *obj, HTTPHeader *header) {
-    JSONAttributeNode *attr;
-    obj->head.next = &obj->tail;
-    obj->head.prev = NULL;
-    obj->tail.next = NULL;
-    obj->tail.prev = &obj->head;
+    node->array.start = json_arena.objects.count;
+    node->array.num_items = indices.count;
 
-    while (c_token != '}') {
-        attr = NEW_STRUCT(JSONAttributeNode);
-        attr->node = NEW_STRUCT(JSONNode);
-        INSERT_AFTER(attr, &obj->head);
-
-        memset(attr->name, '\0', sizeof attr->name);
-        memcpy(attr->name, c_value, sizeof attr->name);
-
-        parser_match_token(T_STRING, header);
-        parser_match_token(':', header);
-        parser_json_parse_node(attr->node, header);
-
-        if (c_token == ',') {
-            parser_match_token(',', header);
-        }
+    for (int i = 0; i < indices.count; i++) {
+        DA_APPEND(&json_arena.objects, indices.items[i]);
     }
 }
 
