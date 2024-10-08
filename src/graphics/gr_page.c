@@ -15,10 +15,12 @@
 #include <sys/mman.h>
 #include <errno.h>
 
+#define MAX_PAGE_SIZE     GIGABYTES((uint64_t) 1)
+
 IPage *graphics_new_page(int num_geo, int max_keyframe) {
     IPage *page = NEW_STRUCT(IPage);
     page->arena.allocd = 0;
-    page->arena.size = MEGABYTES((uint64_t) 128);
+    page->arena.size = MAX_PAGE_SIZE;
     page->arena.memory = mmap(NULL, page->arena.size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0);
     if (page->arena.memory == -1) {
         log_file(LogError, "Graphics", "Unable to allocate page: %s", strerror(errno));
@@ -65,6 +67,9 @@ void graphics_free_page(IPage *page) {
         return;
     }
 
+    float arena_usage = (float) page->arena.allocd * 100 / page->arena.size;
+    /*log_file(LogMessage, "Graphics", "Page %d: Num Geo %d, Arena %f \% (out of %d bytes)", */
+    /*         page->temp_id, page->len_geometry, arena_usage, page->arena.size);*/
     munmap(page->arena.memory, page->arena.size);
     free(page);
 }

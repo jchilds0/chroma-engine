@@ -2,3 +2,5 @@
 build/
 dist/
 log/
+
+perf/*.data

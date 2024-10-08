@@ -36,7 +36,7 @@ typedef struct {
         if ((arena)->allocd + struct_size >= (arena)->size) {                              \
             log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
         }                                                                                  \
-        struct_type *ptr = &(arena)->memory[(arena)->allocd];                              \
+        struct_type *ptr = (arena)->memory + (arena)->allocd;                              \
         (arena)->allocd += struct_size;                                                    \
         ptr;                                                                               \
     })
@@ -46,7 +46,7 @@ typedef struct {
         if ((arena)->allocd + struct_size >= (arena)->size) {                              \
             log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
         }                                                                                  \
-        struct_type *ptr = &(arena)->memory[(arena)->allocd];                              \
+        struct_type *ptr = (arena)->memory + (arena)->allocd;                              \
         (arena)->allocd += struct_size;                                                    \
         ptr;                                                                               \
     })

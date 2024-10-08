@@ -15,17 +15,6 @@ void graphics_new_graph(Arena *a, Graph *g, int n) {
     g->pad_index = ARENA_ARRAY(a, n, int);
     g->exists = ARENA_ARRAY(a, n, unsigned char);
     g->node_evals = ARENA_ARRAY(a, n, NodeEval);
-
-    for (int i = 0; i < n * n; i++) {
-        g->adj_matrix[i] = 0;
-    }
-
-    for (int i = 0; i < n; i++) {
-        g->exists[i] = 0;
-        g->node_evals[i] = NULL;
-        g->value[i] = 0;
-        g->pad_index[i] = 0;
-    }
 }
 
 void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f) {
