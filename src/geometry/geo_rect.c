@@ -6,6 +6,7 @@
  */
 
 #include "chroma-engine.h"
+#include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
 
@@ -14,16 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-GeometryRect *geometry_new_rectangle(void) {
-    GeometryRect *rect = NEW_STRUCT(GeometryRect);
+GeometryRect *geometry_new_rectangle(Arena *a) {
+    GeometryRect *rect = ARENA_ALLOC(a, GeometryRect);
     rect->geo.geo_type = RECT;
     geometry_clean_rect(rect);
 
     return rect;
-}
-
-void geometry_free_rectangle(GeometryRect *rect) {
-    free(rect);
 }
 
 void geometry_clean_rect(GeometryRect *rect) {

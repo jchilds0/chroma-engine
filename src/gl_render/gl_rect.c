@@ -7,6 +7,7 @@
  */
 
 #include "chroma-engine.h"
+#include "geometry/geometry_internal.h"
 #include "gl_render_internal.h"
 #include "geometry.h"
 
@@ -54,7 +55,7 @@ static unsigned int indices[] = {
     8, 11, 10,
 };
 
-static IGeometry *circle = NULL;
+static GeometryCircle circle;
 
 void gl_rectangle_init_buffers(void) {
     glGenVertexArrays(1, &vao);
@@ -75,7 +76,8 @@ void gl_rectangle_init_buffers(void) {
     // configure vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof( float ), (void *)0);
 
-    circle = geometry_create_geometry(CIRCLE);
+    circle.geo.geo_type = CIRCLE;
+    geometry_clean_geo((IGeometry *)&circle);
 
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
@@ -132,23 +134,21 @@ void gl_draw_rectangle(IGeometry *rect) {
 
     // draw corners
     GeometryRect *g_rect = (GeometryRect *)rect;
-    GeometryCircle *g_circle = (GeometryCircle *)circle;
-    
-    g_circle->color[0] = g_rect->color[0];
-    g_circle->color[1] = g_rect->color[1];
-    g_circle->color[2] = g_rect->color[2];
-    g_circle->color[3] = g_rect->color[3];
+    circle.color[0] = g_rect->color[0];
+    circle.color[1] = g_rect->color[1];
+    circle.color[2] = g_rect->color[2];
+    circle.color[3] = g_rect->color[3];
 
-    geometry_set_int_attr(circle, GEO_INNER_RADIUS, 0);
-    geometry_set_int_attr(circle, GEO_OUTER_RADIUS, round);
+    geometry_set_int_attr((IGeometry *)&circle, GEO_INNER_RADIUS, 0);
+    geometry_set_int_attr((IGeometry *)&circle, GEO_OUTER_RADIUS, round);
 
     for (int i = 0; i < 4; i++) {
-        geometry_set_int_attr(circle, GEO_POS_X, circ_v[i][0]);
-        geometry_set_int_attr(circle, GEO_POS_Y, circ_v[i][1]);
-        geometry_set_int_attr(circle, GEO_START_ANGLE, circ_v[i][2]);
-        geometry_set_int_attr(circle, GEO_END_ANGLE, circ_v[i][3]);
+        geometry_set_int_attr((IGeometry *)&circle, GEO_POS_X, circ_v[i][0]);
+        geometry_set_int_attr((IGeometry *)&circle, GEO_POS_Y, circ_v[i][1]);
+        geometry_set_int_attr((IGeometry *)&circle, GEO_START_ANGLE, circ_v[i][2]);
+        geometry_set_int_attr((IGeometry *)&circle, GEO_END_ANGLE, circ_v[i][3]);
 
-        gl_draw_circle(circle);
+        gl_draw_circle((IGeometry *)&circle);
     }
 
     gl_renderer_set_scale(program);

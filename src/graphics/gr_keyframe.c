@@ -52,7 +52,7 @@ static void graphics_log_keyframe(IPage *page) {
                 int i = INDEX(geo_id, attr, frame_index, GEO_INT_NUM, page->max_keyframe);
 
                 log_file(LogMessage, "Graphics", "\t\t\tFrame %d: %d", frame_index, 
-                         page->keyframe_graph->value[i]); 
+                         page->keyframe_graph.value[i]); 
             }
         }
     }
@@ -79,11 +79,11 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
             width = geometry_get_int_attr(geo, GEO_WIDTH);
             frame_index = INDEX(geo_id, GEO_WIDTH, 0, GEO_INT_NUM, page->max_keyframe);
-            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, width);
+            graphics_graph_add_leaf_node(&page->keyframe_graph, frame_index, width);
 
             height = geometry_get_int_attr(geo, GEO_HEIGHT);
             frame_index = INDEX(geo_id, GEO_HEIGHT, 0, GEO_INT_NUM, page->max_keyframe);
-            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, height);
+            graphics_graph_add_leaf_node(&page->keyframe_graph, frame_index, height);
 
         }
     }
@@ -92,11 +92,11 @@ void graphics_page_calculate_keyframes(IPage *page) {
         // calculate frames
         start = clock();
 
-        if (!graphics_graph_is_dag(page->keyframe_graph)) {
+        if (!graphics_graph_is_dag(&page->keyframe_graph)) {
             log_file(LogError, "Graphics", "Page %d keyframes are not in a dag", page->temp_id);
         }
 
-        graphics_graph_evaluate_dag(page->keyframe_graph);
+        graphics_graph_evaluate_dag(&page->keyframe_graph);
 
         end = clock();
         if (LOG_KEYFRAMES) {
@@ -110,7 +110,7 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
     if (LOG_KEYFRAMES) {
         log_file(LogMessage, "Graphics", "Keyframe Graph: %d nodes, %d edges", 
-                 page->keyframe_graph->num_nodes, page->keyframe_graph->num_edges);
+                 page->keyframe_graph.num_nodes, page->keyframe_graph.num_edges);
     }
 }
 
@@ -212,11 +212,11 @@ static void graphics_page_root_node(IPage *page, int geo_id, int frame_num) {
     int width_index = INDEX(geo_id, GEO_WIDTH, frame_num, GEO_INT_NUM, page->max_keyframe);
     int height_index = INDEX(geo_id, GEO_HEIGHT, frame_num, GEO_INT_NUM, page->max_keyframe);
 
-    graphics_graph_add_eval_node(page->keyframe_graph, pos_x_index, 0, NULL);
-    graphics_graph_add_eval_node(page->keyframe_graph, pos_y_index, 0, NULL);
+    graphics_graph_add_eval_node(&page->keyframe_graph, pos_x_index, 0, NULL);
+    graphics_graph_add_eval_node(&page->keyframe_graph, pos_y_index, 0, NULL);
 
-    graphics_graph_add_eval_node(page->keyframe_graph, width_index, 1920, NULL);
-    graphics_graph_add_eval_node(page->keyframe_graph, height_index, 1080, NULL);
+    graphics_graph_add_eval_node(&page->keyframe_graph, width_index, 1920, NULL);
+    graphics_graph_add_eval_node(&page->keyframe_graph, height_index, 1080, NULL);
 }
 
 static void graphics_geometry_relative_position(IPage *page, int geo_id, int frame_num) {
@@ -232,16 +232,16 @@ static void graphics_geometry_relative_position(IPage *page, int geo_id, int fra
         int upper_x_index   = INDEX(geo_id, GEO_X_UPPER, frame_num, GEO_INT_NUM, page->max_keyframe);
         int parent_x_index  = INDEX(parent_id, GEO_POS_X, frame_num, GEO_INT_NUM, page->max_keyframe);
 
-        graphics_graph_add_eval_node(page->keyframe_graph, pos_x_index, 0, sum_value);
-        graphics_graph_add_edge(page->keyframe_graph, pos_x_index, rel_x_index);
-        graphics_graph_add_edge(page->keyframe_graph, pos_x_index, parent_x_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, pos_x_index, 0, sum_value);
+        graphics_graph_add_edge(&page->keyframe_graph, pos_x_index, rel_x_index);
+        graphics_graph_add_edge(&page->keyframe_graph, pos_x_index, parent_x_index);
 
-        graphics_graph_add_eval_node(page->keyframe_graph, lower_x_index, 0, single_value);
-        graphics_graph_add_edge(page->keyframe_graph, lower_x_index, pos_x_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, lower_x_index, 0, single_value);
+        graphics_graph_add_edge(&page->keyframe_graph, lower_x_index, pos_x_index);
 
-        graphics_graph_add_eval_node(page->keyframe_graph, upper_x_index, 0, sum_value);
-        graphics_graph_add_edge(page->keyframe_graph, upper_x_index, rel_x_index);
-        graphics_graph_add_edge(page->keyframe_graph, upper_x_index, width_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, upper_x_index, 0, sum_value);
+        graphics_graph_add_edge(&page->keyframe_graph, upper_x_index, rel_x_index);
+        graphics_graph_add_edge(&page->keyframe_graph, upper_x_index, width_index);
     }
 
     {
@@ -253,16 +253,16 @@ static void graphics_geometry_relative_position(IPage *page, int geo_id, int fra
         int upper_y_index   = INDEX(geo_id, GEO_Y_UPPER, frame_num, GEO_INT_NUM, page->max_keyframe);
         int parent_y_index  = INDEX(parent_id, GEO_POS_Y, frame_num, GEO_INT_NUM, page->max_keyframe);
 
-        graphics_graph_add_eval_node(page->keyframe_graph, pos_y_index, 0, sum_value);
-        graphics_graph_add_edge(page->keyframe_graph, pos_y_index, rel_y_index);
-        graphics_graph_add_edge(page->keyframe_graph, pos_y_index, parent_y_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, pos_y_index, 0, sum_value);
+        graphics_graph_add_edge(&page->keyframe_graph, pos_y_index, rel_y_index);
+        graphics_graph_add_edge(&page->keyframe_graph, pos_y_index, parent_y_index);
 
-        graphics_graph_add_eval_node(page->keyframe_graph, lower_y_index, 0, single_value);
-        graphics_graph_add_edge(page->keyframe_graph, lower_y_index, pos_y_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, lower_y_index, 0, single_value);
+        graphics_graph_add_edge(&page->keyframe_graph, lower_y_index, pos_y_index);
 
-        graphics_graph_add_eval_node(page->keyframe_graph, upper_y_index, 0, sum_value);
-        graphics_graph_add_edge(page->keyframe_graph, upper_y_index, rel_y_index);
-        graphics_graph_add_edge(page->keyframe_graph, upper_y_index, height_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, upper_y_index, 0, sum_value);
+        graphics_graph_add_edge(&page->keyframe_graph, upper_y_index, rel_y_index);
+        graphics_graph_add_edge(&page->keyframe_graph, upper_y_index, height_index);
     }
 }
 
@@ -271,12 +271,12 @@ static void graphics_geometry_default_values(IPage *page, int geo_id, int attr) 
         int base_index = INDEX(geo_id, attr, 0, GEO_INT_NUM, page->max_keyframe);
         int frame_index = INDEX(geo_id, attr, frame_num, GEO_INT_NUM, page->max_keyframe);
 
-        if (page->keyframe_graph->exists[frame_index]) {
+        if (page->keyframe_graph.exists[frame_index]) {
             continue;
         }
 
-        graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
-        graphics_graph_add_edge(page->keyframe_graph, frame_index, base_index);
+        graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, 0, single_value);
+        graphics_graph_add_edge(&page->keyframe_graph, frame_index, base_index);
     }
 }
 
@@ -303,7 +303,7 @@ void graphics_page_default_relations(IPage *page) {
         for (int attr = 0; attr < GEO_INT_NUM; attr++) {
             int base_index = INDEX(geo_id, attr, 0, GEO_INT_NUM, page->max_keyframe);
 
-            if (!page->keyframe_graph->exists[base_index]) {
+            if (!page->keyframe_graph.exists[base_index]) {
                 continue;
             }
 
@@ -330,7 +330,7 @@ static void add_attribute(int attr) {
     int frame_index = INDEX(geo_id, attr, 0, GEO_INT_NUM, page->max_keyframe);
     int value = geometry_get_int_attr(geo, attr);
 
-    graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, value);
+    graphics_graph_add_leaf_node(&page->keyframe_graph, frame_index, value);
 }
 
 
@@ -357,12 +357,12 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
 
     switch (frame.type) {
         case USER_FRAME:
-            graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
-            graphics_graph_add_edge(page->keyframe_graph, frame_index, geo_index);
+            graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, 0, single_value);
+            graphics_graph_add_edge(&page->keyframe_graph, frame_index, geo_index);
             break;
 
         case SET_FRAME:
-            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, frame.value);
+            graphics_graph_add_leaf_node(&page->keyframe_graph, frame_index, frame.value);
             break;
 
         case BIND_FRAME:
@@ -376,8 +376,8 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
                 return;
             }
 
-            graphics_graph_add_eval_node(page->keyframe_graph, frame_index, 0, single_value);
-            graphics_graph_add_edge(page->keyframe_graph, frame_index, bind_index);
+            graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, 0, single_value);
+            graphics_graph_add_edge(&page->keyframe_graph, frame_index, bind_index);
             break;
 
         default:
@@ -389,7 +389,7 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
         log_file(
             LogMessage, "Graphics", 
             "\tInitially set geo %d, attr %d to %d", 
-            frame.geo_id, frame.attr, page->keyframe_graph->value[frame_index]
+            frame.geo_id, frame.attr, page->keyframe_graph.value[frame_index]
         );
     }
 
@@ -397,8 +397,8 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
         return;
     }
 
-    graphics_graph_add_eval_node(page->keyframe_graph, frame_index, geo_index, max_value_plus_pad);
-    graphics_graph_add_edge(page->keyframe_graph, frame_index, geo_index);
+    graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, geo_index, max_value_plus_pad);
+    graphics_graph_add_edge(&page->keyframe_graph, frame_index, geo_index);
 
     for (int child_id = 0; child_id < page->len_geometry; child_id++) {
         if (page->geometry[child_id] == NULL) {
@@ -414,11 +414,11 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
 
         switch (frame.attr) {
             case GEO_WIDTH:
-                graphics_graph_add_edge(page->keyframe_graph, frame_index, x_upper_index);
+                graphics_graph_add_edge(&page->keyframe_graph, frame_index, x_upper_index);
                 break;
 
             case GEO_HEIGHT: 
-                graphics_graph_add_edge(page->keyframe_graph, frame_index, y_upper_index);
+                graphics_graph_add_edge(&page->keyframe_graph, frame_index, y_upper_index);
                 break;
 
             default:

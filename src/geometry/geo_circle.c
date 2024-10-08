@@ -7,20 +7,17 @@
  */
 
 #include "chroma-engine.h"
+#include "geometry.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <math.h>
 
-GeometryCircle *geometry_new_circle(void) {
-    GeometryCircle *circle = NEW_STRUCT(GeometryCircle);
+GeometryCircle *geometry_new_circle(Arena *a) {
+    GeometryCircle *circle = ARENA_ALLOC(a, GeometryCircle);
     circle->geo.geo_type = CIRCLE;
     geometry_clean_circle(circle);
 
     return circle;
-}
-
-void geometry_free_circle(GeometryCircle *circle) {
-    free(circle);
 }
 
 void geometry_clean_circle(GeometryCircle *circle) {

@@ -11,6 +11,7 @@
  */
 
 #include "chroma-engine.h"
+#include "graphics.h"
 #include "graphics_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -18,70 +19,52 @@
 
 IGraphics *graphics_new_graphics_hub(int num_pages) {
     IGraphics *hub = NEW_STRUCT(IGraphics);
-    hub->len_pages = num_pages;
-    hub->num_pages = 0;
+    hub->capacity = DA_INIT_CAPACITY;
+    hub->count = 0;
+    hub->items = NEW_ARRAY(hub->capacity, IPage *);
 
-    hub->pages = NEW_ARRAY(hub->len_pages, IPage *);
-    for (int i = 0; i < hub->len_pages; i++) {
-        hub->pages[i] = NULL;
+    for (int i = 0; i < hub->capacity; i++) {
+        hub->items[i] = NULL;
     }
 
     return hub;
 }
 
-void graphics_hub_free_page(IGraphics *hub, int page_num) {
-    if (page_num < 0 || page_num >= hub->len_pages) {
-        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
-        return;
-    }
-
-    graphics_free_page(hub->pages[page_num]);
-    hub->pages[page_num] = NULL;
-    hub->num_pages--;
-}
-
 void graphics_free_graphics_hub(IGraphics *hub) {
-    for (int i = 0; i < hub->num_pages; i++) {
-        graphics_free_page(hub->pages[i]);
+    for (int i = 0; i < hub->count; i++) {
+        graphics_free_page(hub->items[i]);
     }
 
-    free(hub->pages);
+    free(hub->items);
     free(hub);
 }
 
 void graphics_hub_add_page(IGraphics *hub, IPage *page) {
-    if (page->temp_id >= hub->len_pages) {
-        log_file(LogMessage, "Graphics", "Resizing graphics hub");
-
-        int new_length = MAX(2 * hub->len_pages, page->temp_id + 1);
-        IPage **new_hub = NEW_ARRAY(new_length, IPage *);
-        for (int i = 0; i < new_length; i++) {
-            new_hub[i] = NULL;
-        }
-
-        for (int i = 0; i < hub->len_pages; i++) {
-            new_hub[i] = hub->pages[i];
-        }
-
-        free(hub->pages);
-        hub->pages = new_hub;
-        hub->len_pages = new_length;
+    int i;
+    if ((i = graphics_hub_get_page(hub, page->temp_id)) >= 0) {
+        log_file(LogMessage, "Graphics", "Replacing page");
+        graphics_free_page(hub->items[i]);
+        hub->items[i] = page;
+        return;
     }
 
-    if (hub->pages[page->temp_id] != NULL) {
-        graphics_free_page(hub->pages[page->temp_id]);
-    }
-
-    hub->pages[page->temp_id] = page;
-    hub->num_pages++;
+    DA_APPEND(hub, page);
 }
 
-IPage *graphics_hub_get_page(IGraphics *hub, int page_num) {
-    if (!WITHIN(page_num, 0, hub->len_pages - 1)) {
-        log_file(LogWarn, "Graphics", "Page num %d out of range", page_num);
-        return NULL;
+int graphics_hub_get_page(IGraphics *hub, int temp_id) {
+    int index = -1;
+    for (size_t i = 0; i < hub->count; i++) {
+        if (hub->items[i] == NULL) {
+            continue;
+        }
+
+        if (hub->items[i]->temp_id != temp_id) {
+            continue;
+        }
+
+        index = i;
     }
 
-    return hub->pages[page_num];
+    return index;
 }
 

@@ -13,7 +13,7 @@
  *
  */
 
-#include "geometry.h"
+#include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
 #include <stdio.h>
@@ -43,32 +43,32 @@ GeometryType geometry_geo_type(char *name) {
     return -1;
 }
 
-IGeometry *geometry_create_geometry(GeometryType type) {
+IGeometry *geometry_create_geometry(Arena *a, GeometryType type) {
     IGeometry *geo;
 
     switch (type) {
         case RECT:
-            geo = (IGeometry *) geometry_new_rectangle();
+            geo = (IGeometry *) geometry_new_rectangle(a);
             break;
 
         case CIRCLE:
-            geo = (IGeometry *) geometry_new_circle();
+            geo = (IGeometry *) geometry_new_circle(a);
             break;
 
         case TEXT:
-            geo = (IGeometry *) geometry_new_text();
+            geo = (IGeometry *) geometry_new_text(a);
             break;
 
         case GRAPH:
-            geo = (IGeometry *) geometry_new_graph();
+            geo = (IGeometry *) geometry_new_graph(a);
             break;
 
         case IMAGE:
-            geo = (IGeometry *) geometry_new_image();
+            geo = (IGeometry *) geometry_new_image(a);
             break;
 
         case POLYGON:
-            geo = (IGeometry *) geometry_new_polygon();
+            geo = (IGeometry *) geometry_new_polygon(a);
             break;
 
         default:
@@ -93,42 +93,21 @@ IGeometry *geometry_create_geometry(GeometryType type) {
     return geo;
 }
 
-void geometry_free_geometry(IGeometry *geo) {
-    if (geo == NULL) {
-        return;
-    }
-
-    switch (geo->geo_type) {
-        case RECT:
-            geometry_free_rectangle((GeometryRect *)geo);
-            break;
-
-        case CIRCLE:
-            geometry_free_circle((GeometryCircle *)geo);
-            break;
-
-        case GRAPH:
-            geometry_free_graph((GeometryGraph *)geo);
-            break;
-
-        case TEXT:
-            geometry_free_text((GeometryText *)geo);
-            break;
-
-        case IMAGE:
-            geometry_free_image((GeometryImage *)geo);
-            break;
-
-        case POLYGON:
-            geometry_free_polygon((GeometryPolygon *)geo);
-            break;
-
-        default:
-            log_file(LogWarn, "Geometry", "Unknown geo type %d", geo->geo_type);
-    }
-}
-
 void geometry_clean_geo(IGeometry *geo) {
+    geo->geo_id = 0;
+    geo->parent_id = 0;
+    geo->pos.x = 0;
+    geo->pos.y = 0;
+    geo->rel.x = 0;
+    geo->rel.y = 0;
+
+    geo->mask_geo = 0;
+
+    geo->bound_lower.x = 0;
+    geo->bound_lower.y = 0;
+    geo->bound_upper.x = 0;
+    geo->bound_upper.y = 0;
+
     switch (geo->geo_type) {
         case RECT:
             geometry_clean_rect((GeometryRect *)geo);

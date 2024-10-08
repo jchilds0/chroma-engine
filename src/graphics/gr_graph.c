@@ -7,16 +7,14 @@
 #include "log.h"
 #include <stdlib.h>
 
-Graph *graphics_new_graph(int n) {
-    Graph *g = NEW_STRUCT(Graph);
-
+void graphics_new_graph(Arena *a, Graph *g, int n) {
     g->num_nodes = n;
     g->num_edges = 0;
-    g->adj_matrix = NEW_ARRAY(n * n, unsigned char);
-    g->value = NEW_ARRAY(n, int);
-    g->pad_index = NEW_ARRAY(n, int);
-    g->exists = NEW_ARRAY(n, unsigned char);
-    g->node_evals = NEW_ARRAY(n, NodeEval);
+    g->adj_matrix = ARENA_ARRAY(a, n * n, unsigned char);
+    g->value = ARENA_ARRAY(a, n, int);
+    g->pad_index = ARENA_ARRAY(a, n, int);
+    g->exists = ARENA_ARRAY(a, n, unsigned char);
+    g->node_evals = ARENA_ARRAY(a, n, NodeEval);
 
     for (int i = 0; i < n * n; i++) {
         g->adj_matrix[i] = 0;
@@ -28,8 +26,6 @@ Graph *graphics_new_graph(int n) {
         g->value[i] = 0;
         g->pad_index[i] = 0;
     }
-
-    return g;
 }
 
 void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f) {
@@ -65,19 +61,6 @@ void graphics_graph_add_edge(Graph *g, int x, int y) {
     g->num_edges++;
 }
 
-void graphics_graph_free_graph(Graph *g) {
-    if (g == NULL) {
-        return;
-    }
-
-    free(g->adj_matrix);
-    free(g->exists);
-    free(g->node_evals);
-    free(g->value);
-    free(g->pad_index);
-    free(g);
-}
-
 static unsigned char graphics_graph_depth_first(
     Graph *g, unsigned char *visited, unsigned char *discovered, int node) {
     unsigned char is_dag = 1;
@@ -108,8 +91,8 @@ static unsigned char graphics_graph_depth_first(
 }
 
 unsigned char graphics_graph_is_dag(Graph *g) {
-    unsigned char *visited = NEW_ARRAY(g->num_nodes, unsigned char);
-    unsigned char *discovered = NEW_ARRAY(g->num_nodes, unsigned char);
+    unsigned char visited[g->num_nodes];
+    unsigned char discovered[g->num_nodes];
     unsigned char is_dag = 1;
 
     for (int i = 0; i < g->num_nodes; i++) {
@@ -124,9 +107,6 @@ unsigned char graphics_graph_is_dag(Graph *g) {
         
         is_dag = is_dag && graphics_graph_depth_first(g, visited, discovered, i);
     }
-
-    free(visited);
-    free(discovered);
 
     return is_dag;
 }
@@ -156,7 +136,7 @@ static void graphics_graph_evaluate_node(Graph *g, unsigned char *eval, int node
 }
 
 void graphics_graph_evaluate_dag(Graph *g) {
-    unsigned char *eval = NEW_ARRAY(g->num_nodes, unsigned char);
+    unsigned char eval[g->num_nodes];
 
     for (int i = 0; i < g->num_nodes; i++) {
         eval[i] = 0;
@@ -173,6 +153,4 @@ void graphics_graph_evaluate_dag(Graph *g) {
 
         graphics_graph_evaluate_node(g, eval, i);
     }
-
-    free(eval);
 }

@@ -11,16 +11,12 @@
 #include "log.h"
 #include <stdio.h>
 
-GeometryPolygon *geometry_new_polygon(void) {
-    GeometryPolygon *poly = NEW_STRUCT(GeometryPolygon);
+GeometryPolygon *geometry_new_polygon(Arena *a) {
+    GeometryPolygon *poly = ARENA_ALLOC(a, GeometryPolygon);
     poly->geo.geo_type = POLYGON;
     geometry_clean_polygon(poly);
 
     return poly;
-}
-
-void geometry_free_polygon(GeometryPolygon *poly) {
-    free(poly);
 }
 
 void geometry_clean_polygon(GeometryPolygon *poly) {

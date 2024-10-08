@@ -13,20 +13,15 @@
 #include "log.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 
-GeometryText *geometry_new_text(void) {
-    GeometryText *text = NEW_STRUCT(GeometryText);
+GeometryText *geometry_new_text(Arena *a) {
+    GeometryText *text = ARENA_ALLOC(a, GeometryText);
     text->geo.geo_type = TEXT;
     geometry_clean_text(text);
 
     return text;
-}
-
-void geometry_free_text(GeometryText *text) {
-    free(text);
 }
 
 void geometry_clean_text(GeometryText *text) {

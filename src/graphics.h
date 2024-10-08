@@ -5,7 +5,9 @@
 #ifndef CHROMA_PAGE
 #define CHROMA_PAGE
 
+#include "chroma-engine.h"
 #include "geometry.h"
+#include <stddef.h>
 
 typedef enum {
     SET_FRAME = 0,
@@ -48,28 +50,27 @@ typedef struct {
 
 typedef struct {
     unsigned int      temp_id;
-
+    Arena             arena;
     unsigned int      len_geometry;
     IGeometry         **geometry;
 
     unsigned int      max_keyframe;
-    Graph             *keyframe_graph;
+    Graph             keyframe_graph;
 } IPage;
 
 extern IGeometry    *graphics_page_add_geometry(IPage *page, int type, int geo_id);
 
 typedef struct {
-    unsigned int      num_pages;
-    unsigned int      len_pages;
-    IPage             **pages;
+    size_t  count;
+    size_t  capacity;
+    IPage   **items;
 } IGraphics;
 
 extern IGraphics    *graphics_new_graphics_hub(int num_pages);
 extern void         graphics_hub_load_example(IGraphics *hub);
 extern void         graphics_free_graphics_hub(IGraphics *hub);
-extern void         graphics_hub_free_page(IGraphics *hub, int page_num);
 
-extern IPage        *graphics_hub_get_page(IGraphics *hub, int page_num);
+extern int          graphics_hub_get_page(IGraphics *hub, int temp_id);
 extern void         graphics_hub_add_page(IGraphics *hub, IPage *page);
 
 extern Keyframe     *graphics_page_add_keyframe(IPage *page);

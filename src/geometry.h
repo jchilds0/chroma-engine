@@ -29,6 +29,7 @@
 #ifndef CHROMA_GEOMETRY
 #define CHROMA_GEOMETRY
 
+#include "chroma-engine.h"
 #include "gl_math.h"
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -149,8 +150,7 @@ typedef struct {
 } GeometryPolygon;
 
 extern GeometryType geometry_geo_type(char *name);
-extern IGeometry    *geometry_create_geometry(GeometryType type);
-extern void         geometry_free_geometry(IGeometry *geo);
+extern IGeometry    *geometry_create_geometry(Arena *a, GeometryType type);
 extern void         geometry_clean_geo(IGeometry *geo);
 
 extern GeometryAttr geometry_char_to_attr(char *attr);

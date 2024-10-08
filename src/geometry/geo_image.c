@@ -16,16 +16,12 @@
 #include <string.h>
 
 
-GeometryImage *geometry_new_image(void) {
-    GeometryImage *image = NEW_STRUCT(GeometryImage);
+GeometryImage *geometry_new_image(Arena *a) {
+    GeometryImage *image = ARENA_ALLOC(a, GeometryImage);
     image->geo.geo_type = IMAGE;
     geometry_clean_image(image);
 
     return image;
-}
-
-void geometry_free_image(GeometryImage *image) {
-    free(image);
 }
 
 void geometry_clean_image(GeometryImage *image) {

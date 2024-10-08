@@ -8,26 +8,32 @@
  *
  */
 
-#include "graphics.h"
 #include "graphics_internal.h"
 #include "chroma-engine.h"
-#include "geometry.h"
 #include "log.h"
-#include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <errno.h>
 
 IPage *graphics_new_page(int num_geo, int max_keyframe) {
     IPage *page = NEW_STRUCT(IPage);
+    page->arena.allocd = 0;
+    page->arena.size = MEGABYTES((uint64_t) 128);
+    page->arena.memory = mmap(NULL, page->arena.size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0);
+    if (page->arena.memory == -1) {
+        log_file(LogError, "Graphics", "Unable to allocate page: %s", strerror(errno));
+    }
+
     page->len_geometry = num_geo;
     page->max_keyframe = max_keyframe;
-    page->geometry = NEW_ARRAY(page->len_geometry, IGeometry *);
+    page->geometry = ARENA_ARRAY(&page->arena, num_geo, IGeometry *);
 
     for (int i = 0; i < page->len_geometry; i++) {
         page->geometry[i] = NULL;
     }
 
     int n = page->max_keyframe * page->len_geometry * GEO_INT_NUM;
-    page->keyframe_graph = graphics_new_graph(n);
+    graphics_new_graph(&page->arena, &page->keyframe_graph, n);
 
     IGeometry *geo = graphics_page_add_geometry(page, RECT, 0);
     geometry_set_int_attr(geo, GEO_POS_X, 0);
@@ -49,7 +55,7 @@ IGeometry *graphics_page_add_geometry(IPage *page, int type, int geo_id) {
         return NULL;
     }
 
-    IGeometry *geo = geometry_create_geometry(type);
+    IGeometry *geo = geometry_create_geometry(&page->arena, type);
     page->geometry[geo_id] = geo;
     return geo;
 }
@@ -59,7 +65,7 @@ void graphics_free_page(IPage *page) {
         return;
     }
 
-    graphics_graph_free_graph(page->keyframe_graph);
+    munmap(page->arena.memory, page->arena.size);
     free(page);
 }
 
@@ -79,16 +85,16 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
 
         for (int attr = 0; attr < GEO_INT_NUM; attr++) {
             k_index = INDEX(geo_id, attr, frame_start, GEO_INT_NUM, page->max_keyframe);
-            if (!page->keyframe_graph->exists[k_index]) {
+            if (!page->keyframe_graph.exists[k_index]) {
                 continue;
             }
 
             if (frame_start == page->max_keyframe - 1) {
-                next_value = page->keyframe_graph->value[k_index];
+                next_value = page->keyframe_graph.value[k_index];
             } else {
                 next_value = graphics_keyframe_interpolate_int(
-                    page->keyframe_graph->value[k_index], 
-                    page->keyframe_graph->value[k_index + 1], 
+                    page->keyframe_graph.value[k_index], 
+                    page->keyframe_graph.value[k_index + 1], 
                     frame_index, width
                 );
             }

@@ -13,9 +13,43 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <sys/mman.h>
+
+#include "log.h"
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
+
+#define KILOBYTES(value)              1024 * (value)
+#define MEGABYTES(value)              1024 * KILOBYTES(value)
+#define GIGABYTES(value)              1024 * MEGABYTES(value)
+
+// Arena Macros
+typedef struct {
+    size_t            size;
+    size_t            allocd;
+    void              *memory;
+} Arena;
+
+#define ARENA_ALLOC(arena, struct_type) ({                                                 \
+        size_t struct_size = sizeof( struct_type );                                        \
+        if ((arena)->allocd + struct_size >= (arena)->size) {                              \
+            log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
+        }                                                                                  \
+        struct_type *ptr = &(arena)->memory[(arena)->allocd];                              \
+        (arena)->allocd += struct_size;                                                    \
+        ptr;                                                                               \
+    })
+
+#define ARENA_ARRAY(arena, count, struct_type) ({                                          \
+        size_t struct_size = (size_t) count * sizeof( struct_type );                       \
+        if ((arena)->allocd + struct_size >= (arena)->size) {                              \
+            log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
+        }                                                                                  \
+        struct_type *ptr = &(arena)->memory[(arena)->allocd];                              \
+        (arena)->allocd += struct_size;                                                    \
+        ptr;                                                                               \
+    })
 
 // Dynamic Array Macros
 #define DA_INIT_CAPACITY                 8192
@@ -63,7 +97,7 @@
 #define MAX(a, b)                     (((a) > (b)) ? (a) : (b))
 #define INDEX(x, y, z, y_len, z_len)  x * (y_len * z_len) + y * z_len + z
 
-#define INSTALL_DIR                   "/home/josh/Documents/projects/chroma-engine/"
+#define INSTALL_DIR                   "/home/josh/programming/chroma-engine/"
 
 #define CHROMA_FRAMERATE              30
 

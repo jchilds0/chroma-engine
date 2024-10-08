@@ -139,9 +139,9 @@ PAGE:
         return -1;
     }
 
-    IPage *page = graphics_hub_get_page(eng->hub, status->temp_id);
+    int page_index = graphics_hub_get_page(eng->hub, status->temp_id);
 
-    if (page == NULL) {
+    if (page_index < 0) {
         // invalid page, reset globals and clear remaining message
         status->temp_id = -1;
         status->action = BLANK;
@@ -152,8 +152,8 @@ PAGE:
         return -1;
     }
 
-    // Read new page values
-    parser_parse_page(page);
+    IPage *page = eng->hub->items[page_index];
+    parser_parse_page(page);    // Read new page values
 
     switch (status->action) {
         case ANIMATE_ON:
@@ -300,8 +300,8 @@ void parser_parse_page(IPage *page) {
         int frame_index = INDEX(geo_num, attr_num, 0, GEO_INT_NUM, page->max_keyframe);
         geo = page->geometry[geo_num];
 
-        if (attr_num < GEO_INT_NUM && page->keyframe_graph->exists[frame_index]) {
-            graphics_graph_add_leaf_node(page->keyframe_graph, frame_index, atoi(value));
+        if (attr_num < GEO_INT_NUM && page->keyframe_graph.exists[frame_index]) {
+            graphics_graph_add_leaf_node(&page->keyframe_graph, frame_index, atoi(value));
         } else {
             geometry_set_attr(geo, attr, value);
         }

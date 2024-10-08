@@ -14,16 +14,12 @@
 #include <string.h>
 
 
-GeometryGraph *geometry_new_graph(void) {
-    GeometryGraph *g = NEW_STRUCT(GeometryGraph);
+GeometryGraph *geometry_new_graph(Arena *a) {
+    GeometryGraph *g = ARENA_ALLOC(a, GeometryGraph);
     g->geo.geo_type = GRAPH;
     geometry_clean_graph(g);
 
     return g;
-}
-
-void geometry_free_graph(GeometryGraph *g) {
-    free(g);
 }
 
 void geometry_clean_graph(GeometryGraph *g) {

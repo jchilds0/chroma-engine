@@ -29,11 +29,10 @@ int          graphics_keyframe_interpolate_int(int v_start, int v_end, int index
 void         graphics_page_gen_frame(IPage *page, Keyframe frame);
 
 /* gr_graph.c */
-Graph         *graphics_new_graph(int n);
+void          graphics_new_graph(Arena *a, Graph *g, int n);
 void          graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f);
 void          graphics_graph_add_leaf_node(Graph *g, int x, int value);
 void          graphics_graph_add_edge(Graph *g, int x, int y);
-void          graphics_graph_free_graph(Graph *g);
 unsigned char graphics_graph_is_dag(Graph *g);
 void          graphics_graph_evaluate_dag(Graph *g);
 
