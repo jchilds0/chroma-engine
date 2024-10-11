@@ -70,8 +70,13 @@ int parser_json_get_int(JSONNode *obj, char *name) {
 
 char *parser_json_get_string(JSONNode *obj, char *name) {
     JSONNode *node = parser_json_attribute(obj, name);
-    if (node == NULL || node->type != JSON_STRING) {
-        log_file(LogWarn, "Parser", "%s is not a JSON String", name);
+    if (node == NULL) {
+        //log_file(LogWarn, "Parser", "No JSON String %s", name);
+        return NULL;
+    }
+
+    if (node->type != JSON_STRING) {
+        log_file(LogWarn, "Parser", "%s is not a JSON String: %d", name, node->type);
         return NULL;
     }
 

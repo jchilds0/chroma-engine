@@ -227,7 +227,8 @@ void parser_parse_geometry(JSONNode *geo_obj, IPage *page) {
     IGeometry *geo = graphics_page_add_geometry(page, geo_type, geo_id->integer);
 
     for (int i = 0; i < geo_obj->array.num_items; i++) {
-        JSONNode *attr = &json_arena.items[geo_obj->array.start + i];
+        size_t json_index = json_arena.objects.items[geo_obj->array.start + i];
+        JSONNode *attr = &json_arena.items[json_index];
 
         if (strcmp(attr->name, "Name") == 0) {
             continue;
