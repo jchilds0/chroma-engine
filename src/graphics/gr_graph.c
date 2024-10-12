@@ -3,6 +3,7 @@
  */
 
 #include "chroma-engine.h"
+#include "graphics.h"
 #include "graphics_internal.h"
 #include "log.h"
 #include <stdlib.h>
@@ -17,14 +18,14 @@ void graphics_new_graph(Arena *a, Graph *g, int n) {
     g->node_evals = ARENA_ARRAY(a, n, NodeEval);
 }
 
-void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f) {
+void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval eval) {
     if (x < 0 || x >= g->num_nodes) {
         log_file(LogError, "Graph", "Index out of range: adding eval node %d", x);
     }
 
     g->exists[x] = 1;
     g->pad_index[x] = pad_index;
-    g->node_evals[x] = f;
+    g->node_evals[x] = eval;
 }
 
 void graphics_graph_add_leaf_node(Graph *g, int x, int value) {
@@ -34,7 +35,7 @@ void graphics_graph_add_leaf_node(Graph *g, int x, int value) {
 
     g->exists[x] = 1;
     g->value[x] = value;
-    g->node_evals[x] = NULL;
+    g->node_evals[x] = EVAL_LEAF;
 }
 
 void graphics_graph_add_edge(Graph *g, int x, int y) {
@@ -100,6 +101,117 @@ unsigned char graphics_graph_is_dag(Graph *g) {
     return is_dag;
 }
 
+static int single_value(Node node) {
+    int value_count = 0;
+    int value = 0;
+
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
+            continue;
+        }
+
+        value_count++;
+        value = node.values[i];
+    }
+
+    if (value_count != 1) {
+        log_file(LogError, "Graphics", "Node %d has %d values, expected 1", node.node_index, value_count);
+    }
+
+    return value;
+}
+
+static int min_value(Node node) {
+    int value = INT_MAX;
+
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
+            continue;
+        }
+        
+        value = MIN(value, node.values[i]);
+    }
+
+    if (value == INT_MAX) {
+        log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
+    }
+
+    return value;
+}
+
+static int max_value(Node node) {
+    int value = INT_MIN;
+
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
+            continue;
+        }
+        
+        value = MAX(value, node.values[i]);
+    }
+
+    if (value == INT_MIN) {
+        log_file(LogError, "Graphics", "Node %d missing values", node.node_index);
+    }
+
+    return value;
+}
+
+static int max_value_plus_pad(Node node) {
+    int value = 0;
+
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
+            continue;
+        }
+
+        if (i == node.pad_index) {
+            continue;
+        }
+        
+        value = MAX(value, node.values[i]);
+    }
+
+    if (!node.have_value[node.pad_index]) {
+        log_file(LogError, "Graphics", "Node %d missing pad %d", node.node_index, node.pad_index);
+    }
+
+    return value + node.values[node.pad_index];
+}
+
+static int sum_value(Node node) {
+    int value = 0; 
+
+    for (int i = 0; i < node.num_values; i++) {
+        if (!node.have_value[i]) {
+            continue;
+        }
+
+        value += node.values[i];
+    }
+
+    return value;
+}
+
+static int graphics_graph_eval(Node n) {
+    switch (n.eval) {
+        case EVAL_LEAF:
+            log_assert(0, "Graphics", "Cannot evaluate leaf node");
+            return 0;
+        case EVAL_SINGLE_VALUE:
+            return single_value(n);
+        case EVAL_MIN_VALUE:
+            return min_value(n);
+        case EVAL_MAX_VALUE:
+            return max_value(n);
+        case EVAL_MAX_VALUE_PAD:
+            return max_value_plus_pad(n);
+        case EVAL_SUM_VALUE:
+            return sum_value(n);
+    }
+}
+
+
 static void graphics_graph_evaluate_node(Graph *g, unsigned char *eval, int node) {
     unsigned char *have_value = &g->adj_matrix[node * g->num_nodes];
 
@@ -115,10 +227,10 @@ static void graphics_graph_evaluate_node(Graph *g, unsigned char *eval, int node
         graphics_graph_evaluate_node(g, eval, i);
     }
 
-    if (g->node_evals[node] != NULL) {
-        Node n = {g->num_nodes, node, g->pad_index[node], g->value, have_value};
+    if (g->node_evals[node] != EVAL_LEAF) {
+        Node n = {g->num_nodes, node, g->pad_index[node], g->node_evals[node], g->value, have_value};
 
-        g->value[node] = (g->node_evals[node])(n);
+        g->value[node] = graphics_graph_eval(n);
     }
 
     eval[node] = 1;

@@ -134,6 +134,10 @@ void parser_parse_template(JSONNode *template, IGraphics *hub) {
 
     graphics_hub_add_page(hub, page);
     graphics_page_default_relations(page);
+
+    if (!graphics_graph_is_dag(&page->keyframe_graph)) {
+        log_file(LogError, "Graphics", "Page %d keyframes are not in a dag", page->temp_id);
+    }
 }
 
 static void parser_parse_keyframe(JSONNode *frame_obj, Keyframe *frame) {

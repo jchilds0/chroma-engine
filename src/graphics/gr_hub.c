@@ -41,6 +41,7 @@ void graphics_free_graphics_hub(IGraphics *hub) {
 
 void graphics_hub_add_page(IGraphics *hub, IPage *page) {
     int i;
+
     if ((i = graphics_hub_get_page(hub, page->temp_id)) >= 0) {
         log_file(LogMessage, "Graphics", "Replacing page");
         graphics_free_page(hub->items[i]);

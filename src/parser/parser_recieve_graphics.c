@@ -130,11 +130,15 @@ PAGE:
     parser_parse_header(status);
 
     if (status->action == UPDATE) {
+        log_file(LogMessage, "Parser", "Updating template %d", status->temp_id);
         parser_update_template(eng, status->temp_id);
 
         status->action = BLANK;
         char attr[PARSE_BUF_SIZE];
         while (parser_get_token(attr) != EOM);
+
+        int end = clock();
+        log_file(LogMessage, "Graphics", "Update template in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
 
         return -1;
     }

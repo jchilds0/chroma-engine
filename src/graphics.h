@@ -27,15 +27,23 @@ typedef struct {
     unsigned int      bind_attr;
 } Keyframe;
 
+typedef enum {
+    EVAL_LEAF = 0,
+    EVAL_SINGLE_VALUE,
+    EVAL_MIN_VALUE,
+    EVAL_MAX_VALUE,
+    EVAL_MAX_VALUE_PAD,
+    EVAL_SUM_VALUE,
+} NodeEval;
+
 typedef struct {
     int           num_values;
     int           node_index;
     int           pad_index;
+    NodeEval      eval;
     int           *values;
     unsigned char *have_value;
 } Node;
-
-typedef int (*NodeEval)(Node node);
 
 typedef struct {
     int             num_nodes;
