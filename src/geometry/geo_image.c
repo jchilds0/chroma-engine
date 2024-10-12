@@ -48,7 +48,7 @@ void geometry_image_get_attr(GeometryImage *image, GeometryAttr attr, char *valu
             sprintf(value, "%d", image->image_id);
             break;
         default:
-            //log_file(LogWarn, "Geometry", "Geo attr not an image attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not an image attr: %s", geometry_attr_to_char(attr));
             break;
     }
 }
@@ -68,7 +68,7 @@ void geometry_image_set_attr(GeometryImage *image, GeometryAttr attr, char *valu
             image->image_id = atoi(value);
             break;
         default:
-            //log_file(LogWarn, "Geometry", "Geo attr not an image attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not an image attr: %s", geometry_attr_to_char(attr));
             break;
     }
 }

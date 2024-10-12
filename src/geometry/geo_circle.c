@@ -26,20 +26,17 @@ void geometry_clean_circle(GeometryCircle *circle) {
     circle->start_angle = 0;
     circle->end_angle = 2 * M_PI;
 
-    circle->color[0] = 0.0;
-    circle->color[1] = 0.0;
-    circle->color[2] = 0.0;
-    circle->color[3] = 0.0;
+    circle->color = (vec4){0, 0, 0, 0};
 }
 
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:
             sprintf(value, "%f %f %f %f", 
-                    circle->color[0], 
-                    circle->color[1], 
-                    circle->color[2], 
-                    circle->color[3]);
+                    circle->color.x, 
+                    circle->color.y, 
+                    circle->color.z, 
+                    circle->color.w);
             break;
         case GEO_INNER_RADIUS:
             sprintf(value, "%d", circle->inner_radius);
@@ -54,7 +51,7 @@ void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *v
             sprintf(value, "%d", (int)(circle->end_angle * 180 / M_PI));
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not an circle attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not an circle attr: %s", geometry_attr_to_char(attr));
     }
 }
 
@@ -64,10 +61,10 @@ void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *v
     switch (attr) {
         case GEO_COLOR:
             sscanf(value, "%f %f %f %f", 
-                   &circle->color[0],
-                   &circle->color[1],
-                   &circle->color[2],
-                   &circle->color[3]);
+                   &circle->color.x,
+                   &circle->color.y,
+                   &circle->color.z,
+                   &circle->color.w);
             break;
         case GEO_INNER_RADIUS:
             circle->inner_radius = g_value;
@@ -82,7 +79,7 @@ void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *v
             circle->end_angle = g_value * M_PI / 180;
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not an circle attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not an circle attr: %s", geometry_attr_to_char(attr));
     }
 
 }

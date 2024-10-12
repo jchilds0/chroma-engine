@@ -94,7 +94,7 @@ typedef struct {
     int               width;
     int               height;
     int               rounding;
-    GLfloat           color[4];
+    vec4              color;
 } GeometryRect;
 
 typedef struct {
@@ -103,7 +103,7 @@ typedef struct {
     int               outer_radius;
     float             start_angle;
     float             end_angle;
-    GLfloat           color[4];
+    vec4              color;
 } GeometryCircle;
 
 typedef enum {
@@ -145,7 +145,7 @@ typedef struct {
 typedef struct {
     IGeometry         geo;
     int               num_vertices;
-    GLfloat           color[4];
+    vec4              color;
     vec2              vertex[MAX_NODES];
 } GeometryPolygon;
 
@@ -154,6 +154,7 @@ extern IGeometry    *geometry_create_geometry(Arena *a, GeometryType type);
 extern void         geometry_clean_geo(IGeometry *geo);
 
 extern GeometryAttr geometry_char_to_attr(char *attr);
+extern const char   *geometry_attr_to_char(GeometryAttr attr);
 extern void         geometry_set_attr(IGeometry *geo, char *attr, char *value);
 extern void         geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
 extern void         geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);

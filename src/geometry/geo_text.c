@@ -56,7 +56,7 @@ void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) 
             sprintf(value, "%d", gl_text_text_height(text->buf, text->scale));
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a text attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a text attr: %s", geometry_attr_to_char(attr));
     }
 }
 
@@ -82,7 +82,7 @@ void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value) 
         case GEO_HEIGHT:
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a text attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a text attr: %s", geometry_attr_to_char(attr));
     }
 }
 

@@ -26,9 +26,9 @@
 
 // Arena Macros
 typedef struct {
-    size_t            size;
-    size_t            allocd;
-    void              *memory;
+    size_t size;
+    size_t allocd;
+    size_t *memory;
 } Arena;
 
 #define ARENA_ALLOC(arena, struct_type) ({                                                 \
@@ -36,7 +36,7 @@ typedef struct {
         if ((arena)->allocd + struct_size >= (arena)->size) {                              \
             log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
         }                                                                                  \
-        struct_type *ptr = (arena)->memory + (arena)->allocd;                              \
+        struct_type *ptr = (struct_type *)((arena)->memory + (arena)->allocd);             \
         (arena)->allocd += struct_size;                                                    \
         ptr;                                                                               \
     })
@@ -46,7 +46,7 @@ typedef struct {
         if ((arena)->allocd + struct_size >= (arena)->size) {                              \
             log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
         }                                                                                  \
-        struct_type *ptr = (arena)->memory + (arena)->allocd;                              \
+        struct_type *ptr = (struct_type *)((arena)->memory + (arena)->allocd);             \
         (arena)->allocd += struct_size;                                                    \
         ptr;                                                                               \
     })
@@ -99,7 +99,7 @@ typedef struct {
 
 #define INSTALL_DIR                   "/home/josh/programming/chroma-engine/"
 
-#define CHROMA_FRAMERATE              30
+#define CHROMA_FRAMERATE              120
 
 /*
  * Layer categories

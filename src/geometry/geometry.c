@@ -13,6 +13,7 @@
  *
  */
 
+#include "geometry.h"
 #include "chroma-engine.h"
 #include "geometry_internal.h"
 #include "log.h"
@@ -197,22 +198,106 @@ GeometryAttr geometry_char_to_attr(char *attr) {
     return g_attr;
 }
 
+const char *geometry_attr_to_char(GeometryAttr attr) {
+    switch (attr) {
+    case GEO_POS_X:
+        return "pos x";
+
+    case GEO_POS_Y:
+        return "pos y";
+
+    case GEO_REL_X:
+        return "rel x";
+
+    case GEO_REL_Y:
+        return "rel y";
+
+    case GEO_WIDTH:
+        return "width";
+
+    case GEO_HEIGHT:
+        return "height";
+
+    case GEO_ROUNDING:
+        return "rounding";
+
+    case GEO_INNER_RADIUS:
+        return "inner radius";
+
+    case GEO_OUTER_RADIUS:
+        return "outer radius";
+
+    case GEO_START_ANGLE:
+        return "start angle";
+
+    case GEO_END_ANGLE:
+        return "end angle";
+
+    case GEO_X_LOWER:
+        return "x lower";
+
+    case GEO_X_UPPER:
+        return "x upper";
+
+    case GEO_Y_LOWER:
+        return "y lower";
+
+    case GEO_Y_UPPER:
+        return "y upper";
+
+    case GEO_INT_NUM:
+        return "int num";
+
+    case GEO_COLOR:
+        return "color";
+
+    case GEO_PARENT:
+        return "parent";
+
+    case GEO_MASK:
+        return "mask";
+
+    case GEO_TEXT:
+        return "text";
+
+    case GEO_SCALE:
+        return "scale";
+
+    case GEO_POINT:
+        return "point";
+
+    case GEO_NUM_POINTS:
+        return "num points";
+
+    case GEO_GRAPH_TYPE:
+        return "graph type";
+
+    case GEO_IMAGE_ID:
+        return "image id";
+
+    case GEO_NUM:
+        return "num";
+    }
+
+    return "";
+}
+
 static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_POS_X:
-            sprintf(value, "%d", geo->pos.x);
+            sprintf(value, "%f", geo->pos.x);
             return;
 
         case GEO_POS_Y:
-            sprintf(value, "%d", geo->pos.y);
+            sprintf(value, "%f", geo->pos.y);
             return;
 
         case GEO_REL_X:
-            sprintf(value, "%d", geo->rel.x);
+            sprintf(value, "%f", geo->rel.x);
             return;
 
         case GEO_REL_Y:
-            sprintf(value, "%d", geo->rel.y);
+            sprintf(value, "%f", geo->rel.y);
             return;
 
         case GEO_PARENT:
@@ -224,19 +309,19 @@ static void geometry_get_attribute(IGeometry *geo, GeometryAttr attr, char *valu
             return;
 
         case GEO_X_LOWER:
-            sprintf(value, "%d", geo->bound_lower.x);
+            sprintf(value, "%f", geo->bound_lower.x);
             return;
 
         case GEO_X_UPPER:
-            sprintf(value, "%d", geo->bound_upper.x);
+            sprintf(value, "%f", geo->bound_upper.x);
             return;
 
         case GEO_Y_LOWER:
-            sprintf(value, "%d", geo->bound_lower.y);
+            sprintf(value, "%f", geo->bound_lower.y);
             return;
 
         case GEO_Y_UPPER:
-            sprintf(value, "%d", geo->bound_upper.y);
+            sprintf(value, "%f", geo->bound_upper.y);
             return;
 
         default:
@@ -334,19 +419,19 @@ void geometry_get_attr(IGeometry *geo, char *attr, char *value) {
 static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_POS_X:
-            sscanf(value, "%d", &geo->pos.x);
+            sscanf(value, "%f", &geo->pos.x);
             return;
 
         case GEO_POS_Y:
-            sscanf(value, "%d", &geo->pos.y);
+            sscanf(value, "%f", &geo->pos.y);
             return;
 
         case GEO_REL_X:
-            sscanf(value, "%d", &geo->rel.x);
+            sscanf(value, "%f", &geo->rel.x);
             return;
 
         case GEO_REL_Y:
-            sscanf(value, "%d", &geo->rel.y);
+            sscanf(value, "%f", &geo->rel.y);
             return;
 
         case GEO_PARENT:
@@ -358,19 +443,19 @@ static void geometry_set_attribute(IGeometry *geo, GeometryAttr attr, char *valu
             return;
 
         case GEO_X_LOWER:
-            sscanf(value, "%d", &geo->bound_lower.x);
+            sscanf(value, "%f", &geo->bound_lower.x);
             return;
 
         case GEO_X_UPPER:
-            sscanf(value, "%d", &geo->bound_upper.x);
+            sscanf(value, "%f", &geo->bound_upper.x);
             return;
 
         case GEO_Y_LOWER:
-            sscanf(value, "%d", &geo->bound_lower.y);
+            sscanf(value, "%f", &geo->bound_lower.y);
             return;
 
         case GEO_Y_UPPER:
-            sscanf(value, "%d", &geo->bound_upper.y);
+            sscanf(value, "%f", &geo->bound_upper.y);
             return;
 
         default:
@@ -432,13 +517,15 @@ void geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value) {
 }
 
 void geometry_set_color(IGeometry *geo, float color, int index) {
+    vec4 *c_ptr = NULL;
+
     switch (geo->geo_type) {
         case RECT:
-            ((GeometryRect *)geo)->color[index] = color;
+            c_ptr = &((GeometryRect *)geo)->color;
             break;
 
         case CIRCLE:
-            ((GeometryCircle*)geo)->color[index] = color;
+            c_ptr = &((GeometryCircle *)geo)->color;
             break;
 
         case GRAPH:
@@ -450,13 +537,31 @@ void geometry_set_color(IGeometry *geo, float color, int index) {
             break;
 
         case POLYGON:
-            ((GeometryPolygon*)geo)->color[index] = color;
+            c_ptr = &((GeometryPolygon*)geo)->color;
             break;
 
         default:
             log_file(LogWarn, "Geometry", "Geo type %d does not have a color attribute", geo->geo_type);
     }
+    
+    if (c_ptr == NULL) {
+        return;
+    }
 
+    switch (index) {
+        case 0:
+            c_ptr->x = color;
+            break;
+        case 1:
+            c_ptr->y = color;
+            break;
+        case 2:
+            c_ptr->z = color;
+            break;
+        case 3:
+            c_ptr->w = color;
+            break;
+    }
 }
 
 void geometry_graph_add_values(IGeometry *geo, void (*add_value)(int)) {

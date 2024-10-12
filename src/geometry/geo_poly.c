@@ -27,26 +27,23 @@ void geometry_clean_polygon(GeometryPolygon *poly) {
         poly->vertex[i].y = 0;
     }
 
-    poly->color[0] = 0.0;
-    poly->color[1] = 0.0;
-    poly->color[2] = 0.0;
-    poly->color[3] = 0.0;
+    poly->color = (vec4){0, 0, 0, 0};
 }
 
 void geometry_polygon_get_attr(GeometryPolygon *poly, GeometryAttr attr, char *value) {
     switch (attr) {
         case GEO_COLOR:
             sprintf(value, "%f %f %f %f", 
-                    poly->color[0], 
-                    poly->color[1], 
-                    poly->color[2], 
-                    poly->color[3]);
+                    poly->color.x, 
+                    poly->color.y, 
+                    poly->color.z, 
+                    poly->color.w);
             break;
         case GEO_NUM_POINTS:
             sprintf(value, "%d", poly->num_vertices);
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a poly attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a poly attr: %s", geometry_attr_to_char(attr));
     }
 }
 
@@ -65,10 +62,10 @@ void geometry_polygon_set_attr(GeometryPolygon *poly, GeometryAttr attr, char *v
     switch (attr) {
         case GEO_COLOR:
             sscanf(value, "%f %f %f %f", 
-                   &poly->color[0],
-                   &poly->color[1],
-                   &poly->color[2],
-                   &poly->color[3]);
+                   &poly->color.x,
+                   &poly->color.y,
+                   &poly->color.z,
+                   &poly->color.w);
             break;
 
         case GEO_NUM_POINTS:
@@ -82,7 +79,7 @@ void geometry_polygon_set_attr(GeometryPolygon *poly, GeometryAttr attr, char *v
             break;
 
         default:
-            log_file(LogWarn, "Geometry", "Polygon: %d is not a valid attr", attr);
+            log_file(LogWarn, "Geometry", "Geo attr is not a poly attr: %s", geometry_attr_to_char(attr));
     }
 
     if (poly->num_vertices > MAX_NODES) {

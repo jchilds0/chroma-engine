@@ -5,6 +5,7 @@
  */
 
 #include "geometry.h"
+#include "graphics.h"
 #include "gtk/gtk.h"
 #include "gl_render_internal.h"
 
@@ -12,6 +13,7 @@
 #include "chroma-typedefs.h"
 #include "gl_math.h"
 #include "log.h"
+#include <sys/types.h>
 #include <time.h>
 
 #define ANIM_LENGTH     120
@@ -22,8 +24,10 @@ int current_page[] = {-1, -1, -1, -1, -1};
 int frame_num[] = {0, 0, 0, 0, 0};
 float frame_time[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
+Renderer r;
+
 /* read shader file */
-char *gl_renderer_get_shader_file(char *filename) {
+char *gl_renderer_get_shader_file(const char *filename) {
     FILE *file;
     char *shaderSource;
 
@@ -119,12 +123,6 @@ void gl_realize(GtkWidget *widget) {
     glEnable(GL_STENCIL_TEST);
     glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
 
-    gl_rectangle_init_buffers();
-    gl_rectangle_init_shaders();
-
-    gl_circle_init_buffers();
-    gl_circle_init_shaders();
-
     gl_graph_init_buffers();
     gl_graph_init_shaders();
 
@@ -135,8 +133,9 @@ void gl_realize(GtkWidget *widget) {
     gl_image_init_buffers();
     gl_image_init_shaders();
 
-    gl_polygon_init_buffers();
-    gl_polygon_init_shaders();
+    gl_renderer_triangle_init(&r, 
+                             INSTALL_DIR SHADER_PATH "glrender-gl.vs.glsl", 
+                             INSTALL_DIR SHADER_PATH "glrender-gl.fs.glsl");
 }
 
 void gl_renderer_set_scale(GLuint program) {
@@ -154,8 +153,6 @@ void gl_renderer_set_scale(GLuint program) {
 
     uint ortho_loc = glGetUniformLocation(program, "ortho");
     glUniformMatrix4fv(ortho_loc, 1, GL_TRUE, ortho);
-
-    glUseProgram(0);
 }
 
 static float gl_bezier_time_step(float time, float start, float end, int order) {
@@ -169,16 +166,149 @@ static float gl_bezier_time_step(float time, float start, float end, int order) 
     return (1 - time) * p1 + time * p2;
 }
 
+static void gl_render_draw_geometry(Renderer *r, IGeometry *geo) {
+    switch (geo->geo_type) {
+        case RECT:
+            gl_draw_rectangle(r, (GeometryRect *)geo);
+            break;
+
+        case CIRCLE:
+            gl_draw_circle(r, (GeometryCircle *)geo);
+            break;
+
+        case TEXT:
+            gl_draw_text(geo);
+            break;
+
+        case GRAPH:
+            gl_draw_graph(geo);
+            break;
+
+        case IMAGE:
+            gl_draw_image(geo);
+            break;
+
+        case POLYGON:
+            gl_draw_polygon(r, (GeometryPolygon *)geo);
+            break;
+
+        default:
+            log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", geo->geo_type);
+    }
+}
+
+static int gl_render_has_child(IPage *page, int geo_num) {
+    IGeometry *geo;
+    int retval = 0;
+
+    for (size_t i = 0; i < page->len_geometry; i++) {
+        geo = page->geometry[i];
+        if (geo == NULL) {
+            continue;
+        }
+
+        if (geo->parent_id != geo_num) {
+            continue;
+        }
+
+        retval = 1;
+    }
+
+    return retval;
+}
+
+static void gl_render_clear_bit(IPage *page, uint depth) {
+    GeometryRect rect = {{RECT, 0, 0, {0, 0}, {0, 0}, 0}, 1920, 1080, 0, {0, 0, 0, 0}};
+
+    gl_renderer_mask(&r, RENDER_MASK_CLEAR, depth);
+
+    gl_draw_rectangle(&r, &rect);
+
+    gl_renderer_use(&r);
+    gl_renderer_draw(&r);
+}
+
+static void gl_render_draw_heirachy(IPage *page, IGeometry *parent, uint depth) {
+    IGeometry *geo;
+    log_assert(depth < 8, "GL Render", "Renderer has 8 stencil buffers");
+
+    // draw child geometries without mask
+    gl_renderer_mask(&r, RENDER_DRAW_NO_MASK, depth);
+    for (int geo_num = 0; geo_num < page->len_geometry; geo_num++) {
+        geo = page->geometry[geo_num];
+        if (geo == NULL) {
+            continue;
+        }
+
+        if (geo->parent_id != parent->geo_id) {
+            continue;
+        }
+
+        if (geo->mask_geo) {
+            continue;
+        }
+
+        gl_render_draw_geometry(&r, geo);
+    }
+
+    gl_renderer_use(&r);
+    gl_renderer_draw(&r);
+
+    // draw child geometries with mask
+    gl_renderer_mask(&r, RENDER_DRAW_MASK, depth);
+    for (int geo_num = 0; geo_num < page->len_geometry; geo_num++) {
+        geo = page->geometry[geo_num];
+        if (geo == NULL) {
+            continue;
+        }
+
+        if (geo->parent_id != parent->geo_id) {
+            continue;
+        }
+
+        if (!geo->mask_geo) {
+            continue;
+        }
+
+        gl_render_draw_geometry(&r, geo);
+    }
+
+    gl_renderer_use(&r);
+    gl_renderer_draw(&r);
+
+    for (int geo_num = 0; geo_num < page->len_geometry; geo_num++) {
+        geo = page->geometry[geo_num];
+        if (geo == NULL) {
+            continue;
+        }
+
+        if (geo->parent_id != parent->geo_id) {
+            continue;
+        }
+
+        if (!gl_render_has_child(page, geo_num)) {
+            continue;
+        }
+
+        gl_render_clear_bit(page, depth);
+
+        gl_renderer_mask(&r, RENDER_MASK, depth);
+        gl_render_draw_geometry(&r, geo);
+
+        gl_renderer_use(&r);
+        gl_renderer_draw(&r);
+
+        gl_render_draw_heirachy(page, geo, depth + 1);
+    }
+}
+
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     int page_index;
     float time, bezier_time;
     IPage *page;
-    IGeometry *geo, *parent_geo;
-
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0, 0, 0, 0);
+    glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    glUseProgram(0);
 
     for (int layer = 0; layer < CHROMA_LAYERS; layer++) {
         if (page_num[layer] < 0) {
@@ -212,10 +342,6 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
                 }
 
                 graphics_page_interpolate_geometry(page, time * ANIM_LENGTH, ANIM_LENGTH);
-
-                /*log_file(LogMessage, "GL Renderer", "Time: %d Frame Time: %f Frame Num: %d", */
-                /*         time, frame_time[layer], frame_num[layer]); */
-
                 frame_time[layer] = MIN(frame_time[layer] + 1.0f / ANIM_LENGTH, 1.0); 
                 break;
 
@@ -235,99 +361,9 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             log_file(LogWarn, "GL Renderer", "Action update not handled before renderer");
             continue;
         }
-        
-        //graphics_page_update_geometry(page);
 
-        for (int geo_num = 0; geo_num < page->len_geometry; geo_num++) {
-            geo = page->geometry[geo_num];
-            if (geo == NULL) {
-                continue;
-            }
-
-            glClear(GL_STENCIL_BUFFER_BIT);
-            glStencilFunc(GL_NEVER, 1, 0xFF);
-
-            if (geo->mask_geo == 0) {
-                glStencilMask(0x00);
-            } else {
-                glStencilMask(0xFF);
-            }
-
-            parent_geo = page->geometry[geo->parent_id];
-            if (parent_geo == NULL) {
-                log_file(LogError, "GL Renderer", "Missing parent geo %d for geo %d", geo->parent_id, geo_num);
-            }
-
-            switch (parent_geo->geo_type) {
-                case RECT:
-                    gl_draw_rectangle(parent_geo);
-                    break;
-
-                case CIRCLE:
-                    gl_draw_circle(parent_geo);
-                    break;
-
-                case TEXT:
-                    gl_draw_text(parent_geo);
-                    break;
-
-                case GRAPH:
-                    gl_draw_graph(parent_geo);
-                    break;
-
-                case IMAGE:
-                    gl_draw_image(parent_geo);
-                    break;
-
-                case POLYGON:
-                    gl_draw_polygon(parent_geo);
-                    break;
-
-                default:
-                    log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", parent_geo->geo_type);
-            }
-
-            if (geo->mask_geo == 0) {
-                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            } else {
-                glStencilFunc(GL_EQUAL, 1, 0xFF);
-            }
-
-            glStencilMask(0xFF);
-            glEnable(GL_BLEND);
-
-            switch (geo->geo_type) {
-                case RECT:
-                    gl_draw_rectangle(geo);
-                    break;
-
-                case CIRCLE:
-                    gl_draw_circle(geo);
-                    break;
-
-                case TEXT:
-                    gl_draw_text(geo);
-                    break;
-
-                case GRAPH:
-                    gl_draw_graph(geo);
-                    break;
-
-                case IMAGE:
-                    gl_draw_image(geo);
-                    break;
-
-                case POLYGON:
-                    gl_draw_polygon(geo);
-                    break;
-
-                default:
-                    log_file(LogWarn, "GL Renderer", "Unknown geo type (%d)", geo->geo_type);
-            }
-
-            glDisable(GL_BLEND);
-            glClear(GL_STENCIL_BUFFER_BIT);
-        }
+        gl_render_draw_heirachy(page, page->geometry[0], 0);
+        glClear(GL_STENCIL_BUFFER_BIT);
     }
 
     glFlush();

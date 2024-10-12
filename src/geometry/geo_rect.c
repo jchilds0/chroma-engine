@@ -27,10 +27,7 @@ void geometry_clean_rect(GeometryRect *rect) {
     rect->width = 0;
     rect->height = 0;
 
-    rect->color[0] = 0.0;
-    rect->color[1] = 0.0;
-    rect->color[2] = 0.0;
-    rect->color[3] = 0.0;
+    rect->color = (vec4){0, 0, 0, 0};
     rect->rounding = 0;
 }
 
@@ -38,10 +35,10 @@ void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *va
     switch (attr) {
         case GEO_COLOR:
             sprintf(value, "%f %f %f %f", 
-                    rect->color[0], 
-                    rect->color[1], 
-                    rect->color[2], 
-                    rect->color[3]);
+                    rect->color.x, 
+                    rect->color.y, 
+                    rect->color.z, 
+                    rect->color.w);
             break;
         case GEO_WIDTH:
             sprintf(value, "%d", rect->width);
@@ -53,7 +50,7 @@ void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *va
             sprintf(value, "%d", rect->rounding);
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a rect attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a rect attr: %s", geometry_attr_to_char(attr));
     }
 }
 
@@ -63,10 +60,10 @@ void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *va
     switch (attr) {
         case GEO_COLOR:
             sscanf(value, "%f %f %f %f", 
-                   &rect->color[0],
-                   &rect->color[1],
-                   &rect->color[2],
-                   &rect->color[3]);
+                   &rect->color.x,
+                   &rect->color.y,
+                   &rect->color.z,
+                   &rect->color.w);
             break;
         case GEO_WIDTH:
             rect->width = g_value;
@@ -78,7 +75,7 @@ void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *va
             rect->rounding = g_value;
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a rect attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a rect attr: %s", geometry_attr_to_char(attr));
     }
 }
 

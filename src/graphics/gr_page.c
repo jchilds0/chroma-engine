@@ -22,7 +22,7 @@ IPage *graphics_new_page(int num_geo, int max_keyframe) {
     page->arena.allocd = 0;
     page->arena.size = MAX_PAGE_SIZE;
     page->arena.memory = mmap(NULL, page->arena.size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0);
-    if (page->arena.memory == -1) {
+    if (page->arena.memory == MAP_FAILED) {
         log_file(LogError, "Graphics", "Unable to allocate page: %s", strerror(errno));
     }
 
@@ -38,6 +38,8 @@ IPage *graphics_new_page(int num_geo, int max_keyframe) {
     graphics_new_graph(&page->arena, &page->keyframe_graph, n);
 
     IGeometry *geo = graphics_page_add_geometry(page, RECT, 0);
+    geo->parent_id = -1;
+
     geometry_set_int_attr(geo, GEO_POS_X, 0);
     geometry_set_int_attr(geo, GEO_POS_Y, 0);
     geometry_set_int_attr(geo, GEO_WIDTH, 1920);
@@ -58,7 +60,9 @@ IGeometry *graphics_page_add_geometry(IPage *page, int type, int geo_id) {
     }
 
     IGeometry *geo = geometry_create_geometry(&page->arena, type);
+    geo->geo_id = geo_id;
     page->geometry[geo_id] = geo;
+
     return geo;
 }
 

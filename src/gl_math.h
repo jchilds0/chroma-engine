@@ -71,21 +71,23 @@
     A[12] * B[3] + A[13] * B[7] + A[14] * B[11] + A[15] * B[15]} 
 
 typedef struct {
-    int x;
-    int y;
+    float x;
+    float y;
 } vec2;
 
+#define ADD2(p0, p1)    ((vec2){(p0).x + (p1).x, (p0).y + (p1).y})
+
 typedef struct {
-    int x;
-    int y;
-    int z;
+    float x;
+    float y;
+    float z;
 } vec3;
 
 typedef struct {
-    int x;
-    int y;
-    int z;
-    int w;
+    float x;
+    float y;
+    float z;
+    float w;
 } vec4;
 
 #endif // !CHROMA_GL_MATH

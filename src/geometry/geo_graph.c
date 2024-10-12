@@ -48,7 +48,7 @@ void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
             sprintf(value, "%d", g->graph_type);
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a graph attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a graph attr: %s", geometry_attr_to_char(attr));
     }
 }
 
@@ -92,6 +92,6 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
             }
             break;
         default:
-            log_file(LogWarn, "Geometry", "Geo attr not a graph attr (%d)", attr);
+            log_file(LogWarn, "Geometry", "Geo attr not a graph attr: %s", geometry_attr_to_char(attr));
     }
 }

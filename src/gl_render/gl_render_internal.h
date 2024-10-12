@@ -12,25 +12,63 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <stddef.h>
 #include "geometry.h"
 
 #define SHADER_PATH       "src/gl_render/"
 
 /* gl_renderer.c */
-char  *gl_renderer_get_shader_file(char *filename);
+#define TRIANGLE_CAP      (640 * 1000)
+
+typedef enum {
+    RENDER_DRAW_NO_MASK = 0,
+    RENDER_DRAW_MASK,
+    RENDER_MASK,
+    RENDER_MASK_CLEAR,
+} RendererOptions;
+
+typedef enum {
+    VERTEX_ATTR_POSITION = 0,
+    VERTEX_ATTR_COLOR,
+    VERTEX_ATTR_UV,
+} VertexAttr;
+
+typedef struct {
+    vec2 pos;
+    vec4 color;
+    vec2 uv;
+} Vertex;
+
+typedef struct {
+    Vertex v[3];
+} Triangle;
+
+typedef struct Renderer {
+    GLuint vao;
+    GLuint vbo;
+    GLuint program;
+
+    size_t count;
+    Triangle triangles[TRIANGLE_CAP];
+} Renderer;
+
+void gl_renderer_triangle_init(Renderer *r, const char *vert_file_path, const char *frag_file_path);
+void gl_renderer_use(Renderer *r);
+void gl_renderer_triangle(Renderer *r, vec2 p0, vec2 p1, vec2 p2, 
+                          vec4 c0, vec4 c1, vec4 c2, vec2 uv0, vec2 uv1, vec2 uv2);
+void gl_renderer_mask(Renderer *r, RendererOptions opt, int depth);
+void gl_renderer_draw(Renderer *r);
+
+char  *gl_renderer_get_shader_file(const char *filename);
 GLuint gl_renderer_create_shader(int type, const char *src);
 GLuint gl_renderer_create_program(GLuint vertex, GLuint fragment);
 void gl_renderer_set_scale(GLuint program);
 
 /* gl_rect.c */
-void gl_rectangle_init_buffers(void);
-void gl_rectangle_init_shaders(void);
-void gl_draw_rectangle(IGeometry *rect);
+void gl_draw_rectangle(Renderer *r, GeometryRect *rect);
 
 /* gl_circle.c */
-void gl_circle_init_buffers(void);
-void gl_circle_init_shaders(void);
-void gl_draw_circle(IGeometry *circle);
+void gl_draw_circle(Renderer *r, GeometryCircle *circle);
 
 /* gl_annulus.c */
 void gl_annulus_init_buffers(void);
@@ -56,6 +94,6 @@ void gl_draw_image(IGeometry *image);
 /* gl_poly.c */
 void gl_polygon_init_buffers(void);
 void gl_polygon_init_shaders(void);
-void gl_draw_polygon(IGeometry *poly);
+void gl_draw_polygon(Renderer *r, GeometryPolygon *poly);
 
 #endif // !GL_RENDER_INTERNAL
