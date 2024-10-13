@@ -111,6 +111,7 @@ typedef struct {
  */
 
 #define CHROMA_LAYERS                 5 
+#define MAX_ASSETS                    1024
 #define MAX_BUF_SIZE                  512
 
 #endif // !CHROMA_ENGINE

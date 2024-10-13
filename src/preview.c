@@ -15,7 +15,6 @@ static void close_preview(GtkWidget *widget, gpointer data) {
     gtk_main_quit();
 
     shutdown(engine.server_socket, SHUT_RDWR);
-    graphics_free_graphics_hub(engine.hub);
     exit(1);
 }
 

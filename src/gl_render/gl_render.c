@@ -315,13 +315,13 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             continue;
         }
 
-        page_index = graphics_hub_get_page(engine.hub, page_num[layer]);
+        page_index = graphics_hub_get_page(&engine.hub, page_num[layer]);
         if (page_index < 0) {
             log_file(LogWarn, "GL Render", "Missing page %s", page_num[layer]);
             continue;
         }
 
-        page = engine.hub->items[page_index];
+        page = engine.hub.items[page_index];
 
         switch (action[layer]) {
             case ANIMATE_OFF:

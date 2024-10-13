@@ -2,6 +2,7 @@
  * parser_recieve_hub.c
  */
 
+#include "chroma-engine.h"
 #include "chroma-typedefs.h"
 #include "geometry.h"
 #include "graphics.h"
@@ -10,6 +11,7 @@
 #include "parser/parser_json.h"
 #include "parser/parser_http.h"
 #include "parser_internal.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,10 +52,11 @@ void parser_parse_hub(Engine *eng) {
     }
 
     int num_temp = parser_json_get_int(root, "NumTemplates");
-    eng->hub = graphics_new_graphics_hub(num_temp);
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "Num Templates: %d", num_temp);
     }
+
+    graphics_new_graphics_hub(&eng->hub, num_temp);
 
     JSONNode *templates = parser_json_attribute(root, "Templates");
     if (templates == NULL || templates->type != JSON_ARRAY) {
@@ -62,7 +65,7 @@ void parser_parse_hub(Engine *eng) {
         return;
     }
 
-    JSON_ARRAY(templates, eng->hub, parser_parse_template);
+    JSON_ARRAY(templates, &eng->hub, parser_parse_template);
     parser_clean_json();
 }
 
@@ -79,7 +82,7 @@ void parser_update_template(Engine *eng, int temp_id) {
         return;
     }
 
-    parser_parse_template(template, eng->hub); 
+    parser_parse_template(template, &eng->hub); 
     parser_clean_json();
 }
 

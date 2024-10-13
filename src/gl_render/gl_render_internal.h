@@ -14,6 +14,7 @@
 #include <GL/gl.h>
 #include <stddef.h>
 #include "geometry.h"
+#include "graphics.h"
 
 #define SHADER_PATH       "src/gl_render/"
 

@@ -17,8 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
-IGraphics *graphics_new_graphics_hub(int num_pages) {
-    IGraphics *hub = NEW_STRUCT(IGraphics);
+void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
     hub->capacity = DA_INIT_CAPACITY;
     hub->count = 0;
     hub->items = NEW_ARRAY(hub->capacity, IPage *);
@@ -27,16 +26,13 @@ IGraphics *graphics_new_graphics_hub(int num_pages) {
         hub->items[i] = NULL;
     }
 
-    return hub;
-}
-
-void graphics_free_graphics_hub(IGraphics *hub) {
-    for (int i = 0; i < hub->count; i++) {
-        graphics_free_page(hub->items[i]);
+    for (int i = 0; i < MAX_ASSETS; i++) {
+        hub->img[i].data = NULL;
     }
 
-    free(hub->items);
-    free(hub);
+    hub->arena.allocd = 0;
+    hub->arena.size = GIGABYTES((uint64_t)4);
+    hub->arena.memory = mmap(NULL, hub->arena.size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0);
 }
 
 void graphics_hub_add_page(IGraphics *hub, IPage *page) {

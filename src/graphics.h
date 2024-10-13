@@ -57,24 +57,33 @@ typedef struct {
 } Graph;
 
 typedef struct {
-    unsigned int      temp_id;
-    Arena             arena;
-    unsigned int      len_geometry;
-    IGeometry         **geometry;
+    int             w;
+    int             h;
+    unsigned char   *data;
+} Image;
 
-    unsigned int      max_keyframe;
-    Graph             keyframe_graph;
+typedef struct {
+    unsigned int    temp_id;
+    Arena           arena;
+    unsigned int    len_geometry;
+    IGeometry       **geometry;
+
+    unsigned int    max_keyframe;
+    Graph           keyframe_graph;
 } IPage;
 
 extern IGeometry    *graphics_page_add_geometry(IPage *page, int type, int geo_id);
 
 typedef struct {
-    size_t  count;
-    size_t  capacity;
-    IPage   **items;
+    size_t          count;
+    size_t          capacity;
+    IPage           **items;
+
+    Arena           arena;
+    Image           img[MAX_ASSETS];
 } IGraphics;
 
-extern IGraphics    *graphics_new_graphics_hub(int num_pages);
+extern void         graphics_new_graphics_hub(IGraphics *hub, int num_pages);
 extern void         graphics_hub_load_example(IGraphics *hub);
 extern void         graphics_free_graphics_hub(IGraphics *hub);
 

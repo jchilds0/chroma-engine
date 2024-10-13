@@ -4,6 +4,7 @@
 
 #include "chroma-engine.h"
 #include "geometry.h"
+#include "graphics.h"
 #include "log.h"
 #include "parser/parser_internal.h"
 #include "parser/parser_http.h"
@@ -28,20 +29,23 @@ void free_row_pointers(int, png_bytep *);
 int parser_read_image(int *, int *, png_byte *, png_byte *, png_bytep **);
 void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length);
 
-ServerResponse parser_recieve_image(Engine *eng, GeometryImage *img) {
-    if (img->cur_image_id == img->image_id) {
+ServerResponse parser_recieve_image(Engine *eng, GeometryImage *g_img) {
+    log_assert(g_img->image_id < MAX_ASSETS, "Parser", "Max assets exceeded");
+    Image *img = &eng->hub.img[g_img->image_id];
+
+    if (img->data != NULL) {
+        g_img->data = img->data;
+        g_img->w = img->w;
+        g_img->h = img->h;
+
         return SERVER_MESSAGE;
     }
 
     char addr[PARSE_BUF_SIZE];
     memset(addr, '\0', sizeof addr);
-    sprintf(addr, "%s/asset/%d", eng->hub_addr, img->image_id);
-    img->cur_image_id = img->image_id;
+    sprintf(addr, "%s/asset/%d", eng->hub_addr, g_img->image_id);
 
-    if (LOG_PARSER) {
-        log_file(LogMessage, "Parser", "Request image %d", img->image_id);
-    }
-
+    log_file(LogMessage, "Parser", "Request image %d", g_img->image_id);
     socket_client = eng->hub_socket;
     parser_http_get(socket_client, addr);
 
@@ -57,8 +61,7 @@ ServerResponse parser_recieve_image(Engine *eng, GeometryImage *img) {
     }
 
     //log_file(LogMessage, "GL Render", "Color Type %d, Bit Depth %d", color_type, bit_depth);
-    free(img->data);
-    img->data = NEW_ARRAY(img->w * img->h * 4, unsigned char);
+    img->data = ARENA_ARRAY(&eng->hub.arena, img->w * img->h * 4, unsigned char);
 
     for (int y = 0; y < img->h; y++) {
         memcpy(&img->data[4 * img->w * y], row_pointers[img->h - y - 1], 4 * img->w * sizeof( unsigned char ));
@@ -66,6 +69,10 @@ ServerResponse parser_recieve_image(Engine *eng, GeometryImage *img) {
 
     free_row_pointers(img->h, row_pointers);
     parser_http_free_header(header);
+
+    g_img->data = img->data;
+    g_img->w = img->w;
+    g_img->h = img->h;
 
     return SERVER_MESSAGE;
 }

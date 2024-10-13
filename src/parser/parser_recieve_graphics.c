@@ -143,7 +143,7 @@ PAGE:
         return -1;
     }
 
-    int page_index = graphics_hub_get_page(eng->hub, status->temp_id);
+    int page_index = graphics_hub_get_page(&eng->hub, status->temp_id);
 
     if (page_index < 0) {
         // invalid page, reset globals and clear remaining message
@@ -156,7 +156,7 @@ PAGE:
         return -1;
     }
 
-    IPage *page = eng->hub->items[page_index];
+    IPage *page = eng->hub.items[page_index];
     parser_parse_page(page);    // Read new page values
 
     switch (status->action) {

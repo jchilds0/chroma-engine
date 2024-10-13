@@ -138,7 +138,6 @@ typedef struct {
     int               w;
     int               h;
     int               image_id;
-    int               cur_image_id;
     unsigned char     *data;
 } GeometryImage;
 
