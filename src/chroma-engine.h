@@ -15,8 +15,6 @@
 #include <GL/gl.h>
 #include <sys/mman.h>
 
-#include "log.h"
-
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
 

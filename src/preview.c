@@ -4,7 +4,6 @@
 
 #include "chroma-engine.h"
 #include "chroma-typedefs.h"
-#include "chroma-prototypes.h"
 #include "gl_render.h"
 #include "parser.h"
 #include "log.h"

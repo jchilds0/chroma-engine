@@ -39,4 +39,12 @@ typedef struct {
 
 extern Engine engine;
 
+/* engine.c */
+void engine_window(void);
+
+/* preview.c */
+void preview_window(int);
+
+void free_engine(void);
+
 #endif // !CHROMA_TYPEDEFS

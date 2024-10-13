@@ -3,7 +3,6 @@
  */
 
 #include "chroma-typedefs.h"
-#include "chroma-prototypes.h"
 #include "gl_render.h"
 #include "gtk/gtk.h"
 #include "log.h"

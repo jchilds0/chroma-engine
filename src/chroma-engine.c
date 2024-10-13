@@ -3,7 +3,6 @@
  */
 
 #include "chroma-typedefs.h"
-#include "chroma-prototypes.h"
 #include "config.h"
 #include "log.h"
 #include "parser.h"
