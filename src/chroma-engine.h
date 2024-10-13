@@ -14,6 +14,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <sys/mman.h>
+#include "log.h"
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
@@ -24,13 +25,13 @@
 
 // Arena Macros
 typedef struct {
-    size_t size;
-    size_t allocd;
+    uint64_t size;
+    uint64_t allocd;
     size_t *memory;
 } Arena;
 
 #define ARENA_ALLOC(arena, struct_type) ({                                                 \
-        size_t struct_size = sizeof( struct_type );                                        \
+        uint64_t struct_size = sizeof( struct_type );                                        \
         if ((arena)->allocd + struct_size >= (arena)->size) {                              \
             log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
         }                                                                                  \

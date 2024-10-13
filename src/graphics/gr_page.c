@@ -72,8 +72,8 @@ void graphics_free_page(IPage *page) {
     }
 
     float arena_usage = (float) page->arena.allocd * 100 / page->arena.size;
-    /*log_file(LogMessage, "Graphics", "Page %d: Num Geo %d, Arena %f \% (out of %d bytes)", */
-    /*         page->temp_id, page->len_geometry, arena_usage, page->arena.size);*/
+    log_file(LogMessage, "Graphics", "Page %d: Num Geo %d, Arena %f \% (out of %d bytes)", 
+             page->temp_id, page->len_geometry, arena_usage, page->arena.size);
     munmap(page->arena.memory, page->arena.size);
     free(page);
 }

@@ -33,6 +33,10 @@ void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
     hub->arena.allocd = 0;
     hub->arena.size = GIGABYTES((uint64_t)4);
     hub->arena.memory = mmap(NULL, hub->arena.size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0);
+    if (hub->arena.memory == MAP_FAILED) {
+        log_file(LogError, "Graphics", "Unable to allocate image: %s", strerror(errno));
+    }
+
 }
 
 void graphics_hub_add_page(IGraphics *hub, IPage *page) {
