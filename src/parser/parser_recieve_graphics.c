@@ -156,7 +156,7 @@ PAGE:
         return -1;
     }
 
-    IPage *page = eng->hub.items[page_index];
+    IPage *page = &eng->hub.items[page_index];
     parser_parse_page(page);    // Read new page values
 
     switch (status->action) {

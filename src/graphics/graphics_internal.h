@@ -19,7 +19,7 @@
 #define PAGE_MIN_GEOMETRY     20
 
 /* gr_page.c */
-IPage        *graphics_new_page(int num_geo, int max_keyframe);
+void         graphics_init_page(IPage *, int num_geo, int max_keyframe);
 void         graphics_free_page(IPage *);
 void         graphics_page_generate(IPage *);
 

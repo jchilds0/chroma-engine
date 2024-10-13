@@ -321,7 +321,7 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
             continue;
         }
 
-        page = engine.hub.items[page_index];
+        page = &engine.hub.items[page_index];
 
         switch (action[layer]) {
             case ANIMATE_OFF:

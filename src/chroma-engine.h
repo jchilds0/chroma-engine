@@ -27,11 +27,19 @@
 typedef struct {
     uint64_t size;
     uint64_t allocd;
-    size_t *memory;
+    int8_t   *memory;
 } Arena;
 
+#define ARENA_INIT(arena, capacity)                                                                        \
+    do {                                                                                                   \
+        (arena)->allocd = 0;                                                                               \
+        (arena)->size = capacity;                                                                          \
+        (arena)->memory = mmap(NULL, (arena)->size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0); \
+        log_assert((arena)->memory != MAP_FAILED, "System", "Unable to allocate arena: " __FILE__);        \
+    } while (0)
+
 #define ARENA_ALLOC(arena, struct_type) ({                                                 \
-        uint64_t struct_size = sizeof( struct_type );                                        \
+        uint64_t struct_size = sizeof( struct_type );                                      \
         if ((arena)->allocd + struct_size >= (arena)->size) {                              \
             log_file(LogError, "System", "Arena out of memory " __FILE__ ":%d", __LINE__); \
         }                                                                                  \

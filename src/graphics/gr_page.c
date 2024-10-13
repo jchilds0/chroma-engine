@@ -13,26 +13,17 @@
 #include "log.h"
 #include <string.h>
 #include <sys/mman.h>
-#include <errno.h>
 
-#define MAX_PAGE_SIZE     GIGABYTES((uint64_t) 1)
-
-IPage *graphics_new_page(int num_geo, int max_keyframe) {
-    IPage *page = NEW_STRUCT(IPage);
-    page->arena.allocd = 0;
-    page->arena.size = MAX_PAGE_SIZE;
-    page->arena.memory = mmap(NULL, page->arena.size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANON, 0, 0);
-    if (page->arena.memory == MAP_FAILED) {
-        log_file(LogError, "Graphics", "Unable to allocate page: %s", strerror(errno));
-    }
+/*
+ * Initialise a page, assumes the arena has been allocated.
+ */
+void graphics_init_page(IPage *page, int num_geo, int max_keyframe) {
+    log_assert(page != NULL, "Graphics", "Page init requires a page");
+    log_assert(page->arena.memory != NULL, "Graphics", "Page init requires arena to be allocated");
 
     page->len_geometry = num_geo;
     page->max_keyframe = max_keyframe;
     page->geometry = ARENA_ARRAY(&page->arena, num_geo, IGeometry *);
-
-    for (int i = 0; i < page->len_geometry; i++) {
-        page->geometry[i] = NULL;
-    }
 
     int n = page->max_keyframe * page->len_geometry * GEO_INT_NUM;
     graphics_new_graph(&page->arena, &page->keyframe_graph, n);
@@ -50,7 +41,6 @@ IPage *graphics_new_page(int num_geo, int max_keyframe) {
     geometry_set_int_attr(geo, GEO_Y_LOWER, 0);
     geometry_set_int_attr(geo, GEO_Y_UPPER, 1080);
 
-    return page;
 }
 
 IGeometry *graphics_page_add_geometry(IPage *page, int type, int geo_id) {
@@ -71,11 +61,12 @@ void graphics_free_page(IPage *page) {
         return;
     }
 
-    float arena_usage = (float) page->arena.allocd * 100 / page->arena.size;
+    double arena_usage = (double) page->arena.allocd * 100 / page->arena.size;
     log_file(LogMessage, "Graphics", "Page %d: Num Geo %d, Arena %f \% (out of %d bytes)", 
              page->temp_id, page->len_geometry, arena_usage, page->arena.size);
-    munmap(page->arena.memory, page->arena.size);
-    free(page);
+
+    page->arena.allocd = 0;
+    page->len_geometry = 0;
 }
 
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
