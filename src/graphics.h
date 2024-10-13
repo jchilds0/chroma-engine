@@ -8,6 +8,7 @@
 #include "chroma-engine.h"
 #include "geometry.h"
 #include <stddef.h>
+#include <stdint.h>
 
 #define MAX_PAGE_SIZE     GIGABYTES((uint64_t) 8)
 
@@ -91,6 +92,8 @@ extern void         graphics_free_graphics_hub(IGraphics *hub);
 
 extern int          graphics_hub_get_page(IGraphics *hub, int temp_id);
 extern void         graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id);
+
+extern uint64_t     graphics_graph_size(Graph *g);
 
 extern Keyframe     *graphics_page_add_keyframe(IPage *page);
 extern void         graphics_keyframe_set_int(Keyframe *frame, char *name, int value);

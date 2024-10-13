@@ -6,7 +6,8 @@
 #include "graphics.h"
 #include "graphics_internal.h"
 #include "log.h"
-#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 
 void graphics_new_graph(Arena *a, Graph *g, int n) {
     g->num_nodes = n;
@@ -16,6 +17,16 @@ void graphics_new_graph(Arena *a, Graph *g, int n) {
     g->pad_index = ARENA_ARRAY(a, n, int);
     g->exists = ARENA_ARRAY(a, n, unsigned char);
     g->node_evals = ARENA_ARRAY(a, n, NodeEval);
+}
+
+uint64_t graphics_graph_size(Graph *g) {
+    uint64_t adj_mat_size = sizeof( unsigned char ) * g->num_nodes * g->num_nodes;
+    uint64_t value_size = sizeof( int ) * g->num_nodes;
+    uint64_t pad_size = sizeof( int ) * g->num_nodes;
+    uint64_t exists_size = sizeof( unsigned char ) * g->num_nodes;
+    uint64_t eval_size = sizeof( NodeEval ) * g->num_nodes;
+
+    return adj_mat_size + value_size + pad_size + exists_size + eval_size;
 }
 
 void graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval eval) {

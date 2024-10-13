@@ -8,9 +8,11 @@
  *
  */
 
+#include "graphics.h"
 #include "graphics_internal.h"
 #include "chroma-engine.h"
 #include "log.h"
+#include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
 
@@ -62,8 +64,14 @@ void graphics_free_page(IPage *page) {
     }
 
     double arena_usage = (double) page->arena.allocd * 100 / page->arena.size;
-    log_file(LogMessage, "Graphics", "Page %d: Num Geo %d, Arena %f \% (out of %d bytes)", 
-             page->temp_id, page->len_geometry, arena_usage, page->arena.size);
+    uint64_t usage_size = page->arena.allocd / MEGABYTES((uint64_t)1);
+    uint64_t arena_size = page->arena.size / MEGABYTES((uint64_t)1);
+    uint64_t graph_size = graphics_graph_size(&page->keyframe_graph) / MEGABYTES((uint64_t)1);
+
+    log_file(LogMessage, "Graphics", "Page %d", page->temp_id); 
+    log_file(LogMessage, "Graphics", "\tNum Geo %d", page->len_geometry);
+    log_file(LogMessage, "Graphics", "\tArena %f %% (%lu out of %lu MB)", arena_usage, usage_size, arena_size);
+    log_file(LogMessage, "Graphics", "\tGraph %lu MB", graph_size);
 
     page->arena.allocd = 0;
     page->len_geometry = 0;
