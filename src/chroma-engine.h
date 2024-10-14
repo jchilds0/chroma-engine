@@ -51,7 +51,7 @@ typedef struct {
     })
 
 #define ARENA_ARRAY(arena, count, struct_type) ({                                          \
-        size_t struct_size = (size_t) count * sizeof( struct_type );                       \
+        uint64_t struct_size = (uint64_t) count * sizeof( struct_type );                   \
         log_assert((arena)->allocd + struct_size < (arena)->size,                          \
                 "System", "Arena out of memory " __FILE__);                                \
         struct_type *ptr = (struct_type *)((arena)->memory + (arena)->allocd);             \

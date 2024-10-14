@@ -564,7 +564,7 @@ void geometry_set_color(IGeometry *geo, float color, int index) {
     }
 }
 
-void geometry_graph_add_values(IGeometry *geo, void (*add_value)(int)) {
+void geometry_graph_add_values(IGeometry *geo, void (*add_value)(GeometryAttr)) {
     add_value(GEO_REL_X);
     add_value(GEO_REL_Y);
 
@@ -579,6 +579,8 @@ void geometry_graph_add_values(IGeometry *geo, void (*add_value)(int)) {
             add_value(GEO_END_ANGLE);
             add_value(GEO_INNER_RADIUS);
             add_value(GEO_OUTER_RADIUS);
+            add_value(GEO_WIDTH);
+            add_value(GEO_HEIGHT);
             break;
 
         case TEXT:

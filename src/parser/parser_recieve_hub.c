@@ -101,12 +101,7 @@ void parser_parse_template(JSONNode *template, IGraphics *hub) {
     }
 
     int temp_id = parser_json_get_int(template, "TempID");
-    graphics_hub_new_page(hub, max_geo, max_key, temp_id);
-    int index = graphics_hub_get_page(hub, temp_id);
-    log_assert(index >= 0, "Parser", "Page must exist");
-
-    IPage *page = &hub->items[index];
-
+    IPage *page = graphics_hub_new_page(hub, max_geo, max_key, temp_id);
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\ttemplate id: %d", page->temp_id);
     }
@@ -139,6 +134,8 @@ void parser_parse_template(JSONNode *template, IGraphics *hub) {
     }
 
     graphics_page_default_relations(page);
+
+    return;
 
     if (!graphics_graph_is_dag(&page->keyframe_graph)) {
         log_file(LogError, "Graphics", "Page %d keyframes are not in a dag", page->temp_id);

@@ -10,7 +10,9 @@
 #ifndef GRAPHICS_INTERNAL
 #define GRAPHICS_INTERNAL
 
+#include "geometry.h"
 #include "graphics.h"
+#include <stddef.h>
 
 #define LOG_KEYFRAMES         0
 #define KEYFRAME_TYPE_LEN     20
@@ -29,10 +31,12 @@ int          graphics_keyframe_interpolate_int(int v_start, int v_end, int index
 void         graphics_page_gen_frame(IPage *page, Keyframe frame);
 
 /* gr_graph.c */
-void          graphics_new_graph(Arena *a, Graph *g, int n);
-void          graphics_graph_add_eval_node(Graph *g, int x, int pad_index, NodeEval f);
-void          graphics_graph_add_leaf_node(Graph *g, int x, int value);
-void          graphics_graph_add_edge(Graph *g, int x, int y);
+void          graphics_new_graph(Arena *a, Graph *g, size_t n);
+Node          *graphics_graph_get_node(Graph *g, size_t index, GeometryAttr attr);
+void          graphics_graph_add_eval_node(Graph *g, size_t x, GeometryAttr attr, NodeEval f);
+void          graphics_graph_add_leaf_node(Graph *g, size_t x, GeometryAttr attr, int value);
+void          graphics_graph_update_leaf(Graph *g, size_t x, GeometryAttr attr, int value);
+void          graphics_graph_add_edge(Graph *g, size_t x, GeometryAttr x_attr, size_t y, GeometryAttr y_attr);
 unsigned char graphics_graph_is_dag(Graph *g);
 void          graphics_graph_evaluate_dag(Graph *g);
 

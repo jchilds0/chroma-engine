@@ -101,7 +101,7 @@ void current_time(char *buf, int buf_size) {
     sprintf(buf, "[%s%d/%s%d/%d %s%d:%s%d]", 
             pad_int(timeinfo->tm_mday),
             timeinfo->tm_mday,
-            pad_int(timeinfo->tm_mon),
+            pad_int(timeinfo->tm_mon + 1),
             timeinfo->tm_mon + 1,
             timeinfo->tm_year - 100, 
             pad_int(timeinfo->tm_hour),

@@ -13,13 +13,15 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <stddef.h>
+#include <stdint.h>
+#include "chroma-engine.h"
 #include "geometry.h"
 #include "graphics.h"
 
 #define SHADER_PATH       "src/gl_render/"
 
 /* gl_renderer.c */
-#define TRIANGLE_CAP      (640 * 1000)
+#define TRIANGLE_CAP      (GIGABYTES((uint64_t)1) / sizeof( Triangle ))
 
 typedef enum {
     RENDER_DRAW_NO_MASK = 0,

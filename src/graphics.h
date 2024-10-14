@@ -39,24 +39,35 @@ typedef enum {
     EVAL_SUM_VALUE,
 } NodeEval;
 
-typedef struct {
-    int           num_values;
-    int           node_index;
-    int           pad_index;
+typedef struct Edge {
+    size_t        index;
+    GeometryAttr  attr;
+
+    struct Edge   *next;
+    struct Edge   *prev;
+} Edge;
+
+typedef struct Node {
+    GeometryAttr  attr;
+    int           value;
     NodeEval      eval;
-    int           *values;
-    unsigned char *have_value;
+    unsigned char evaluated;
+
+    Edge          edge_list_head;
+    Edge          edge_list_tail;
+
+    struct Node   *next;
+    struct Node   *prev;
 } Node;
 
 typedef struct {
-    int             num_nodes;
-    int             num_edges;
-    int             *value;
-    int             *pad_index;
-    NodeEval        *node_evals;
-    unsigned char   *exists;
+    Arena         *arena;
+    size_t        node_count;
+    size_t        num_nodes;
+    size_t        num_edges;
 
-    unsigned char   *adj_matrix;
+    Node          *node_list_head;
+    Node          *node_list_tail;
 } Graph;
 
 typedef struct {
@@ -86,12 +97,13 @@ typedef struct {
     Image           img[MAX_ASSETS];
 } IGraphics;
 
+/* gr_hub.c */
 extern void         graphics_new_graphics_hub(IGraphics *hub, int num_pages);
 extern void         graphics_hub_load_example(IGraphics *hub);
 extern void         graphics_free_graphics_hub(IGraphics *hub);
 
 extern int          graphics_hub_get_page(IGraphics *hub, int temp_id);
-extern void         graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id);
+extern IPage        *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id);
 
 extern uint64_t     graphics_graph_size(Graph *g);
 

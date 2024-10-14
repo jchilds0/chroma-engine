@@ -8,6 +8,7 @@
  *
  */
 
+#include "geometry.h"
 #include "graphics.h"
 #include "graphics_internal.h"
 #include "chroma-engine.h"
@@ -27,7 +28,7 @@ void graphics_init_page(IPage *page, int num_geo, int max_keyframe) {
     page->max_keyframe = max_keyframe;
     page->geometry = ARENA_ARRAY(&page->arena, num_geo, IGeometry *);
 
-    int n = page->max_keyframe * page->len_geometry * GEO_INT_NUM;
+    int n = page->max_keyframe * page->len_geometry;
     graphics_new_graph(&page->arena, &page->keyframe_graph, n);
 
     IGeometry *geo = graphics_page_add_geometry(page, RECT, 0);
@@ -71,7 +72,7 @@ void graphics_free_page(IPage *page) {
     log_file(LogMessage, "Graphics", "Page %d", page->temp_id); 
     log_file(LogMessage, "Graphics", "\tNum Geo %d", page->len_geometry);
     log_file(LogMessage, "Graphics", "\tArena %f %% (%lu out of %lu MB)", arena_usage, usage_size, arena_size);
-    log_file(LogMessage, "Graphics", "\tGraph %lu MB", graph_size);
+    log_file(LogMessage, "Graphics", "\tGraph %lu nodes, %lu MB", page->keyframe_graph.num_nodes, graph_size);
 
     page->arena.allocd = 0;
     page->len_geometry = 0;
@@ -79,7 +80,8 @@ void graphics_free_page(IPage *page) {
 
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
     IGeometry *geo;
-    int next_value, k_index;
+    Node *head, *tail;
+    int next_value, k_index, k1_index;
     int frame_start = index / width;
     int frame_index = index % width;
 
@@ -91,24 +93,31 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
             continue;
         }
 
-        for (int attr = 0; attr < GEO_INT_NUM; attr++) {
-            k_index = INDEX(geo_id, attr, frame_start, GEO_INT_NUM, page->max_keyframe);
-            if (!page->keyframe_graph.exists[k_index]) {
+        k_index = frame_start * page->len_geometry + geo_id;
+        k1_index = (frame_start + 1) * page->len_geometry + geo_id;
+        head = &page->keyframe_graph.node_list_head[k_index];
+        tail = &page->keyframe_graph.node_list_tail[k_index];
+
+        for (Node *node = head->next; node != tail; node = node->next) {
+            if (!node->evaluated) {
                 continue;
             }
 
             if (frame_start == page->max_keyframe - 1) {
-                next_value = page->keyframe_graph.value[k_index];
-            } else {
-                next_value = graphics_keyframe_interpolate_int(
-                    page->keyframe_graph.value[k_index], 
-                    page->keyframe_graph.value[k_index + 1], 
-                    frame_index, width
-                );
+                geometry_set_int_attr(geo, node->attr, node->value);
+                continue;
+            } 
+
+            Node *next_node = graphics_graph_get_node(&page->keyframe_graph, k1_index, node->attr);
+            if (next_node == NULL) {
+                next_node = node;
             }
 
-            geometry_set_int_attr(geo, attr, next_value);
-            //log_file(LogMessage, "Graphics", "Set geo %d attr %d to %d", geo_id, attr, next_value);
+            next_value = graphics_keyframe_interpolate_int(
+                node->value, next_node->value, frame_index, width
+            );
+
+            geometry_set_int_attr(geo, node->attr, next_value);
         }
     }
 }

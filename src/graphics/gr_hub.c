@@ -29,23 +29,28 @@ void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
     ARENA_INIT(&hub->arena, GIGABYTES((uint64_t) 4));
 }
 
-void graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id) {
+IPage *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id) {
+    IPage *page;
     int i;
 
     if ((i = graphics_hub_get_page(hub, temp_id)) >= 0) {
         log_file(LogMessage, "Graphics", "Replacing page %d", temp_id);
         graphics_free_page(&hub->items[i]);
-        IPage *page = &hub->items[i];
+        page = &hub->items[i];
 
         graphics_init_page(page, num_geo, max_keyframe);
     } else {
         IPage temp_page;
-        ARENA_INIT(&temp_page.arena, MAX_PAGE_SIZE);
-        temp_page.temp_id = temp_id;
-        graphics_init_page(&temp_page, num_geo, max_keyframe);
-
         DA_APPEND(hub, temp_page);
+        page = &hub->items[hub->count - 1];
+
+        ARENA_INIT(&page->arena, MAX_PAGE_SIZE);
+        page->temp_id = temp_id;
+
+        graphics_init_page(page, num_geo, max_keyframe);
     } 
+
+    return page;
 }
 
 int graphics_hub_get_page(IGraphics *hub, int temp_id) {

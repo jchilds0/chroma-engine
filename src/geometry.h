@@ -163,6 +163,6 @@ extern void         geometry_get_attr(IGeometry *geo, char *attr, char *value);
 extern int          geometry_get_int_attr(IGeometry *geo, GeometryAttr attr);
 extern float        geometry_get_float_attr(IGeometry *geo, GeometryAttr attr);
 
-extern void         geometry_graph_add_values(IGeometry *geo, void (*add_value)(int attr));
+extern void         geometry_graph_add_values(IGeometry *geo, void (*add_value)(GeometryAttr attr));
 
 #endif // !CHROMA_GEOMETRY
