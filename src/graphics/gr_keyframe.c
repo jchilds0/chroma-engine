@@ -224,68 +224,104 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
     int frame_index = frame.frame_num * page->len_geometry + frame.geo_id; 
     int bind_index;
 
-    switch (frame.type) {
-        case USER_FRAME:
-            graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, frame.attr, EVAL_SINGLE_VALUE);
-            graphics_graph_add_edge(&page->keyframe_graph, frame_index, frame.attr, frame.geo_id, frame.attr);
-            break;
-
-        case SET_FRAME:
-            graphics_graph_add_leaf_node(&page->keyframe_graph, frame_index, frame.attr, frame.value);
-            break;
-
-        case BIND_FRAME:
-            bind_index = frame.bind_frame_num * page->len_geometry + frame.bind_geo_id; // INDEX(frame.bind_geo_id, frame.bind_attr, frame.bind_frame_num, GEO_INT_NUM, page->max_keyframe);
-
-            if (frame.bind_attr >= GEO_INT_NUM) {
-                log_file(LogWarn, "Graphics", "Keyframe %d: Bind attr %d not implemented", frame.frame_num, frame.bind_attr);
-                return;
-            }
-
-            graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, 0, EVAL_SINGLE_VALUE);
-            graphics_graph_add_edge(&page->keyframe_graph, frame_index, frame.attr, bind_index, frame.bind_attr);
-            break;
-
-        default:
-            log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame.type);
-    }
-
     if (!frame.expand) {
+        switch (frame.type) {
+            case USER_FRAME:
+                graphics_graph_add_eval_node(
+                    &page->keyframe_graph, 
+                    frame_index, frame.attr, 
+                    EVAL_SINGLE_VALUE
+                );
+
+                graphics_graph_add_edge(
+                    &page->keyframe_graph, 
+                    frame_index, frame.attr, 
+                    frame.geo_id, frame.attr
+                );
+
+                break;
+
+            case SET_FRAME:
+                graphics_graph_add_leaf_node(
+                    &page->keyframe_graph, 
+                    frame_index, frame.attr, 
+                    frame.value
+                );
+                break;
+
+            case BIND_FRAME:
+                bind_index = frame.bind_frame_num * page->len_geometry + frame.bind_geo_id;
+
+                if (frame.bind_attr >= GEO_INT_NUM) {
+                    log_file(LogWarn, "Graphics", "Keyframe %d: Bind attr %d not implemented", 
+                             frame.frame_num, frame.bind_attr);
+                    return;
+                }
+
+                graphics_graph_add_eval_node(
+                    &page->keyframe_graph, 
+                    frame_index, 
+                    frame.attr, 
+                    EVAL_SINGLE_VALUE
+                );
+
+                graphics_graph_add_edge(
+                    &page->keyframe_graph, 
+                    frame_index, 
+                    frame.attr, 
+                    bind_index, 
+                    frame.bind_attr
+                );
+
+                break;
+
+            default:
+                log_file(LogWarn, "Graphics", "Unknown keyframe type %d", frame.type);
+        }
+
         return;
     }
 
-    log_file(LogError, "Graphics", "Frame expand not implemented");
-
-    /*
-    graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, geo_index, EVAL_MAX_VALUE_PAD);
-    graphics_graph_add_edge(&page->keyframe_graph, frame_index, geo_index);
+    graphics_graph_add_eval_node(&page->keyframe_graph, frame_index, frame.attr, EVAL_MAX_VALUE_PAD);
+    Edge *e = graphics_graph_add_edge(
+        &page->keyframe_graph, 
+        frame_index, frame.attr, 
+        frame.geo_id, frame.attr 
+    );
+    e->pad = 1;
 
     for (int child_id = 0; child_id < page->len_geometry; child_id++) {
         if (page->geometry[child_id] == NULL) {
             continue;
         }
 
-        if (frame.geo_id != geometry_get_int_attr(page->geometry[child_id], GEO_PARENT)) {
+        if (frame.geo_id != page->geometry[child_id]->parent_id) {
             continue;
         }
 
-        int x_upper_index = INDEX(child_id, GEO_X_UPPER, frame.frame_num, GEO_INT_NUM, page->max_keyframe);
-        int y_upper_index = INDEX(child_id, GEO_Y_UPPER, frame.frame_num, GEO_INT_NUM, page->max_keyframe);
+        int child_index = frame.frame_num * page->len_geometry + child_id;
 
         switch (frame.attr) {
             case GEO_WIDTH:
-                graphics_graph_add_edge(&page->keyframe_graph, frame_index, x_upper_index);
+                graphics_graph_add_edge(
+                    &page->keyframe_graph, 
+                    frame_index, frame.attr, 
+                    child_index, GEO_X_UPPER
+                );
                 break;
 
             case GEO_HEIGHT: 
-                graphics_graph_add_edge(&page->keyframe_graph, frame_index, y_upper_index);
+                graphics_graph_add_edge(
+                    &page->keyframe_graph, 
+                    frame_index, frame.attr, 
+                    child_index, GEO_Y_UPPER
+                );
                 break;
 
             default:
                 log_file(LogWarn, "Graphics", "Expand attr %d not implemented", frame.attr);
         }
     }
-    */
 }
 
 /*

@@ -135,8 +135,6 @@ void parser_parse_template(JSONNode *template, IGraphics *hub) {
 
     graphics_page_default_relations(page);
 
-    return;
-
     if (!graphics_graph_is_dag(&page->keyframe_graph)) {
         log_file(LogError, "Graphics", "Page %d keyframes are not in a dag", page->temp_id);
     }

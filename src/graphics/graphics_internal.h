@@ -15,10 +15,6 @@
 #include <stddef.h>
 
 #define LOG_KEYFRAMES         0
-#define KEYFRAME_TYPE_LEN     20
-
-#define PAGE_MIN_GEOMETRY     20
-#define PAGE_MIN_GEOMETRY     20
 
 /* gr_page.c */
 void         graphics_init_page(IPage *, int num_geo, int max_keyframe);
@@ -36,7 +32,8 @@ Node          *graphics_graph_get_node(Graph *g, size_t index, GeometryAttr attr
 void          graphics_graph_add_eval_node(Graph *g, size_t x, GeometryAttr attr, NodeEval f);
 void          graphics_graph_add_leaf_node(Graph *g, size_t x, GeometryAttr attr, int value);
 void          graphics_graph_update_leaf(Graph *g, size_t x, GeometryAttr attr, int value);
-void          graphics_graph_add_edge(Graph *g, size_t x, GeometryAttr x_attr, size_t y, GeometryAttr y_attr);
+Edge          *graphics_graph_add_edge(Graph *g, size_t x, GeometryAttr x_attr, 
+                                      size_t y, GeometryAttr y_attr);
 unsigned char graphics_graph_is_dag(Graph *g);
 void          graphics_graph_evaluate_dag(Graph *g);
 

@@ -40,6 +40,7 @@ typedef enum {
 } NodeEval;
 
 typedef struct Edge {
+    unsigned char pad;
     size_t        index;
     GeometryAttr  attr;
 
@@ -52,6 +53,8 @@ typedef struct Node {
     int           value;
     NodeEval      eval;
     unsigned char evaluated;
+    unsigned char visited;
+    unsigned char discovered;
 
     Edge          edge_list_head;
     Edge          edge_list_tail;

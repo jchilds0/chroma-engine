@@ -101,7 +101,8 @@ void graphics_graph_update_leaf(Graph *g, size_t x, GeometryAttr attr, int value
     node->value = value;
 }
 
-void graphics_graph_add_edge(Graph *g, size_t x, GeometryAttr x_attr, size_t y, GeometryAttr y_attr) {
+Edge *graphics_graph_add_edge(Graph *g, size_t x, GeometryAttr x_attr, 
+                             size_t y, GeometryAttr y_attr) {
     if (x < 0 || x >= g->node_count) {
         log_file(LogError, "Graph", "Index out of range: adding edge from %d", x);
     }
@@ -119,59 +120,64 @@ void graphics_graph_add_edge(Graph *g, size_t x, GeometryAttr x_attr, size_t y, 
     Edge *edge = ARENA_ALLOC(g->arena, Edge);
     edge->index = y;
     edge->attr = y_attr;
+    edge->pad = 0;
 
     INSERT_BEFORE(edge, &node->edge_list_tail);
     g->num_edges++;
+    return edge;
 }
 
-static unsigned char graphics_graph_depth_first(
-    Graph *g, unsigned char *visited, unsigned char *discovered, int node) {
-    return 0;
-    /*
+static unsigned char graphics_graph_depth_first(Graph *g, Node *node) {
+    Edge *head = &node->edge_list_head;
+    Edge *tail = &node->edge_list_tail;
     unsigned char is_dag = 1;
 
-    discovered[node] = 1;
+    node->discovered = 1;
 
-    for (int i = 0; i < g->num_nodes; i++) {
-        if (!g->adj_matrix[node * g->num_nodes + i]) {
+    for (Edge *edge = head->next; edge != tail; edge = edge->next) {
+        Node *adj = graphics_graph_get_node(g, edge->index, edge->attr);
+        if (adj == NULL || adj->visited) {
             continue;
         }
 
-        if (visited[i] || i == node) {
-            continue;
-        }
-
-        if (discovered[i]) {
+        if (adj->discovered) {
             is_dag = 0;
             continue;
         }
 
-        is_dag = is_dag && graphics_graph_depth_first(g, visited, discovered, i);
+        is_dag = is_dag && graphics_graph_depth_first(g, adj);
     }
 
-
-    discovered[node] = 0;
-    visited[node] = 1;
+    node->discovered = 0;
+    node->visited = 1;
     return is_dag;
-    */
 }
 
 unsigned char graphics_graph_is_dag(Graph *g) {
-    unsigned char visited[g->node_count];
-    unsigned char discovered[g->node_count];
     unsigned char is_dag = 1;
 
-    for (int i = 0; i < g->node_count; i++) {
-        visited[i] = 0;
-        discovered[i] = 0;
+    // zero visited values
+    for (size_t i = 0; i < g->node_count; i++) {
+        Node *head = &g->node_list_head[i];
+        Node *tail = &g->node_list_tail[i];
+
+        for (Node *node = head->next; node != tail; node = node->next) {
+            node->visited = 0;
+            node->discovered = 0;
+        }
     }
 
-    for (int i = 0; i < g->node_count; i++) {
-        if (visited[i]) {
-            continue;
+    for (size_t i = 0; i < g->node_count; i++) {
+        Node *head = &g->node_list_head[i];
+        Node *tail = &g->node_list_tail[i];
+
+        for (Node *node = head->next; node != tail; node = node->next) {
+            if (node->visited) {
+                continue;
+            }
+            
+            is_dag = is_dag && graphics_graph_depth_first(g, node);
         }
-        
-        is_dag = is_dag && graphics_graph_depth_first(g, visited, discovered, i);
     }
 
     return is_dag;
@@ -241,6 +247,35 @@ static int max_value(Graph *g, Node *node) {
     return value;
 }
 
+static int max_value_plus_pad(Graph *g, Node *node) {
+    int value = INT_MIN;
+    int pad = 0;
+
+    for (Edge *edge = node->edge_list_head.next; edge != &node->edge_list_tail; edge = edge->next) {
+        Node *adj = graphics_graph_get_node(g, edge->index, edge->attr);
+        if (adj == NULL) {
+            log_file(LogWarn, "Graphics", "Missing node %d %s", edge->index, geometry_attr_to_char(edge->attr));
+            continue;
+        }
+
+        if (!adj->evaluated) {
+            continue;
+        }
+        
+        if (edge->pad) {
+            pad += adj->value;
+        } else {
+            value = MAX(value, adj->value);
+        }
+    }
+
+    if (value == INT_MIN) {
+        log_file(LogError, "Graphics", "Node %s missing values", geometry_attr_to_char(node->attr));
+    }
+
+    return value + pad;
+}
+
 static int sum_value(Graph *g, Node *node) {
     int value = 0; 
 
@@ -273,8 +308,7 @@ static int graphics_graph_eval(Graph *g, Node *n) {
         case EVAL_MAX_VALUE:
             return max_value(g, n);
         case EVAL_MAX_VALUE_PAD:
-            log_file(LogError, "Graphics", "Max value plus pad not implemented");
-            return 0;
+            return max_value_plus_pad(g, n);
         case EVAL_SUM_VALUE:
             return sum_value(g, n);
     }

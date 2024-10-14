@@ -21,7 +21,7 @@
 #define SHADER_PATH       "src/gl_render/"
 
 /* gl_renderer.c */
-#define TRIANGLE_CAP      (GIGABYTES((uint64_t)1) / sizeof( Triangle ))
+#define TRIANGLE_CAP      (MEGABYTES((uint64_t)128) / sizeof( Triangle ))
 
 typedef enum {
     RENDER_DRAW_NO_MASK = 0,
