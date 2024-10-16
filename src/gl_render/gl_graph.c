@@ -230,8 +230,7 @@ void gl_draw_graph(IGeometry *graph) {
     glBindVertexArray(vao);
 
     uint color_loc = glGetUniformLocation(program, "color");
-    glUniform4f(color_loc, geo_graph->color[0], geo_graph->color[1], 
-                geo_graph->color[2], geo_graph->color[3]);
+    glUniform4f(color_loc, geo_graph->color.x, geo_graph->color.y, geo_graph->color.z, geo_graph->color.w);
 
     gl_draw_axis(pos, offset);
 

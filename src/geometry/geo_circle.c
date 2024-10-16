@@ -31,12 +31,17 @@ void geometry_clean_circle(GeometryCircle *circle) {
 
 void geometry_circle_get_attr(GeometryCircle *circle, GeometryAttr attr, char *value) {
     switch (attr) {
-        case GEO_COLOR:
-            sprintf(value, "%f %f %f %f", 
-                    circle->color.x, 
-                    circle->color.y, 
-                    circle->color.z, 
-                    circle->color.w);
+        case GEO_COLOR_R:
+            sprintf(value, "%f", circle->color.x);
+            break;
+        case GEO_COLOR_G:
+            sprintf(value, "%f", circle->color.y);
+            break;
+        case GEO_COLOR_B:
+            sprintf(value, "%f", circle->color.z);
+            break;
+        case GEO_COLOR_A:
+            sprintf(value, "%f", circle->color.w);
             break;
         case GEO_INNER_RADIUS:
             sprintf(value, "%d", circle->inner_radius);
@@ -65,12 +70,17 @@ void geometry_circle_set_attr(GeometryCircle *circle, GeometryAttr attr, char *v
     int g_value = atoi(value);
 
     switch (attr) {
-        case GEO_COLOR:
-            sscanf(value, "%f %f %f %f", 
-                   &circle->color.x,
-                   &circle->color.y,
-                   &circle->color.z,
-                   &circle->color.w);
+        case GEO_COLOR_R:
+            circle->color.x = atof(value);
+            break;
+        case GEO_COLOR_G:
+            circle->color.y = atof(value);
+            break;
+        case GEO_COLOR_B:
+            circle->color.z = atof(value);
+            break;
+        case GEO_COLOR_A:
+            circle->color.w = atof(value);
             break;
         case GEO_INNER_RADIUS:
             circle->inner_radius = g_value;

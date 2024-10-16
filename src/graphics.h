@@ -23,7 +23,7 @@ typedef struct {
     unsigned int      geo_id;
     unsigned int      attr;
     FrameType         type;
-    int               value;
+    double            value;
     unsigned char     expand;
     unsigned int      bind_frame_num;
     unsigned int      bind_geo_id;
@@ -50,7 +50,7 @@ typedef struct Edge {
 
 typedef struct Node {
     GeometryAttr  attr;
-    int           value;
+    float         value;
     NodeEval      eval;
     unsigned char evaluated;
     unsigned char visited;

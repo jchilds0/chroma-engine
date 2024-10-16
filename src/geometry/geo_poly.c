@@ -32,12 +32,17 @@ void geometry_clean_polygon(GeometryPolygon *poly) {
 
 void geometry_polygon_get_attr(GeometryPolygon *poly, GeometryAttr attr, char *value) {
     switch (attr) {
-        case GEO_COLOR:
-            sprintf(value, "%f %f %f %f", 
-                    poly->color.x, 
-                    poly->color.y, 
-                    poly->color.z, 
-                    poly->color.w);
+        case GEO_COLOR_R:
+            sprintf(value, "%f", poly->color.x);
+            break;
+        case GEO_COLOR_G:
+            sprintf(value, "%f", poly->color.y);
+            break;
+        case GEO_COLOR_B:
+            sprintf(value, "%f", poly->color.z);
+            break;
+        case GEO_COLOR_A:
+            sprintf(value, "%f", poly->color.w);
             break;
         case GEO_NUM_POINTS:
             sprintf(value, "%d", poly->num_vertices);
@@ -60,24 +65,26 @@ void geometry_polygon_set_attr(GeometryPolygon *poly, GeometryAttr attr, char *v
     int i, x, y;
 
     switch (attr) {
-        case GEO_COLOR:
-            sscanf(value, "%f %f %f %f", 
-                   &poly->color.x,
-                   &poly->color.y,
-                   &poly->color.z,
-                   &poly->color.w);
+        case GEO_COLOR_R:
+            poly->color.x = atof(value);
             break;
-
+        case GEO_COLOR_G:
+            poly->color.y = atof(value);
+            break;
+        case GEO_COLOR_B:
+            poly->color.z = atof(value);
+            break;
+        case GEO_COLOR_A:
+            poly->color.w = atof(value);
+            break;
         case GEO_NUM_POINTS:
             poly->num_vertices = atoi(value);
             break;
-
         case GEO_POINT:
             sscanf(value, "%d %d %d", &i, &x, &y);
             poly->vertex[i].x = x;
             poly->vertex[i].y = y;
             break;
-
         default:
             log_file(LogWarn, "Geometry", "Geo attr is not a poly attr: %s", geometry_attr_to_char(attr));
     }

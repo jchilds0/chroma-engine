@@ -34,12 +34,17 @@ void geometry_clean_graph(GeometryGraph *g) {
 
 void geometry_graph_get_attr(GeometryGraph *g, GeometryAttr attr, char *value) {
     switch (attr) {
-        case GEO_COLOR:
-            sprintf(value, "%f %f %f %f", 
-                    g->color[0], 
-                    g->color[1], 
-                    g->color[2], 
-                    g->color[3]);
+        case GEO_COLOR_R:
+            sprintf(value, "%f", g->color.x);
+            break;
+        case GEO_COLOR_G:
+            sprintf(value, "%f", g->color.y);
+            break;
+        case GEO_COLOR_B:
+            sprintf(value, "%f", g->color.z);
+            break;
+        case GEO_COLOR_A:
+            sprintf(value, "%f", g->color.w);
             break;
         case GEO_NUM_POINTS:
             sprintf(value, "%d", g->num_nodes);
@@ -57,12 +62,17 @@ void geometry_graph_set_attr(GeometryGraph *graph, GeometryAttr attr, char *valu
     int x, y;
 
     switch (attr) {
-        case GEO_COLOR:
-            sscanf(value, "%f %f %f %f", 
-                   &graph->color[0],
-                   &graph->color[1],
-                   &graph->color[2],
-                   &graph->color[3]);
+        case GEO_COLOR_R:
+            graph->color.x = (float) g_value;
+            break;
+        case GEO_COLOR_G:
+            graph->color.y = (float) g_value;
+            break;
+        case GEO_COLOR_B:
+            graph->color.z = (float) g_value;
+            break;
+        case GEO_COLOR_A:
+            graph->color.w = (float) g_value;
             break;
         case GEO_POINT:
             sscanf(value, "%d %d", &x, &y);

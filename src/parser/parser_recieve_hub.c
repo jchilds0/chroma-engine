@@ -288,17 +288,19 @@ void parser_parse_attribute(JSONNode *attr, IGeometry *geo) {
         }
     }
 
-    char *color_attrs[] = {"Red", "Green", "Blue", "Alpha"};
+    // parse color
+    char *color_names[] = {"Red", "Green", "Blue", "Alpha"};
+    int color_attrs[] = {GEO_COLOR_R, GEO_COLOR_G, GEO_COLOR_B, GEO_COLOR_A};
     for (int i = 0; i < 4; i++) {
-        JSONNode *node = parser_json_attribute(attr, color_attrs[i]);
+        JSONNode *node = parser_json_attribute(attr, color_names[i]);
         if (node == NULL) {
             continue;
         }
 
-        if (node->type == JSON_FLOAT) {
-            geometry_set_color(geo, node->f, i);
-        } else if (node->type == JSON_INT) {
-            geometry_set_color(geo, node->integer, i);
+        if (node->type == JSON_INT) {
+            geometry_set_float_attr(geo, color_attrs[i], node->integer);
+        } else {
+            geometry_set_float_attr(geo, color_attrs[i], node->f);
         }
     }
 }

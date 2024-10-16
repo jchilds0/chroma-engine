@@ -303,8 +303,8 @@ void parser_parse_page(IPage *page) {
         GeometryAttr geo_attr = geometry_char_to_attr(attr);
         geo = page->geometry[geo_num];
 
-        if (geo_attr < GEO_INT_NUM) {
-            graphics_graph_update_leaf(&page->keyframe_graph, geo_num, geo_attr, atoi(value));
+        if (geo_attr < GEO_NUMBER) {
+            graphics_graph_update_leaf(&page->keyframe_graph, geo_num, geo_attr, atof(value));
         } else {
             geometry_set_attr(geo, attr, value);
         }

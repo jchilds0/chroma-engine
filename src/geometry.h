@@ -62,14 +62,17 @@ typedef enum {
     GEO_X_UPPER,
     GEO_Y_LOWER,
     GEO_Y_UPPER,
+    GEO_COLOR_R,
+    GEO_COLOR_G,
+    GEO_COLOR_B,
+    GEO_COLOR_A,
+    GEO_SCALE,
 
-    GEO_INT_NUM,
+    GEO_NUMBER,
 
-    GEO_COLOR,
     GEO_PARENT,
     GEO_MASK,
     GEO_TEXT,
-    GEO_SCALE,
     GEO_POINT,
     GEO_NUM_POINTS,
     GEO_GRAPH_TYPE,
@@ -121,15 +124,15 @@ typedef struct {
     char              y_label[GEO_BUF_SIZE];
     int               node_count;
     int               num_nodes;
-    GLfloat           color[4];
+    vec4              color;
     vec2              nodes[MAX_NODES];
 } GeometryGraph;
 
 typedef struct {
     IGeometry         geo;
     float             scale;
+    vec4              color;
     char              buf[GEO_BUF_SIZE];
-    GLfloat           color[4];
 } GeometryText;
 
 typedef struct {
@@ -157,7 +160,6 @@ extern const char   *geometry_attr_to_char(GeometryAttr attr);
 extern void         geometry_set_attr(IGeometry *geo, char *attr, char *value);
 extern void         geometry_set_int_attr(IGeometry *geo, GeometryAttr attr, int value);
 extern void         geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value);
-extern void         geometry_set_color(IGeometry *geo, float color, int index);
 
 extern void         geometry_get_attr(IGeometry *geo, char *attr, char *value);
 extern int          geometry_get_int_attr(IGeometry *geo, GeometryAttr attr);

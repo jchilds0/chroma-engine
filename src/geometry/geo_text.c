@@ -28,20 +28,22 @@ void geometry_clean_text(GeometryText *text) {
     text->scale = 1.0;
     memset(text->buf, '\0', GEO_BUF_SIZE);
 
-    text->color[0] = 0.0;
-    text->color[1] = 0.0;
-    text->color[2] = 0.0;
-    text->color[3] = 0.0;
+    text->color = (vec4){0, 0, 0, 0};
 }
 
 void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) {
     switch (attr) {
-        case GEO_COLOR:
-            sprintf(value, "%f %f %f %f", 
-                    text->color[0], 
-                    text->color[1], 
-                    text->color[2], 
-                    text->color[3]);
+        case GEO_COLOR_R:
+            sprintf(value, "%f", text->color.x);
+            break;
+        case GEO_COLOR_G:
+            sprintf(value, "%f", text->color.y);
+            break;
+        case GEO_COLOR_B:
+            sprintf(value, "%f", text->color.z);
+            break;
+        case GEO_COLOR_A:
+            sprintf(value, "%f", text->color.w);
             break;
         case GEO_TEXT:
             memcpy(value, text->buf, GEO_BUF_SIZE);
@@ -61,22 +63,24 @@ void geometry_text_get_attr(GeometryText *text, GeometryAttr attr, char *value) 
 }
 
 void geometry_text_set_attr(GeometryText *text, GeometryAttr attr, char *value) {
-    float scale;
-
     switch (attr) {
-        case GEO_COLOR:
-            sscanf(value, "%f %f %f %f", 
-                   &text->color[0],
-                   &text->color[1],
-                   &text->color[2],
-                   &text->color[3]);
+        case GEO_COLOR_R:
+            text->color.x = atof(value);
+            break;
+        case GEO_COLOR_G:
+            text->color.y = atof(value);
+            break;
+        case GEO_COLOR_B:
+            text->color.z = atof(value);
+            break;
+        case GEO_COLOR_A:
+            text->color.w = atof(value);
             break;
         case GEO_TEXT:
             memmove(text->buf, value, GEO_BUF_SIZE);
             break;
         case GEO_SCALE:
-            sscanf(value, "%f", &scale);
-            text->scale = scale;
+            text->scale = atof(value);
             break;
         case GEO_WIDTH:
         case GEO_HEIGHT:

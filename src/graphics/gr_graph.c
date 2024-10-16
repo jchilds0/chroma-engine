@@ -78,7 +78,7 @@ void graphics_graph_add_eval_node(Graph *g, size_t x, GeometryAttr attr, NodeEva
     INSERT_BEFORE(node, &g->node_list_tail[x]);
 }
 
-void graphics_graph_add_leaf_node(Graph *g, size_t x, GeometryAttr attr, int value) {
+void graphics_graph_add_leaf_node(Graph *g, size_t x, GeometryAttr attr, float value) {
     if (x < 0 || x >= g->node_count) {
         log_file(LogError, "Graph", "Index out of range: adding leaf node %d", x);
     }
@@ -91,7 +91,7 @@ void graphics_graph_add_leaf_node(Graph *g, size_t x, GeometryAttr attr, int val
     INSERT_BEFORE(node, &g->node_list_tail[x]);
 }
 
-void graphics_graph_update_leaf(Graph *g, size_t x, GeometryAttr attr, int value) {
+void graphics_graph_update_leaf(Graph *g, size_t x, GeometryAttr attr, float value) {
     Node *node = graphics_graph_get_node(g, x, attr);
     if (node == NULL) {
         graphics_graph_add_leaf_node(g, x, attr, value);
@@ -183,7 +183,7 @@ unsigned char graphics_graph_is_dag(Graph *g) {
     return is_dag;
 }
 
-static int single_value(Graph *g, Node *node) {
+static float single_value(Graph *g, Node *node) {
     if (node->edge_list_head.next == &node->edge_list_tail) {
         log_file(LogError, "Graphics", "Node %s has no values, expected 1", geometry_attr_to_char(node->attr));
     }
@@ -199,8 +199,8 @@ static int single_value(Graph *g, Node *node) {
     return adj->value;
 }
 
-static int min_value(Graph *g, Node *node) {
-    int value = INT_MAX;
+static float min_value(Graph *g, Node *node) {
+    float value = INT_MAX;
 
     for (Edge *edge = node->edge_list_head.next; edge != &node->edge_list_tail; edge = edge->next) {
         Node *adj = graphics_graph_get_node(g, edge->index, edge->attr);
@@ -223,8 +223,8 @@ static int min_value(Graph *g, Node *node) {
     return value;
 }
 
-static int max_value(Graph *g, Node *node) {
-    int value = INT_MIN;
+static float max_value(Graph *g, Node *node) {
+    float value = INT_MIN;
 
     for (Edge *edge = node->edge_list_head.next; edge != &node->edge_list_tail; edge = edge->next) {
         Node *adj = graphics_graph_get_node(g, edge->index, edge->attr);
@@ -247,9 +247,9 @@ static int max_value(Graph *g, Node *node) {
     return value;
 }
 
-static int max_value_plus_pad(Graph *g, Node *node) {
-    int value = INT_MIN;
-    int pad = 0;
+static float max_value_plus_pad(Graph *g, Node *node) {
+    float value = INT_MIN;
+    float pad = 0;
 
     for (Edge *edge = node->edge_list_head.next; edge != &node->edge_list_tail; edge = edge->next) {
         Node *adj = graphics_graph_get_node(g, edge->index, edge->attr);
@@ -276,8 +276,8 @@ static int max_value_plus_pad(Graph *g, Node *node) {
     return value + pad;
 }
 
-static int sum_value(Graph *g, Node *node) {
-    int value = 0; 
+static float sum_value(Graph *g, Node *node) {
+    float value = 0; 
 
     for (Edge *edge = node->edge_list_head.next; edge != &node->edge_list_tail; edge = edge->next) {
         Node *adj = graphics_graph_get_node(g, edge->index, edge->attr);
@@ -296,7 +296,7 @@ static int sum_value(Graph *g, Node *node) {
     return value;
 }
 
-static int graphics_graph_eval(Graph *g, Node *n) {
+static float graphics_graph_eval(Graph *g, Node *n) {
     switch (n->eval) {
         case EVAL_LEAF:
             log_file(LogError, "Graphics", "Cannot evaluate leaf node");

@@ -154,8 +154,14 @@ GeometryAttr geometry_char_to_attr(char *attr) {
         g_attr = GEO_PARENT;
     } else if (strncmp(attr, "mask", 4) == 0) {
         g_attr = GEO_MASK;
-    } else if (strncmp(attr, "color", 5) == 0) {
-        g_attr = GEO_COLOR;
+    } else if (strncmp(attr, "red", 5) == 0) {
+        g_attr = GEO_COLOR_R;
+    } else if (strncmp(attr, "green", 5) == 0) {
+        g_attr = GEO_COLOR_G;
+    } else if (strncmp(attr, "blue", 5) == 0) {
+        g_attr = GEO_COLOR_B;
+    } else if (strncmp(attr, "alpha", 5) == 0) {
+        g_attr = GEO_COLOR_A;
     } else if (strncmp(attr, "width", 5) == 0) {
         g_attr = GEO_WIDTH;
     } else if (strncmp(attr, "height", 6) == 0) {
@@ -245,11 +251,20 @@ const char *geometry_attr_to_char(GeometryAttr attr) {
     case GEO_Y_UPPER:
         return "y upper";
 
-    case GEO_INT_NUM:
+    case GEO_NUMBER:
         return "int num";
 
-    case GEO_COLOR:
-        return "color";
+    case GEO_COLOR_R:
+        return "red";
+
+    case GEO_COLOR_G:
+        return "green";
+
+    case GEO_COLOR_B:
+        return "blue";
+
+    case GEO_COLOR_A:
+        return "alpha";
 
     case GEO_PARENT:
         return "parent";
@@ -516,54 +531,6 @@ void geometry_set_float_attr(IGeometry *geo, GeometryAttr attr, float value) {
     geometry_set_attribute(geo, attr, buf);
 }
 
-void geometry_set_color(IGeometry *geo, float color, int index) {
-    vec4 *c_ptr = NULL;
-
-    switch (geo->geo_type) {
-        case RECT:
-            c_ptr = &((GeometryRect *)geo)->color;
-            break;
-
-        case CIRCLE:
-            c_ptr = &((GeometryCircle *)geo)->color;
-            break;
-
-        case GRAPH:
-            ((GeometryGraph*)geo)->color[index] = color;
-            break;
-
-        case TEXT:
-            ((GeometryText*)geo)->color[index] = color;
-            break;
-
-        case POLYGON:
-            c_ptr = &((GeometryPolygon*)geo)->color;
-            break;
-
-        default:
-            log_file(LogWarn, "Geometry", "Geo type %d does not have a color attribute", geo->geo_type);
-    }
-    
-    if (c_ptr == NULL) {
-        return;
-    }
-
-    switch (index) {
-        case 0:
-            c_ptr->x = color;
-            break;
-        case 1:
-            c_ptr->y = color;
-            break;
-        case 2:
-            c_ptr->z = color;
-            break;
-        case 3:
-            c_ptr->w = color;
-            break;
-    }
-}
-
 void geometry_graph_add_values(IGeometry *geo, void (*add_value)(GeometryAttr)) {
     add_value(GEO_REL_X);
     add_value(GEO_REL_Y);
@@ -572,6 +539,10 @@ void geometry_graph_add_values(IGeometry *geo, void (*add_value)(GeometryAttr)) 
         case RECT:
             add_value(GEO_WIDTH);
             add_value(GEO_HEIGHT);
+            add_value(GEO_COLOR_R);
+            add_value(GEO_COLOR_G);
+            add_value(GEO_COLOR_B);
+            add_value(GEO_COLOR_A);
             break;
 
         case CIRCLE:
@@ -581,17 +552,29 @@ void geometry_graph_add_values(IGeometry *geo, void (*add_value)(GeometryAttr)) 
             add_value(GEO_OUTER_RADIUS);
             add_value(GEO_WIDTH);
             add_value(GEO_HEIGHT);
+            add_value(GEO_COLOR_R);
+            add_value(GEO_COLOR_G);
+            add_value(GEO_COLOR_B);
+            add_value(GEO_COLOR_A);
             break;
 
         case TEXT:
             add_value(GEO_WIDTH);
             add_value(GEO_HEIGHT);
+            add_value(GEO_COLOR_R);
+            add_value(GEO_COLOR_G);
+            add_value(GEO_COLOR_B);
+            add_value(GEO_COLOR_A);
             break;
 
         case IMAGE:
             break;
 
         case POLYGON:
+            add_value(GEO_COLOR_R);
+            add_value(GEO_COLOR_G);
+            add_value(GEO_COLOR_B);
+            add_value(GEO_COLOR_A);
             break;
 
         default:

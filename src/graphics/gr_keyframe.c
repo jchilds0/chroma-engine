@@ -26,8 +26,6 @@
 #include <string.h>
 #include <time.h>
 
-void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames);
-
 static void graphics_log_keyframe(IPage *page) {
     if (!LOG_KEYFRAMES) {
         return;
@@ -51,7 +49,7 @@ static void graphics_log_keyframe(IPage *page) {
             log_file(LogMessage, "Graphics", "\t\tFrame %d", frame_num); 
 
             for (Node *node = head->next; node != tail; node = node->next) {
-                log_file(LogMessage, "Graphics", "\t\t\tAttr %s: %d", 
+                log_file(LogMessage, "Graphics", "\t\t\tAttr %s: %f", 
                          geometry_attr_to_char(node->attr), node->value);
             }
         }
@@ -166,7 +164,7 @@ static void add_attribute(GeometryAttr attr) {
 
     Graph *g = &current_page->keyframe_graph;
     IGeometry *geo = current_page->geometry[geo_id];
-    int value = geometry_get_int_attr(geo, attr);
+    float value = geometry_get_float_attr(geo, attr);
     graphics_graph_update_leaf(g, geo_id, attr, value);
 
     for (int frame_num = 1; frame_num < current_page->max_keyframe; frame_num++) {
@@ -217,7 +215,7 @@ void graphics_page_default_relations(IPage *page) {
 } 
 
 void graphics_page_gen_frame(IPage *page, Keyframe frame) {
-    if (frame.attr >= GEO_INT_NUM) {
+    if (frame.attr >= GEO_NUMBER) {
         log_file(LogError, "Graphics", "Keyframe %d: Attr %d not implemented", frame.frame_num, frame.attr);
     }
 
@@ -252,7 +250,7 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
             case BIND_FRAME:
                 bind_index = frame.bind_frame_num * page->len_geometry + frame.bind_geo_id;
 
-                if (frame.bind_attr >= GEO_INT_NUM) {
+                if (frame.bind_attr >= GEO_NUMBER) {
                     log_file(LogWarn, "Graphics", "Keyframe %d: Bind attr %d not implemented", 
                              frame.frame_num, frame.bind_attr);
                     return;
@@ -328,41 +326,12 @@ void graphics_page_gen_frame(IPage *page, Keyframe frame) {
  * Calculate the value at time index interpolating linearly
  * from 0 to width with v_start at t = 0 and v_end at t = width
  */
-int graphics_keyframe_interpolate_int(int v_start, int v_end, int index, int width) {
+float graphics_keyframe_interpolate(float v_start, float v_end, int index, int width) {
     if (width == 0) {
         log_file(LogWarn, "Graphics", "Interpolating over an interval of length 0");
         return v_start;
     }
 
     return (v_end - v_start) * index / width + v_start;
-}
-
-/* 
- * frames is a list of 0 or 1, where frames[i] == 1 
- * if values[i] is a keyframe value. Interpolate linearly 
- * between keyframe values in values.
- */
-void graphics_keyframe_interpolate_frames(int *values, unsigned char *frames, int num_frames) {
-    int start = 0;
-    int end;
-
-    while (start < num_frames) { 
-        if (!frames[start]) {
-            start++;
-            continue;
-        }
-
-        for (end = start + 1; end < num_frames && !frames[end]; end++);
-
-        if (!frames[end]) {
-            break;
-        }
-
-        for (int i = start + 1; i < end; i++) {
-            values[i] = graphics_keyframe_interpolate_int(values[start], values[end], i, end - start);
-        }
-
-        start = end;
-    }
 }
 

@@ -81,11 +81,10 @@ void graphics_free_page(IPage *page) {
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
     IGeometry *geo;
     Node *head, *tail;
-    int next_value, k_index, k1_index;
+    int k_index, k1_index;
     int frame_start = index / width;
     int frame_index = index % width;
-
-    //log_file(LogMessage, "Graphics", "Interpolating page %d at keyframe %d and index %d", page->temp_id, frame_start, frame_index);
+    double next_value;
 
     for (int geo_id = 0; geo_id < page->len_geometry; geo_id++) {
         geo = page->geometry[geo_id];
@@ -104,7 +103,7 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
             }
 
             if (frame_start == page->max_keyframe - 1) {
-                geometry_set_int_attr(geo, node->attr, node->value);
+                geometry_set_float_attr(geo, node->attr, node->value);
                 continue;
             } 
 
@@ -113,11 +112,11 @@ void graphics_page_interpolate_geometry(IPage *page, int index, int width) {
                 next_node = node;
             }
 
-            next_value = graphics_keyframe_interpolate_int(
+            next_value = graphics_keyframe_interpolate(
                 node->value, next_node->value, frame_index, width
             );
 
-            geometry_set_int_attr(geo, node->attr, next_value);
+            geometry_set_float_attr(geo, node->attr, next_value);
         }
     }
 }

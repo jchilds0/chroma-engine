@@ -33,12 +33,17 @@ void geometry_clean_rect(GeometryRect *rect) {
 
 void geometry_rectangle_get_attr(GeometryRect *rect, GeometryAttr attr, char *value) {
     switch (attr) {
-        case GEO_COLOR:
-            sprintf(value, "%f %f %f %f", 
-                    rect->color.x, 
-                    rect->color.y, 
-                    rect->color.z, 
-                    rect->color.w);
+        case GEO_COLOR_R:
+            sprintf(value, "%f", rect->color.x);
+            break;
+        case GEO_COLOR_G:
+            sprintf(value, "%f", rect->color.y);
+            break;
+        case GEO_COLOR_B:
+            sprintf(value, "%f", rect->color.z);
+            break;
+        case GEO_COLOR_A:
+            sprintf(value, "%f", rect->color.w);
             break;
         case GEO_WIDTH:
             sprintf(value, "%d", rect->width);
@@ -58,12 +63,17 @@ void geometry_rectangle_set_attr(GeometryRect *rect, GeometryAttr attr, char *va
     int g_value = atoi(value);
 
     switch (attr) {
-        case GEO_COLOR:
-            sscanf(value, "%f %f %f %f", 
-                   &rect->color.x,
-                   &rect->color.y,
-                   &rect->color.z,
-                   &rect->color.w);
+        case GEO_COLOR_R:
+            rect->color.x = atof(value);
+            break;
+        case GEO_COLOR_G:
+            rect->color.y = atof(value);
+            break;
+        case GEO_COLOR_B:
+            rect->color.z = atof(value);
+            break;
+        case GEO_COLOR_A:
+            rect->color.w = atof(value);
             break;
         case GEO_WIDTH:
             rect->width = g_value;

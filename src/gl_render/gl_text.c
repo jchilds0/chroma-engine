@@ -134,8 +134,8 @@ void gl_draw_text(IGeometry *text) {
 
     GeometryText *g_text = (GeometryText *)text;
     GLint color_loc = glGetUniformLocation(program, "color");
-    glUniform4f(color_loc, g_text->color[0], g_text->color[1], 
-                g_text->color[2], g_text->color[3]); 
+    glUniform4f(color_loc, g_text->color.x, g_text->color.y, 
+                g_text->color.z, g_text->color.w); 
     glBindVertexArray(vao);
 
     glEnable(GL_CULL_FACE);
