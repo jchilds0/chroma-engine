@@ -4,9 +4,11 @@
 
 #include "log.h"
 #include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <time.h>
 #include <stdarg.h>
 
@@ -87,6 +89,7 @@ void log_file(LogType flag, const char *module, const char *buf, ...) {
     fclose(pfile);
 
     if (flag == LogError) {
+        shutdown(engine.server_socket, SHUT_RDWR);
         exit(0);
     }
 }

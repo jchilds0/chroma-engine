@@ -177,7 +177,16 @@ void parser_parse_set_frame(JSONNode *frame_obj, IPage *page) {
     parser_parse_keyframe(frame_obj, &frame);
     frame.type = SET_FRAME;
 
-    frame.value = parser_json_get_int(frame_obj, "Value");
+    JSONNode *value = parser_json_attribute(frame_obj, "Value");
+    if (value->type == JSON_INT) {
+        frame.value = parser_json_get_int(frame_obj, "Value");
+    } else if (value->type == JSON_FLOAT) {
+        frame.value = parser_json_get_float(frame_obj, "Value");
+    } else {
+        log_file(LogWarn, "Parser", "Unknown json type for set value: %d", value->type);
+        frame.value = 0;
+    }
+
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\tValue: %d", frame.value);
     }
