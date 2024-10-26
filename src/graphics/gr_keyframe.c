@@ -80,7 +80,6 @@ void graphics_page_calculate_keyframes(IPage *page) {
 
             height = geometry_get_int_attr(geo, GEO_HEIGHT);
             graphics_graph_update_leaf(&page->keyframe_graph, geo_id, GEO_HEIGHT, height);
-
         }
     }
 

@@ -339,6 +339,21 @@ static void graphics_graph_evaluate_node(Graph *g, Node *node) {
 
 void graphics_graph_evaluate_dag(Graph *g) {
     Node *head, *tail;
+
+    // reset evaluation
+    for (size_t i = 0; i < g->node_count; i++) {
+        head = &g->node_list_head[i];
+        tail = &g->node_list_tail[i];
+
+        for (Node *node = head->next; node != tail; node = node->next) {
+            if (node->eval == EVAL_LEAF) {
+                continue;
+            }
+
+            node->evaluated = 0;
+        }
+    }
+
     for (size_t i = 0; i < g->node_count; i++) {
         head = &g->node_list_head[i];
         tail = &g->node_list_tail[i];
