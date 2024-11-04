@@ -3,16 +3,10 @@
  *
  */
 
-#include "chroma-engine.h"
-#include "log.h"
-#include "parser/parser_internal.h"
-#include "parser/parser_json.h"
+#include "parser_internal.h"
+#include "parser_json.h"
 #include "parser_http.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <time.h>
 
 int parser_http_get(int socket_client, const char *addr) {
     char msg[PARSE_BUF_SIZE];

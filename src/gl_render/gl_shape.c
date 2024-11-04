@@ -5,14 +5,7 @@
  *
  */
 
-#include "chroma-engine.h"
-#include "gl_math.h"
 #include "gl_render_internal.h"
-#include "geometry.h"
-
-#include <GL/glew.h>
-#include <GL/gl.h>
-#include <math.h>
 
 /*
  * Rectangle vertex layout (corners 

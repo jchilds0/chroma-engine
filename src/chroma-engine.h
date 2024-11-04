@@ -8,11 +8,9 @@
 #define CHROMA_ENGINE
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/mman.h>
-#include <limits.h>
 #include "log.h"
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))

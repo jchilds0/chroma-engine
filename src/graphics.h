@@ -109,10 +109,13 @@ extern int          graphics_hub_get_page(IGraphics *hub, int temp_id);
 extern IPage        *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id);
 
 extern uint64_t     graphics_graph_size(Graph *g);
+extern unsigned char graphics_graph_is_dag(Graph *g);
 
 extern Keyframe     *graphics_page_add_keyframe(IPage *page);
 extern void         graphics_keyframe_set_int(Keyframe *frame, char *name, int value);
 extern void         graphics_keyframe_set_attr(Keyframe *frame, char *name, char *value);
+extern void         graphics_page_gen_frame(IPage *page, Keyframe frame);
+extern void         graphics_graph_update_leaf(Graph *g, size_t x, GeometryAttr attr, float value);
 extern void         graphics_page_default_relations(IPage *page);
 extern void         graphics_page_calculate_keyframes(IPage *page);
 extern void         graphics_page_interpolate_geometry(IPage *page, int index, int width);

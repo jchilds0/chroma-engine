@@ -4,13 +4,8 @@
  */
 
 #include "parser_json.h"
-#include "chroma-engine.h"
-#include "log.h"
-#include "parser/parser_http.h"
+#include "parser_http.h"
 #include "parser_internal.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
 
 JSONArena json_arena = {0, DA_INIT_CAPACITY, NULL, {0, DA_INIT_CAPACITY, NULL}};
 

@@ -4,17 +4,8 @@
  * Callbacks for GTK_GL_AREA used in preview.c and engine.c
  */
 
-#include "geometry.h"
-#include "graphics.h"
-#include "gtk/gtk.h"
 #include "gl_render_internal.h"
-
-#include "chroma-engine.h"
 #include "chroma-typedefs.h"
-#include "gl_math.h"
-#include "log.h"
-#include <sys/types.h>
-#include <time.h>
 
 #define ANIM_LENGTH     120
 

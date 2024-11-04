@@ -2,17 +2,9 @@
  * parser_recieve_image.c
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
-#include "graphics.h"
-#include "log.h"
-#include "parser/parser_internal.h"
-#include "parser/parser_http.h"
+#include "parser_internal.h"
+#include "parser_http.h"
 #include <png.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
 
 static int socket_client = 0;
 static HTTPHeader *header;

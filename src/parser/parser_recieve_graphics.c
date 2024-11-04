@@ -5,20 +5,10 @@
  *
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "graphics.h"
-#include "graphics/graphics_internal.h"
 #include "parser_internal.h"
-#include "chroma-typedefs.h"
-#include "log.h"
 
 #include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <time.h>
 
 static int clients[MAX_CONNECTIONS];
 static int socket_client = -1;

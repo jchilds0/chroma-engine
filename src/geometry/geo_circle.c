@@ -6,11 +6,8 @@
  * outer radius, starting angle and end angle.
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "geometry_internal.h"
-#include "log.h"
-#include <math.h>
+#include <stdio.h>
 
 GeometryCircle *geometry_new_circle(Arena *a) {
     GeometryCircle *circle = ARENA_ALLOC(a, GeometryCircle);

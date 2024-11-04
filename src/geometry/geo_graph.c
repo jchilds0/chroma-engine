@@ -6,13 +6,8 @@
  * points and the type of graph.
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "geometry_internal.h"
-#include "log.h"
 #include <stdio.h>
-#include <string.h>
-
 
 GeometryGraph *geometry_new_graph(Arena *a) {
     GeometryGraph *g = ARENA_ALLOC(a, GeometryGraph);

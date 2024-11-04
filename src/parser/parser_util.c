@@ -2,9 +2,7 @@
  * parser_util.c 
  */ 
 
-#include "log.h"
 #include "parser_internal.h"
-#include <string.h>
 
 void parser_incorrect_token(char tok1, char tok2, int buf_ptr, char *buf) {
     char error[30];

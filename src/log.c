@@ -3,7 +3,9 @@
  */
 
 #include "log.h"
-#include "chroma-typedefs.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <stdarg.h>

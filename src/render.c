@@ -1,15 +1,13 @@
 /*
- *
+ * render.c 
  */
 
 #include "chroma-typedefs.h"
 #include "config.h"
-#include "graphics.h"
 #include "parser.h"
 #include "gl_render.h"
 #include "log.h"
 
-#include "glib.h"
 #include "gtk/gtk.h"
 #include <sys/socket.h>
 

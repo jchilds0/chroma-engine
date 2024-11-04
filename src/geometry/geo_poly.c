@@ -5,11 +5,9 @@
  * describes a polygon of n points.
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "geometry_internal.h"
-#include "log.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 GeometryPolygon *geometry_new_polygon(Arena *a) {
     GeometryPolygon *poly = ARENA_ALLOC(a, GeometryPolygon);

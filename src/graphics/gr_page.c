@@ -8,14 +8,7 @@
  *
  */
 
-#include "geometry.h"
-#include "graphics.h"
 #include "graphics_internal.h"
-#include "chroma-engine.h"
-#include "log.h"
-#include <stdint.h>
-#include <string.h>
-#include <sys/mman.h>
 
 /*
  * Initialise a page, assumes the arena has been allocated.

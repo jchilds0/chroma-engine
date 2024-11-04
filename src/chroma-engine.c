@@ -4,11 +4,9 @@
 
 #include "chroma-engine.h"
 #include "chroma-typedefs.h"
-#include "log.h"
 
 #include <bits/getopt_core.h>
 #include <stdio.h>
-#include <sys/socket.h>
 
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *window, *gl_area;

@@ -6,13 +6,8 @@
  *
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "gl_render_internal.h"
-#include "log.h"
-
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include <limits.h>
 
 static GLuint vao;
 static GLuint vbo;

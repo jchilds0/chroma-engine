@@ -5,15 +5,8 @@
  * describes a rectangle.
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "geometry_internal.h"
-#include "log.h"
-
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 GeometryRect *geometry_new_rectangle(Arena *a) {
     GeometryRect *rect = ARENA_ALLOC(a, GeometryRect);

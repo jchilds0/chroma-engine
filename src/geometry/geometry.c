@@ -13,13 +13,8 @@
  *
  */
 
-#include "geometry.h"
-#include "chroma-engine.h"
 #include "geometry_internal.h"
-#include "log.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 void geometry_get_attr(IGeometry *geo, char *attr, char *value);
 void geometry_set_attr(IGeometry *geo, char *attr, char *value);

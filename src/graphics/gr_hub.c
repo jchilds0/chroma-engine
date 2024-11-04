@@ -10,13 +10,7 @@
  *
  */
 
-#include "chroma-engine.h"
-#include "graphics.h"
 #include "graphics_internal.h"
-#include "log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
     hub->capacity = DA_INIT_CAPACITY;

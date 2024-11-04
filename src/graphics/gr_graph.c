@@ -2,14 +2,8 @@
  * gr_graph.c
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
-#include "graphics.h"
 #include "graphics_internal.h"
-#include "log.h"
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
+#include <limits.h>
 
 void graphics_new_graph(Arena *a, Graph *g, size_t n) {
     g->arena = a;

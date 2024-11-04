@@ -7,8 +7,6 @@
  *
  */
 
-#include "chroma-engine.h"
-#include "log.h"
 #include "parser_internal.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>

@@ -19,11 +19,7 @@
  *
  */
 
-#include "graphics.h"
 #include "graphics_internal.h"
-#include "geometry.h"
-#include "log.h"
-#include <string.h>
 #include <time.h>
 
 static void graphics_log_keyframe(IPage *page) {

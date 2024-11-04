@@ -5,16 +5,8 @@
  * describes a rectangular image.
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
-#include "geometry/geometry_internal.h"
-
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include "geometry_internal.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 
 GeometryImage *geometry_new_image(Arena *a) {
     GeometryImage *image = ARENA_ALLOC(a, GeometryImage);

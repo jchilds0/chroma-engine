@@ -12,8 +12,6 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <stddef.h>
-#include <stdint.h>
 #include "chroma-engine.h"
 #include "geometry.h"
 

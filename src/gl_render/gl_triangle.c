@@ -2,12 +2,7 @@
  * gl_triangle.c
  */
 
-#include "chroma-engine.h"
-#include "gl_math.h"
 #include "gl_render_internal.h"
-#include "log.h"
-#include <GL/glew.h>
-#include <stddef.h>
 
 void gl_renderer_triangle_init(Renderer *r, const char *vs, const char *fs) {
     {

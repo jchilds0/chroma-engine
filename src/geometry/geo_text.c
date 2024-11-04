@@ -6,15 +6,9 @@
  * and color.
  */
 
-#include "chroma-engine.h"
-#include "geometry.h"
 #include "geometry_internal.h"
 #include "gl_render.h"
-#include "log.h"
-
 #include <stdio.h>
-#include <string.h>
-
 
 GeometryText *geometry_new_text(Arena *a) {
     GeometryText *text = ARENA_ALLOC(a, GeometryText);

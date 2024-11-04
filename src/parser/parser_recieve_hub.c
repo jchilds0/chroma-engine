@@ -2,21 +2,9 @@
  * parser_recieve_hub.c
  */
 
-#include "chroma-engine.h"
-#include "chroma-typedefs.h"
-#include "geometry.h"
-#include "graphics.h"
-#include "graphics/graphics_internal.h"
-#include "log.h"
-#include "parser/parser_json.h"
-#include "parser/parser_http.h"
+#include "parser_json.h"
+#include "parser_http.h"
 #include "parser_internal.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 int parser_parse_template(JSONNode *template, IGraphics *hub);
 void parser_parse_geometry(JSONNode *geo, IPage *page);

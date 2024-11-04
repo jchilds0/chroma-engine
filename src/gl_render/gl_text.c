@@ -6,12 +6,7 @@
  *
  */
 
-#include "chroma-engine.h"
 #include "gl_render_internal.h"
-#include "geometry.h"
-#include "log.h"
-
-#include <GL/gl.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
