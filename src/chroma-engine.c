@@ -62,7 +62,8 @@ int main(int argc, char **argv) {
     GtkApplication *app;
     int status;
 
-    app = gtk_application_new("com.chroma.engine", G_APPLICATION_DEFAULT_FLAGS);
+    // use deprecated flags none while ubuntu packages are below glib 2.74
+    app = gtk_application_new("com.chroma.engine", G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     status = g_application_run(G_APPLICATION(app), 0, NULL);
     g_object_unref(app);
