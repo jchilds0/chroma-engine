@@ -15,6 +15,7 @@
 typedef enum {
     NONE,
     ENGINE,
+    CHROMA_HUB,
 } Table;
 
 typedef enum {
@@ -24,7 +25,7 @@ typedef enum {
 } LineType;
 
 static int is_whitespace(char c) {
-    return c == '\t' || c == ' ' || c == '\n';
+    return c == '\t' || c == ' ';
 }
 
 static LineType config_line_type(const char *buf) {
@@ -46,10 +47,7 @@ static LineType config_line_type(const char *buf) {
             log_file(LogError, "Config", "Invalid category format");
             break;
 
-        case ' ':
-        case '\t':
         case '\n':
-        case '-':
         case '#':
             return BLANK_LINE;
 
@@ -77,6 +75,8 @@ static Table config_parse_category(const char *buf) {
 
     if (strncmp(name, "Engine", sizeof name) == 0) {
         return ENGINE;
+    } else if (strncmp(name, "ChromaHub", sizeof name) == 0) {
+        return CHROMA_HUB;
     } else {
         log_file(LogWarn, "Config", "Unknown table %s", name);
         return NONE;
@@ -124,7 +124,7 @@ static void config_parse_field(Config *c, Table t, const char *buf) {
             value[j] = buf[i + j];
         }
     } else {
-        for (int j = 0; !is_whitespace(buf[i + j]); j++) {
+        for (int j = 0; buf[i + j] != '\n'; j++) {
             value[j] = buf[i + j];
         }
     }
@@ -135,13 +135,21 @@ static void config_parse_field(Config *c, Table t, const char *buf) {
 
     switch (t) {
         case ENGINE:
-            if (strcmp(field, "ChromaHubAddr") == 0) {
+            if (strncmp(field, "Port", sizeof field) == 0) {
+
+                c->engine_port = atoi(value);
+
+            }
+            break;
+
+        case CHROMA_HUB:
+            if (strcmp(field, "Addr") == 0) {
 
                 int addr_len = strlen(value) + 1;
                 c->hub_addr = NEW_ARRAY(addr_len, char);
                 memcpy(c->hub_addr, value, addr_len);
 
-            } else if (strcmp(field, "ChromaHubPort") == 0) {
+            } else if (strcmp(field, "Port") == 0) {
 
                 c->hub_port = atoi(value);
 
@@ -163,6 +171,7 @@ void config_parse_file(Config *c, char *file_name) {
 
     if (file == NULL) {
         log_file(LogError, "Config", "Error while opening config file %s", file_name);
+        return;
     }
 
     char buf[FILE_LINE_MAX_LEN];

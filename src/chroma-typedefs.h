@@ -28,16 +28,18 @@ typedef struct {
 
 /* graphics structs */
 typedef struct {
-    int         server_socket;
-    int         server_port;
+    unsigned char active;
+    int           server_socket;
+    int           server_port;
 
-    int         hub_socket;
-    char        hub_addr[MAX_BUF_SIZE];
+    int           hub_socket;
+    char          hub_addr[MAX_BUF_SIZE];
 
-    IGraphics   hub;
+    IGraphics     hub;
 } Engine;
 
 extern Engine engine;
+int        chroma_init_renderer(char *filename);
 GtkWidget *chroma_new_renderer(void);
 
 #endif // !CHROMA_TYPEDEFS

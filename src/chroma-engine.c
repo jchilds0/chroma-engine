@@ -32,8 +32,6 @@ int main(int argc, char **argv) {
     char *config_path;
     opterr = 0;
 
-    log_start(-1);
-
     while ((x = getopt(argc, argv, "c:hw:")) != -1) {
         switch (x) {
             case 'c':
@@ -46,7 +44,8 @@ int main(int argc, char **argv) {
                 break;
 
             default:
-                log_file(LogError, "Engine", "Invalid Args %d", x);
+                printf("Invalid Args %d", x);
+                return 1;
         }
     }
 
@@ -54,6 +53,11 @@ int main(int argc, char **argv) {
         printf("Usage:\n");
         printf("  -c [file]\tConfig File\n");
         return 0;
+    }
+
+    if (cflag && chroma_init_renderer(config_path) < 0) {
+        log_file(LogWarn, "Engine", "Error initialising renderer");
+        return 1;
     }
 
     GtkApplication *app;

@@ -11,6 +11,7 @@
 typedef struct {
     char *hub_addr;
     int hub_port;
+    int engine_port;
 } Config;
 
 void config_parse_file(Config *c, char *file_name);
