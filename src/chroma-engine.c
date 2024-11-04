@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     int hflag = 0;
     int cflag = 0;
 
-    char *config_path;
+    char *config_path = "";
     opterr = 0;
 
     while ((x = getopt(argc, argv, "c:hw:")) != -1) {
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (cflag && chroma_init_renderer(config_path) < 0) {
+    if (chroma_init_renderer(config_path) < 0) {
         log_file(LogWarn, "Engine", "Error initialising renderer");
         return 1;
     }
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     GtkApplication *app;
     int status;
 
-    app = gtk_application_new("com.chroma.engine", G_APPLICATION_DEFAULT_FLAGS);
+    app = gtk_application_new("com.chroma.engine", G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     status = g_application_run(G_APPLICATION(app), 0, NULL);
     g_object_unref(app);

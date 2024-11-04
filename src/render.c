@@ -9,6 +9,7 @@
 #include "log.h"
 
 #include "gtk/gtk.h"
+#include <string.h>
 #include <sys/socket.h>
 
 Engine engine = {.active = 0};
@@ -33,7 +34,9 @@ int chroma_init_renderer(char *filename) {
 
     log_start(-1);
 
-    config_parse_file(&config, filename);
+    if (strlen(filename) > 0) {
+        config_parse_file(&config, filename);
+    }
 
     sprintf(engine.hub_addr, "%s:%d", config.hub_addr, config.hub_port); 
     engine.hub_socket = parser_tcp_start_client(config.hub_addr, config.hub_port);
