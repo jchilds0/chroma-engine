@@ -34,11 +34,11 @@ typedef struct {
     HeaderNode tail;
 } HTTPHeader;
 
-char        parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf);
+int         parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf, char *c);
 
-void        parser_http_get(int socket_client, const char *addr);
+int         parser_http_get(int socket_client, const char *addr);
 HTTPHeader  *parser_http_new_header(int socket_client);
-void        parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf);
+int         parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf);
 void        parser_http_free_header(HTTPHeader *header);
 
 #endif // !PARSER_HTTP

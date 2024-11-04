@@ -122,14 +122,6 @@ ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message)
         log_file(LogMessage, "Parser", "Recieved %s", client_message);
     }
 
-    // respond to client 
-    //strcpy(server_message, "Recieved");
-
-    if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
-        printf("Can't send\n");
-        return SERVER_TIMEOUT;
-    }
-
     if (client_message[0] == END_OF_CONN) {
         log_file(LogMessage, "Parser", "Client closed connection");
         return SERVER_CLOSE;

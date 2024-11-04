@@ -45,16 +45,10 @@ void gl_text_init_buffers(void) {
 } 
 
 void gl_text_init_shaders(void) {
-    char *vertexSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "gltext-gl.vs.glsl");
-    char *fragmentSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "gltext-gl.fs.glsl");
-
-    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vertexSource);
-    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
+    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, gltext_vs_glsl);
+    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, gltext_fs_glsl);
 
     program = gl_renderer_create_program(vertex, fragment);
-
-    free(vertexSource);
-    free(fragmentSource);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);

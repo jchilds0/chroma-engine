@@ -16,9 +16,6 @@
 #include <stdint.h>
 #include "chroma-engine.h"
 #include "geometry.h"
-#include "graphics.h"
-
-#define SHADER_PATH       "src/gl_render/"
 
 /* gl_renderer.c */
 #define TRIANGLE_CAP      (MEGABYTES((uint64_t)128) / sizeof( Triangle ))
@@ -62,10 +59,18 @@ void gl_renderer_triangle(Renderer *r, vec2 p0, vec2 p1, vec2 p2,
 void gl_renderer_mask(Renderer *r, RendererOptions opt, int depth);
 void gl_renderer_draw(Renderer *r);
 
-char  *gl_renderer_get_shader_file(const char *filename);
 GLuint gl_renderer_create_shader(int type, const char *src);
 GLuint gl_renderer_create_program(GLuint vertex, GLuint fragment);
 void gl_renderer_set_scale(GLuint program);
+
+extern const char *glimage_vs_glsl;
+extern const char *glimage_fs_glsl;
+extern const char *glrender_vs_glsl;
+extern const char *glrender_fs_glsl;
+extern const char *glshape_vs_glsl;
+extern const char *glshape_fs_glsl;
+extern const char *gltext_vs_glsl;
+extern const char *gltext_fs_glsl;
 
 /* gl_rect.c */
 void gl_draw_rectangle(Renderer *r, GeometryRect *rect);

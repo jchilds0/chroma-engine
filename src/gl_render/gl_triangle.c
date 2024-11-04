@@ -9,9 +9,7 @@
 #include <GL/glew.h>
 #include <stddef.h>
 
-void gl_renderer_triangle_init(Renderer *r, 
-                               const char *vert_file_path,
-                               const char *frag_file_path) {
+void gl_renderer_triangle_init(Renderer *r, const char *vs, const char *fs) {
     {
         glGenVertexArrays(1, &r->vao);
         glBindVertexArray(r->vao);
@@ -36,16 +34,10 @@ void gl_renderer_triangle_init(Renderer *r,
                               (GLvoid *)offsetof(Vertex, uv));
     }
 
-    char *vertexSource = gl_renderer_get_shader_file(vert_file_path);
-    char *fragmentSource = gl_renderer_get_shader_file(frag_file_path);
-
-    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vertexSource);
-    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
+    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vs);
+    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fs);
 
     r->program = gl_renderer_create_program(vertex, fragment);
-
-    free(vertexSource);
-    free(fragmentSource);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);

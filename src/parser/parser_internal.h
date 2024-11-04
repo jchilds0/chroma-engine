@@ -17,7 +17,6 @@
 #define MAX_CONNECTIONS     10
 #define LOG_PARSER          0
 #define LOG_TEMPLATE        0
-#define LOG_JSON            0
 
 // ServerResponse MUST BE < 0 otherwise socket_client in parser will be incorrect
 typedef enum {
@@ -27,8 +26,10 @@ typedef enum {
 } ServerResponse;
 
 typedef enum {
+    NONE,
+
     /* header tokens */
-    VERSION = 0,
+    VERSION,
     LAYER,
     ACTION,
     TEMPID,
@@ -49,11 +50,11 @@ ServerResponse  parser_tcp_recieve_message(int socket_client, char *buf);
 ServerResponse  parser_recieve_image(Engine *eng, GeometryImage *img);
 
 // parser_http.c
-void            parser_update_template(Engine *eng, int page_num);
+int             parser_update_template(Engine *eng, int page_num);
 
 // parser_util.c
 void            parser_incorrect_token(char tok1, char tok2, int buf_ptr, char *buf);
-char            parser_get_char(int socket_client, int *buf_ptr, char *buf);
+int             parser_get_char(int socket_client, int *buf_ptr, char *buf, char *c);
 void            parser_clean_buffer(int *buf_ptr, char *buf);
 ServerResponse  parser_get_message(int socket_client, int *buf_ptr, char *buf);
 

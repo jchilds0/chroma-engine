@@ -3,16 +3,10 @@
  */
 
 #include "log.h"
-#include "chroma-engine.h"
 #include "chroma-typedefs.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <stdarg.h>
-
-#define LOG_DIR             INSTALL_DIR "/log/"
 
 void current_time(char *, int);
 char *pad_int(int);
@@ -24,13 +18,13 @@ void log_start(EngineType type) {
 
     switch (type) {
         case LogEngine:
-            filename = LOG_DIR "chroma-engine.log";
+            filename = "./chroma-engine.log";
             break;
         case LogPreview:
-            filename = LOG_DIR "chroma-preview.log";
+            filename = "./chroma-preview.log";
             break;
         default:
-            filename = LOG_DIR "log.log";
+            filename = "./log.log";
     }
 
     pfile = fopen(filename, "w");
@@ -54,12 +48,13 @@ void log_assert(int cond, const char *module, const char *buf) {
     }
 
     log_file(LogError, module, buf);
+    exit(1);
 }
 
 void log_file(LogType flag, const char *module, const char *buf, ...) {
     char time[100];
     char *type;
-    char message[512];
+    char message[2048];
     va_list argptr = {0};
     va_start(argptr, buf);
     vsnprintf(message, sizeof message, buf, argptr);
@@ -87,11 +82,6 @@ void log_file(LogType flag, const char *module, const char *buf, ...) {
 
     fprintf(pfile, "%s [%s]\t%s%s\n", time, module, type, message);
     fclose(pfile);
-
-    if (flag == LogError) {
-        shutdown(engine.server_socket, SHUT_RDWR);
-        exit(0);
-    }
 }
 
 void current_time(char *buf, int buf_size) {

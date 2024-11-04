@@ -26,29 +26,6 @@ float frame_time[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
 Renderer r;
 
-/* read shader file */
-char *gl_renderer_get_shader_file(const char *filename) {
-    FILE *file;
-    char *shaderSource;
-
-    file = fopen(filename, "rb");
-    if (file == NULL) {
-        shaderSource = "";
-    } else {
-        fseek(file, 0L, SEEK_END);
-        long size = ftell(file) + 1;
-        fclose(file);
-
-        file = fopen(filename, "r");
-        shaderSource = NEW_ARRAY(size, char);
-        memset(shaderSource, '\0', size);
-        fread(shaderSource, 1, size - 1, file);
-        fclose(file);
-    }
-
-    return shaderSource; 
-}
-
 /* Create and compile a shader */
 GLuint gl_renderer_create_shader(int type, const char *src) {
     GLuint shader;
@@ -133,9 +110,7 @@ void gl_realize(GtkWidget *widget) {
     gl_image_init_buffers();
     gl_image_init_shaders();
 
-    gl_renderer_triangle_init(&r, 
-                             INSTALL_DIR SHADER_PATH "glrender-gl.vs.glsl", 
-                             INSTALL_DIR SHADER_PATH "glrender-gl.fs.glsl");
+    gl_renderer_triangle_init(&r, glrender_vs_glsl, glrender_fs_glsl);                             
 }
 
 void gl_renderer_set_scale(GLuint program) {

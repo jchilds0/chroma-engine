@@ -59,7 +59,7 @@ IGeometry *graphics_page_add_geometry(IPage *page, int type, int geo_id) {
     return geo;
 }
 
-void graphics_free_page(IPage *page) {
+void graphics_page_clear(IPage *page) {
     if (page == NULL) {
         return;
     }
@@ -76,6 +76,14 @@ void graphics_free_page(IPage *page) {
 
     page->arena.allocd = 0;
     page->len_geometry = 0;
+}
+
+int graphics_page_free_page(IPage *page) {
+    if (page == NULL) {
+        return 0;
+    }
+
+    return munmap(page->arena.memory, page->arena.allocd);
 }
 
 void graphics_page_interpolate_geometry(IPage *page, int index, int width) {

@@ -23,9 +23,9 @@
 static int clients[MAX_CONNECTIONS];
 static int socket_client = -1;
 
-void    parser_parse_page(IPage *page);
-void    parser_parse_header(PageStatus *status);
-Token   parser_get_token(char *value);
+int     parser_parse_page(IPage *page);
+int     parser_parse_header(PageStatus *status);
+int     parser_get_token(char *value, Token *t);
 
 static char buf[PARSE_BUF_SIZE];
 static int buf_ptr = 0;
@@ -76,6 +76,7 @@ void parser_check_socket(int server_socket) {
  */
 int parser_parse_graphic(Engine *eng, PageStatus *status) {
     ServerResponse rec;
+    status->action = BLANK;
 
     // check if current connection has a message
     if (socket_client >= 0) {
@@ -121,26 +122,36 @@ int parser_parse_graphic(Engine *eng, PageStatus *status) {
         }
     }
 
-    return -1;
+    return 0;
 
 PAGE:
     log_file(LogMessage, "Parser", "Recieved message from %d", socket_client);
 
     int start = clock();
-    parser_parse_header(status);
+    if (parser_parse_header(status) < 0) {
+        return -1;
+    }
 
     if (status->action == UPDATE) {
         log_file(LogMessage, "Parser", "Updating template %d", status->temp_id);
-        parser_update_template(eng, status->temp_id);
+        if (parser_update_template(eng, status->temp_id) < 0) {
+            return -1;
+        }
 
         status->action = BLANK;
         char attr[PARSE_BUF_SIZE];
-        while (parser_get_token(attr) != EOM);
+        Token t = NONE;
+        while (t != EOM) {
+            if (parser_get_token(attr, &t) < 0) {
+                log_file(LogWarn, "Parser", "Missing EOM tag");
+                break;
+            }
+        };
 
         int end = clock();
         log_file(LogMessage, "Graphics", "Update template in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
 
-        return -1;
+        return 0;
     }
 
     int page_index = graphics_hub_get_page(&eng->hub, status->temp_id);
@@ -152,12 +163,22 @@ PAGE:
         status->layer = 0;
 
         char attr[PARSE_BUF_SIZE];
-        while (parser_get_token(attr) != EOM);
+        Token t = NONE;
+        while (t != EOM) {
+            if (parser_get_token(attr, &t) < 0) {
+                log_file(LogWarn, "Parser", "Missing EOM tag");
+                break;
+            }
+        };
+
         return -1;
     }
 
     IPage *page = &eng->hub.items[page_index];
-    parser_parse_page(page);    // Read new page values
+    // Read new page values
+    if (parser_parse_page(page) < 0) {
+        return -1;
+    }
 
     switch (status->action) {
         case ANIMATE_ON:
@@ -199,33 +220,42 @@ PAGE:
     end = clock();
 
     log_file(LogMessage, "Graphics", "Calculated keyframes in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
-
     return 0;
 }
 
 /*
  * Parse the header of a gui request 
  */
-void parser_parse_header(PageStatus *status) {
+int parser_parse_header(PageStatus *status) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
     int parsed_temp_id = 0;
 
-    Token tok;
+    Token tok_attr, tok_value;
     int v_m, v_n;
     char attr[PARSE_BUF_SIZE];
     char value[PARSE_BUF_SIZE];
 
-    while ((tok = parser_get_token(attr)) != EOM
-           && parser_get_token(value) != EOM) {
-        switch (tok) {
+    while (1) {
+        if (parser_get_token(attr, &tok_attr) < 0) {
+            log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
+        if (parser_get_token(value, &tok_value) < 0) {
+            log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
+        switch (tok_attr) {
             case VERSION:
                 sscanf(value, "%d,%d", &v_m, &v_n);
                 parsed_version = 1;
                 
                 if (v_m != 1 || v_n != 4) {
                     log_file(LogError, "Parser", "Incorrect encoding version v%d.%d, expected v1.4", v_m, v_n);
+                    return -1;
                 }
 
                 if (LOG_PARSER) {
@@ -265,26 +295,37 @@ void parser_parse_header(PageStatus *status) {
         }
 
         if (parsed_version && parsed_length && parsed_action && parsed_temp_id) {
-            return;
+            return 0;
         }
     }
+
+    log_file(LogError, "Parser", "Didn't find header tokens");
+    return -1;
 }
 
-void parser_parse_page(IPage *page) {
+int parser_parse_page(IPage *page) {
     char attr[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     Token tok;
     IGeometry *geo;
     int geo_num = -1;
 
     while (1) {
-        tok = parser_get_token(attr);
+        if (parser_get_token(attr, &tok) < 0) {
+            log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
         if (tok == EOM) {
-            return;
+            return 0;
         } else if (tok != ATTR) {
             log_file(LogWarn, "Parser", "Unexpected token %d, expected %d", tok, ATTR);
         }
         
-        tok = parser_get_token(value);
+        if (parser_get_token(value, &tok) < 0) {
+            log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
         if (tok == EOM) {
             log_file(LogWarn, "Parser", "Parsed attr without a value");
         } else if (tok != VALUE) {
@@ -298,6 +339,7 @@ void parser_parse_page(IPage *page) {
 
         if (geo_num == -1) {
             log_file(LogError, "Parser", "Didn't find a geo num");
+            return -1;
         }
 
         GeometryAttr geo_attr = geometry_char_to_attr(attr);
@@ -315,14 +357,16 @@ void parser_parse_page(IPage *page) {
     }
 }
 
-Token parser_get_token(char *value) {
+int parser_get_token(char *value, Token *t) {
     char c;
     int i = 0;
     memset(value, '\0', PARSE_BUF_SIZE);
 
     // read chars until we get a '#', '=' or end of message
     while (1) {
-        c = parser_get_char(socket_client, &buf_ptr, buf);
+        if (parser_get_char(socket_client, &buf_ptr, buf, &c) < 0) {
+            return -1;
+        }
 
         switch (c) {
             case '=':
@@ -330,11 +374,13 @@ Token parser_get_token(char *value) {
             case '#':
                 goto HASH;
             case END_OF_MESSAGE:
-                return EOM;
+                *t = EOM;
+                return 0;
         }
 
         if (i >= PARSE_BUF_SIZE) {
             log_file(LogError, "Parser", "token buffer out of memory");
+            return -1;
         }
 
         value[i++] = c;
@@ -342,25 +388,25 @@ Token parser_get_token(char *value) {
 
 EQUAL:
     // We found an attribute 
+    *t = ATTR;
 
-    // First check if it part of the message header
+    // check if it part of the message header
     if (strcmp(value, "version") == 0) {
-        return VERSION;
+        *t = VERSION;
     } else if (strcmp(value, "layer") == 0) {
-        return LAYER;
+        *t = LAYER;
     } else if (strcmp(value, "action") == 0) {
-        return ACTION;
+        *t = ACTION;
     } else if (strcmp(value, "temp") == 0) {
-        return TEMPID;
+        *t = TEMPID;
     }
 
-    // Not a header attribute so it is part of the page,
-    // we return the attr for the page to deal with
-    return ATTR;
+    return 0;
 
 HASH:
     // We found a value
-    return VALUE;
+    *t = VALUE;
+    return 0;
 
 }
 

@@ -24,12 +24,14 @@ void parser_incorrect_token(char tok1, char tok2, int buf_ptr, char *buf) {
     }
 }
 
-char parser_get_char(int socket_client, int *buf_ptr, char *buf) {
+int parser_get_char(int socket_client, int *buf_ptr, char *buf, char *c) {
     if (parser_get_message(socket_client, buf_ptr, buf) != SERVER_MESSAGE) {
         log_file(LogWarn, "Parser", "Tried to get char, but didn't have any remaining");
+        return -1;
     }
 
-    return buf[(*buf_ptr)++];
+    *c = buf[(*buf_ptr)++];
+    return 0;
 }
 
 void parser_clean_buffer(int *buf_ptr, char *buf) {

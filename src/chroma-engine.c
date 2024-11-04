@@ -2,35 +2,37 @@
  * chroma-engine.c 
  */
 
+#include "chroma-engine.h"
 #include "chroma-typedefs.h"
-#include "config.h"
 #include "log.h"
-#include "parser.h"
 
 #include <bits/getopt_core.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <time.h>
 
-Engine engine;
-Config config;
+static void activate(GtkApplication *app, gpointer user_data) {
+    GtkWidget *window, *gl_area;
+
+    window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(window), "Chroma Engine");
+    gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1080);
+    gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+
+    gl_area = chroma_new_renderer();
+    gtk_container_add(GTK_CONTAINER(window), gl_area);
+
+    gtk_widget_show_all(window);
+}
 
 int main(int argc, char **argv) {
-    int x, wid;
+    int x;
     int hflag = 0;
-    int wflag = 0;
     int cflag = 0;
 
-    char *wval;
     char *config_path;
     opterr = 0;
 
-    config.hub_addr = NULL;
-
     log_start(-1);
-    parser_init_sockets();
 
     while ((x = getopt(argc, argv, "c:hw:")) != -1) {
         switch (x) {
@@ -43,11 +45,6 @@ int main(int argc, char **argv) {
                 hflag = 1;
                 break;
 
-            case 'w':
-                wval = optarg;
-                wflag = 1;
-                break;
-
             default:
                 log_file(LogError, "Engine", "Invalid Args %d", x);
         }
@@ -56,42 +53,16 @@ int main(int argc, char **argv) {
     if (hflag) {
         printf("Usage:\n");
         printf("  -c [file]\tConfig File\n");
-        printf("  -w [id]\tUse preview mode with gtk plug id [id]\n");
         return 0;
     }
 
-    if (cflag) {
-        config_parse_file(&config, config_path);
-    } else {
-        log_file(LogMessage, "Config", "No config file specified, loading default " DEFAULT_CONFIG_PATH);
-        config_parse_file(&config, DEFAULT_CONFIG_PATH);
-    }
+    GtkApplication *app;
+    int status;
 
-    sprintf(engine.hub_addr, "%s:%d", config.hub_addr, config.hub_port); 
-    engine.hub_socket = parser_tcp_start_client(config.hub_addr, config.hub_port);
-    log_file(LogMessage, "Engine", "Graphics hub %s:%d", config.hub_addr, config.hub_port); 
+    app = gtk_application_new("com.chroma.engine", G_APPLICATION_DEFAULT_FLAGS);
+    g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+    status = g_application_run(G_APPLICATION(app), 0, NULL);
+    g_object_unref(app);
 
-    clock_t start, end;
-    start = clock();
-
-    parser_parse_hub(&engine);
-
-    end = clock();
-
-    log_file(LogMessage, "Parser", "Imported Chroma Hub in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
-
-    if (wflag) {
-        // Preview process
-        log_start(LogPreview);
-        wid = atoi(wval);
-        log_file(LogMessage, "Engine", "Recieved wid %d", wid);
-        preview_window(wid);
-    } else {
-        // Engine process
-        log_start(LogEngine);
-        engine_window();
-    }
-
-    return 1;
+    return status;
 }
-

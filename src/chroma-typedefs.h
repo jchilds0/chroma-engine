@@ -6,8 +6,8 @@
 #define CHROMA_TYPEDEFS
 
 #include "chroma-engine.h"
-#include "config.h"
 #include "graphics.h"
+#include <gtk/gtk.h>
 
 typedef enum {
     BLANK = 0,
@@ -38,13 +38,6 @@ typedef struct {
 } Engine;
 
 extern Engine engine;
-
-/* engine.c */
-void engine_window(void);
-
-/* preview.c */
-void preview_window(int);
-
-void free_engine(void);
+GtkWidget *chroma_new_renderer(void);
 
 #endif // !CHROMA_TYPEDEFS

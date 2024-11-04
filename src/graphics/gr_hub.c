@@ -15,6 +15,7 @@
 #include "graphics_internal.h"
 #include "log.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
@@ -35,7 +36,7 @@ IPage *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int 
 
     if ((i = graphics_hub_get_page(hub, temp_id)) >= 0) {
         log_file(LogMessage, "Graphics", "Replacing page %d", temp_id);
-        graphics_free_page(&hub->items[i]);
+        graphics_page_clear(&hub->items[i]);
         page = &hub->items[i];
 
         graphics_init_page(page, num_geo, max_keyframe);
@@ -66,3 +67,15 @@ int graphics_hub_get_page(IGraphics *hub, int temp_id) {
     return index;
 }
 
+void graphics_free_graphics_hub(IGraphics *hub) {
+    if (hub == NULL) {
+        return;
+    }
+
+    for (size_t i = 0; i < hub->count; i++) {
+        IPage *page = &hub->items[i];
+        graphics_page_free_page(page);
+    }
+
+    free(hub->items);
+}

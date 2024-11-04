@@ -18,78 +18,94 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void parser_parse_template(JSONNode *template, IGraphics *hub);
+int parser_parse_template(JSONNode *template, IGraphics *hub);
 void parser_parse_geometry(JSONNode *geo, IPage *page);
 void parser_parse_attribute(JSONNode *attr, IGeometry *geo);
-
+ 
 void parser_parse_user_frame(JSONNode *frame, IPage *page);
 void parser_parse_bind_frame(JSONNode *frame, IPage *page);
 void parser_parse_set_frame(JSONNode *frame, IPage *page);
 
-#define JSON_ARRAY(array_obj, data, f)                                                     \
-    do {                                                                                   \
-        log_assert((array_obj)->type == JSON_ARRAY, "Parser", "Node is not a JSON_ARRAY"); \
-        for (int i = 0; i < (array_obj)->array.num_items; i++) {                           \
-            size_t node_index = json_arena.objects.items[(array_obj)->array.start + i];    \
-            JSONNode *node = &json_arena.items[node_index];                                \
-            f((node), (data));                                                             \
-        }                                                                                  \
-    } while (0);                                                                           \
-
-
 // S -> {'num_temp': num, 'templates': [T]}
-void parser_parse_hub(Engine *eng) {
+int parser_parse_hub(Engine *eng) {
     char addr[PARSE_BUF_SIZE];
+    log_file(LogMessage, "Parser", "Requesting Chroma Hub");
 
     memset(addr, '\0', sizeof addr);
     sprintf(addr, "%s/templates", eng->hub_addr);
-    parser_http_get(eng->hub_socket, addr);
-
-    JSONNode *root = parser_receive_json(eng->hub_socket);
-    if (root == NULL || root->type != JSON_OBJECT) {
-        log_file(LogMessage, "Parser", "No hub received");
-        return;
+    if (parser_http_get(eng->hub_socket, addr) < 0) {
+        log_file(LogError, "Parser", "parser_parse_hub: %s %d", __FILE__, __LINE__);
+        return -1;
     }
 
-    int num_temp = parser_json_get_int(root, "NumTemplates");
+    JSONNode root;
+    if (parser_receive_json(eng->hub_socket, &root) < 0 || root.type != JSON_OBJECT) {
+        log_file(LogWarn, "Parser", "No hub received");
+        parser_clean_json();
+        return -1;
+    }
+
+    int num_temp = parser_json_get_int(&root, "NumTemplates");
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "Num Templates: %d", num_temp);
     }
 
     graphics_new_graphics_hub(&eng->hub, num_temp);
 
-    JSONNode *templates = parser_json_attribute(root, "Templates");
+    JSONNode *templates = parser_json_attribute(&root, "Templates");
     if (templates == NULL || templates->type != JSON_ARRAY) {
         log_file(LogWarn, "Parser", "No templates received");
         parser_clean_json();
-        return;
+        return 0;
     }
 
-    JSON_ARRAY(templates, &eng->hub, parser_parse_template);
+    if (templates->type != JSON_ARRAY) {
+        log_file(LogError, "Parser", "Templates is not a JSON_ARRAY");
+        return -1;
+    }
+
+    for (int i = 0; i < templates->array.num_items; i++) {    
+        size_t node_index = json_arena.objects.items[templates->array.start + i];  
+        JSONNode *node = &json_arena.items[node_index];                               
+        if (parser_parse_template(node, &eng->hub) < 0) {
+            log_file(LogError, "Parser", "parser_parse_hub: %s %d", __FILE__, __LINE__);
+            log_file(LogError, "Parser", "Array index: %d", i);
+            return -1;
+        }
+    }                                                                                  
+
     parser_clean_json();
+    return 0;
 }
 
-void parser_update_template(Engine *eng, int temp_id) {
+int parser_update_template(Engine *eng, int temp_id) {
     char addr[PARSE_BUF_SIZE];
     memset(addr, '\0', sizeof addr);
     sprintf(addr, "%s/template/%d", eng->hub_addr, temp_id);
-    parser_http_get(eng->hub_socket, addr);
-
-    JSONNode *template = parser_receive_json(eng->hub_socket);
-    if (template == NULL || template->type != JSON_OBJECT) {
-        log_file(LogMessage, "Parser", "No template received");
-        parser_clean_json();
-        return;
+    if (parser_http_get(eng->hub_socket, addr) < 0) {
+        log_file(LogError, "Parser", "parser_update_template: %s %d", __FILE__, __LINE__);
+        return -1;
     }
 
-    parser_parse_template(template, &eng->hub); 
+    JSONNode template;
+    if (parser_receive_json(eng->hub_socket, &template) < 0 || template.type != JSON_OBJECT) {
+        log_file(LogMessage, "Parser", "No template received");
+        parser_clean_json();
+        return 0;
+    }
+
+    if (parser_parse_template(&template, &eng->hub) < 0) {
+        return -1;
+    } 
+
     parser_clean_json();
+    return 0;
 }
 
 static int geo_type;
 
 // T -> {'id': num, 'num_geo': num, 'geometry': [G]} | T, T
-void parser_parse_template(JSONNode *template, IGraphics *hub) {
+int parser_parse_template(JSONNode *template, IGraphics *hub) {
     int max_geo = parser_json_get_int(template, "MaxGeometry");
     if (LOG_TEMPLATE) {
         log_file(LogMessage, "Parser", "\tnum geometery: %d", max_geo);
@@ -115,29 +131,66 @@ void parser_parse_template(JSONNode *template, IGraphics *hub) {
         for (int i = 0; i < num_geo; i++) {
             JSONNode *node = parser_json_attribute(template, geo_names[i]);
             geo_type = geo_types[i];
-            JSON_ARRAY(node, page, parser_parse_geometry);
-        }
+            if (node == NULL || node->type != JSON_ARRAY) {
+                log_file(LogError, "Parser", "parser_parse_hub: %s %d", __FILE__, __LINE__);
+                return -1;
+            }
 
+            for (int i = 0; i < node->array.num_items; i++) {    
+                size_t node_index = json_arena.objects.items[node->array.start + i];  
+                JSONNode *node = &json_arena.items[node_index];                               
+                parser_parse_geometry(node, page);                                                             
+            }                                                                                  
+        }
     }
 
     {
         // keyframes
         JSONNode *node = parser_json_attribute(template, "UserFrame");
-        JSON_ARRAY(node, page, parser_parse_user_frame);
+        if (node == NULL || node->type != JSON_ARRAY) {
+            log_file(LogError, "Parser", "parser_parse_hub: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
+        for (int i = 0; i < node->array.num_items; i++) {    
+            size_t node_index = json_arena.objects.items[node->array.start + i];  
+            JSONNode *node = &json_arena.items[node_index];                               
+            parser_parse_user_frame(node, page);                                                             
+        }                                                                                  
 
         node = parser_json_attribute(template, "SetFrame");
-        JSON_ARRAY(node, page, parser_parse_set_frame);
+        if (node == NULL || node->type != JSON_ARRAY) {
+            log_file(LogError, "Parser", "parser_parse_hub: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
+        for (int i = 0; i < node->array.num_items; i++) {    
+            size_t node_index = json_arena.objects.items[node->array.start + i];  
+            JSONNode *node = &json_arena.items[node_index];                               
+            parser_parse_set_frame(node, page);                                                             
+        }                                                                                  
 
         node = parser_json_attribute(template, "BindFrame");
-        JSON_ARRAY(node, page, parser_parse_bind_frame);
+        if (node == NULL || node->type != JSON_ARRAY) {
+            log_file(LogError, "Parser", "parser_parse_hub: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
 
+        for (int i = 0; i < node->array.num_items; i++) {    
+            size_t node_index = json_arena.objects.items[node->array.start + i];  
+            JSONNode *node = &json_arena.items[node_index];                               
+            parser_parse_bind_frame(node, page);                                                             
+        }                                                                                  
     }
 
     graphics_page_default_relations(page);
 
     if (!graphics_graph_is_dag(&page->keyframe_graph)) {
         log_file(LogError, "Graphics", "Page %d keyframes are not in a dag", page->temp_id);
+        return -1;
     }
+
+    return 0;
 }
 
 static void parser_parse_keyframe(JSONNode *frame_obj, Keyframe *frame) {

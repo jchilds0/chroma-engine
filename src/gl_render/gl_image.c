@@ -59,11 +59,8 @@ void gl_image_init_buffers(void) {
 }
 
 void gl_image_init_shaders(void) {
-    char *vertexSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "glimage-gl.vs.glsl");
-    char *fragmentSource = gl_renderer_get_shader_file(INSTALL_DIR SHADER_PATH "glimage-gl.fs.glsl");
-
-    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, vertexSource);
-    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, fragmentSource);
+    GLuint vertex = gl_renderer_create_shader(GL_VERTEX_SHADER, glimage_vs_glsl);
+    GLuint fragment = gl_renderer_create_shader(GL_FRAGMENT_SHADER, glimage_fs_glsl);
 
     program = gl_renderer_create_program(vertex, fragment);
 
@@ -82,9 +79,6 @@ void gl_image_init_shaders(void) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    free(vertexSource);
-    free(fragmentSource);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);

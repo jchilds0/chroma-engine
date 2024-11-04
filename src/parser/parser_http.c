@@ -14,14 +14,17 @@
 #include <sys/socket.h>
 #include <time.h>
 
-void parser_http_get(int socket_client, const char *addr) {
+int parser_http_get(int socket_client, const char *addr) {
     char msg[PARSE_BUF_SIZE];
     memset(msg, '\0', sizeof msg);
 
     sprintf(msg, "GET http://%s HTTP/1.1\nHost: ChromaViz\n\n", addr);
     if (send(socket_client, msg, strlen(msg), 0) < 0) {
         log_file(LogError, "Parser", "Error requesting graphics hub"); 
+        return -1;
     }
+
+    return 0;
 }
 
 HTTPHeader *parser_http_new_header(int socket_client) {
@@ -54,12 +57,19 @@ void parser_http_free_header(HTTPHeader *header) {
     free(header);
 }
 
-void parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
-    char c, line[PARSE_BUF_SIZE];
+int parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
+    char c = '\0', line[PARSE_BUF_SIZE];
     int i = 0;
 
     // status
-    while ((line[i++] = parser_get_char(header->socket_client, buf_ptr, buf)) != '\n');
+    while (c != '\n') {
+        if (parser_get_char(header->socket_client, buf_ptr, buf, &c) < 0) {
+            log_file(LogError, "Parser", "parser_http_header: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
+
+        line[i++] = c;
+    }
 
     // attrs
     while (1) {
@@ -71,7 +81,11 @@ void parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
 
         // name
         while (1) {
-            c = parser_get_char(header->socket_client, buf_ptr, buf);
+            if (parser_get_char(header->socket_client, buf_ptr, buf, &c) < 0) {
+                log_file(LogError, "Parser", "parser_http_header: %s %d", __FILE__, __LINE__);
+                return -1;
+            }
+
             if (c == ':' || c == '\r') {
                 break;
             }
@@ -84,7 +98,10 @@ void parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
             node->name[i++] = c;
         };
 
-        parser_get_char(header->socket_client, buf_ptr, buf);
+        if (parser_get_char(header->socket_client, buf_ptr, buf, &c) < 0) {
+            log_file(LogError, "Parser", "parser_http_header: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
 
         // end of header
         if (i == 0) {
@@ -95,7 +112,11 @@ void parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
 
         // value
         while (1) {
-            c = parser_get_char(header->socket_client, buf_ptr, buf);
+            if (parser_get_char(header->socket_client, buf_ptr, buf, &c) < 0) {
+                log_file(LogError, "Parser", "parser_http_header: %s %d", __FILE__, __LINE__);
+                return -1;
+            }
+
             if (c == '\r') {
                 break;
             }
@@ -108,7 +129,10 @@ void parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
             node->value[i++] = c;
         };
 
-        parser_get_char(header->socket_client, buf_ptr, buf);
+        if (parser_get_char(header->socket_client, buf_ptr, buf, &c) < 0) {
+            log_file(LogError, "Parser", "parser_http_header: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
 
         if (LOG_PARSER) {
             log_file(LogMessage, "Parser", "\tName: '%s'", node->name);
@@ -145,17 +169,30 @@ void parser_http_header(HTTPHeader *header, int *buf_ptr, char *buf) {
 
         }
     }
+
+    return 0;
 }
 
-char parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf) {
+int parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf, char *c) {
+    char c_temp = 0;
     if (header->transfer_encoding == CHUNKED && header->chunk_size == header->read) {
         // end of a chunk, read next chunk size
         char line[PARSE_BUF_SIZE];
         memset(line, '\0', PARSE_BUF_SIZE);
         int i = 0;
 
-        while ((line[i++] = parser_get_char(header->socket_client, buf_ptr, buf)) != '\r');
-        parser_get_char(header->socket_client, buf_ptr, buf);
+        while (c_temp != '\r') {
+            if (parser_get_char(header->socket_client, buf_ptr, buf, &c_temp) < 0) {
+                log_file(LogError, "Parser", "parser_http_get_char: %s %d", __FILE__, __LINE__);
+                return -1;
+            }
+
+            line[i++] = c_temp;
+        }
+        if (parser_get_char(header->socket_client, buf_ptr, buf, &c_temp) < 0) {
+            log_file(LogError, "Parser", "parser_http_get_char: %s %d", __FILE__, __LINE__);
+            return -1;
+        }
 
         header->chunk_size = strtol(line, NULL, 16);
         if (LOG_PARSER) {
@@ -164,10 +201,16 @@ char parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf) {
 
     } else if (header->content_length == header->read) {
         log_file(LogMessage, "Parser", "End of content");
-        return T_NONE;
+        *c = T_NONE;
+        return 0;
     }
 
     header->read++;
-    return parser_get_char(header->socket_client, buf_ptr, buf);
+    if (parser_get_char(header->socket_client, buf_ptr, buf, c) < 0) {
+        log_file(LogError, "Parser", "parser_http_get_char: %s %d", __FILE__, __LINE__);
+        return -1;
+    }
+
+    return 0;
 }
 

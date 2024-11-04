@@ -7,13 +7,12 @@
 #ifndef CHROMA_ENGINE
 #define CHROMA_ENGINE
 
-#include <gdk/gdk.h>
-#include <gtk/gtkx.h>
-#include <gtk/gtk.h>
-
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <sys/mman.h>
+#include <limits.h>
 #include "log.h"
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
@@ -105,8 +104,6 @@ typedef struct {
 #define MIN(a, b)                     (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)                     (((a) > (b)) ? (a) : (b))
 #define INDEX(x, y, z, y_len, z_len)  x * (y_len * z_len) + y * z_len + z
-
-#define INSTALL_DIR                   "/home/josh/programming/chroma-engine/"
 
 #define CHROMA_FRAMERATE              120
 

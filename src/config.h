@@ -5,9 +5,8 @@
 #ifndef CONFIG
 #define CONFIG
 
+#include "chroma-engine.h"
 #include <stdint.h>
-
-#define DEFAULT_CONFIG_PATH     "config/config.toml"
 
 typedef struct {
     char *hub_addr;

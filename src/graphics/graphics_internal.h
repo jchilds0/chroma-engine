@@ -18,8 +18,9 @@
 
 /* gr_page.c */
 void         graphics_init_page(IPage *, int num_geo, int max_keyframe);
-void         graphics_free_page(IPage *);
+void         graphics_page_clear(IPage *);
 void         graphics_page_generate(IPage *);
+int          graphics_page_free_page(IPage *);
 
 /* gr_keyframe.c */
 FrameType    graphics_keyframe_type(char *name);   

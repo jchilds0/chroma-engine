@@ -65,7 +65,7 @@ typedef struct {
 
 extern JSONArena json_arena;
 
-JSONNode *parser_receive_json(int socket_client);
+int  parser_receive_json(int socket_client, JSONNode *root);
 void parser_clean_json(void);
 
 JSONNode *parser_json_attribute(JSONNode *obj, const char *attr);
