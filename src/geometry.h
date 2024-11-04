@@ -29,7 +29,7 @@
 #ifndef CHROMA_GEOMETRY
 #define CHROMA_GEOMETRY
 
-#include "chroma-engine.h"
+#include "arena.h"
 #include "gl_math.h"
 #include <GL/glew.h>
 #include <GL/gl.h>

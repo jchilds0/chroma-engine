@@ -29,17 +29,21 @@ static void chroma_close_renderer(GtkWidget *widget, gpointer data) {
     engine.active = 0;
 }
 
-int chroma_init_renderer(char *filename) {
+int chroma_init_renderer(char *config_path, char *log_path) {
     parser_init_sockets();
 
-    log_start(-1);
+    log_start(log_path);
 
-    if (strlen(filename) > 0) {
-        config_parse_file(&config, filename);
+    if (strlen(config_path) > 0) {
+        config_parse_file(&config, config_path);
     }
 
     sprintf(engine.hub_addr, "%s:%d", config.hub_addr, config.hub_port); 
     engine.hub_socket = parser_tcp_start_client(config.hub_addr, config.hub_port);
+    if (engine.hub_socket < 0) {
+        return -1;
+    }
+
     log_file(LogMessage, "Engine", "Graphics hub %s:%d", config.hub_addr, config.hub_port); 
 
     clock_t start, end;
@@ -53,6 +57,10 @@ int chroma_init_renderer(char *filename) {
 
     engine.server_port = config.engine_port;
     engine.server_socket = parser_tcp_start_server(engine.server_port);
+    if (engine.server_socket < 0) {
+        return -1;
+    }
+
     engine.active = 1;
 
     log_file(LogMessage, "Parser", "Imported Chroma Hub in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);

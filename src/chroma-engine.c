@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (chroma_init_renderer(config_path) < 0) {
+    if (chroma_init_renderer(config_path, "./log") < 0) {
         log_file(LogWarn, "Engine", "Error initialising renderer");
         return 1;
     }

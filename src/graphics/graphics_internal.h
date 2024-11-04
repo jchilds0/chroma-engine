@@ -10,6 +10,7 @@
 #ifndef GRAPHICS_INTERNAL
 #define GRAPHICS_INTERNAL
 
+#include "chroma-engine.h"
 #include "geometry.h"
 #include "graphics.h"
 #include <stddef.h>

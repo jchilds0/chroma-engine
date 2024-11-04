@@ -13,35 +13,15 @@
 void current_time(char *, int);
 char *pad_int(int);
 
-static char *filename;
+static char filename[1024];
 
-void log_start(EngineType type) {
+void log_start(char *path) {
     FILE *pfile;
 
-    switch (type) {
-        case LogEngine:
-            filename = "./chroma-engine.log";
-            break;
-        case LogPreview:
-            filename = "./chroma-preview.log";
-            break;
-        default:
-            filename = "./log.log";
-    }
-
+    snprintf(filename, sizeof filename, "%s/chroma_engine.log", path);
     pfile = fopen(filename, "w");
     fclose(pfile);
-
-    switch (type) {
-        case LogEngine:
-            log_file(LogMessage, "Log", "Engine Started");
-            break;
-        case LogPreview:
-            log_file(LogMessage, "Log", "Preview Started");
-            break;
-        default:
-            log_file(LogMessage, "Log", "Logging to temp file");
-    }
+    log_file(LogMessage, "Log", "Engine Started");
 }
 
 void log_assert(int cond, const char *module, const char *buf) {

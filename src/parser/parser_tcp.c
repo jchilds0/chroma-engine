@@ -25,6 +25,7 @@ int parser_tcp_start_server(int port) {
 
         if (attempts++ > MAX_ATTEMPTS) {
             log_file(LogError, "Parser", "Too many failed attemps to create a socket");
+            return -1;
         }
 
         if (socket_desc < 0) {
@@ -51,6 +52,7 @@ int parser_tcp_start_server(int port) {
 
         if (attempts++ > MAX_ATTEMPTS) {
             log_file(LogError, "Parser", "Too many attemps to bind socket to port %d", port);
+            return -1;
         }
 
         if (bind_soc < 0) {

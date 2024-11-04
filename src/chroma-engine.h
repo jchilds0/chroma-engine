@@ -7,11 +7,9 @@
 #ifndef CHROMA_ENGINE
 #define CHROMA_ENGINE
 
-#include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
-#include "log.h"
+#include <gtk/gtk.h>
 
 #define NEW_STRUCT(struct_type)       (struct_type *) malloc((size_t) sizeof( struct_type ))
 #define NEW_ARRAY(n, struct_type)     (struct_type *) malloc((size_t) (n) * sizeof( struct_type ))
@@ -19,43 +17,6 @@
 #define KILOBYTES(value)              (1024 * (value))
 #define MEGABYTES(value)              (1024 * KILOBYTES(value))
 #define GIGABYTES(value)              (1024 * MEGABYTES(value))
-
-// Arena Macros
-typedef struct {
-    uint64_t size;
-    uint64_t allocd;
-    int8_t   *memory;
-} Arena;
-
-#define ARENA_INIT(arena, capacity)                                                        \
-    do {                                                                                   \
-        (arena)->allocd = 0;                                                               \
-        (arena)->size = capacity;                                                          \
-        (arena)->memory = mmap(NULL, (arena)->size, PROT_WRITE | PROT_READ,                \
-                MAP_PRIVATE | MAP_ANON, 0, 0);                                             \
-        log_assert((arena)->memory != MAP_FAILED,                                          \
-                "System", "Unable to allocate arena: " __FILE__);                          \
-    } while (0)
-
-#define ARENA_ALLOC(arena, struct_type) ({                                                 \
-        uint64_t struct_size = sizeof( struct_type );                                      \
-        log_assert((arena)->allocd + struct_size < (arena)->size,                          \
-                "System", "Arena out of memory " __FILE__);                                \
-        struct_type *ptr = (struct_type *)((arena)->memory + (arena)->allocd);             \
-        (arena)->allocd += struct_size;                                                    \
-        memset(ptr, 0, struct_size);                                                       \
-        ptr;                                                                               \
-    })
-
-#define ARENA_ARRAY(arena, count, struct_type) ({                                          \
-        uint64_t struct_size = (uint64_t) count * sizeof( struct_type );                   \
-        log_assert((arena)->allocd + struct_size < (arena)->size,                          \
-                "System", "Arena out of memory " __FILE__);                                \
-        struct_type *ptr = (struct_type *)((arena)->memory + (arena)->allocd);             \
-        (arena)->allocd += struct_size;                                                    \
-        memset(ptr, 0, struct_size);                                                       \
-        ptr;                                                                               \
-    })
 
 // Dynamic Array Macros
 #define DA_INIT_CAPACITY                 8192
@@ -115,7 +76,9 @@ typedef struct {
  */
 
 #define CHROMA_LAYERS                 5 
-#define MAX_ASSETS                    1024
 #define MAX_BUF_SIZE                  512
+
+int        chroma_init_renderer(char *config_path, char *log_path);
+GtkWidget  *chroma_new_renderer(void);
 
 #endif // !CHROMA_ENGINE

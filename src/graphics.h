@@ -5,12 +5,13 @@
 #ifndef CHROMA_PAGE
 #define CHROMA_PAGE
 
-#include "chroma-engine.h"
+#include "arena.h"
 #include "geometry.h"
 #include <stddef.h>
 #include <stdint.h>
 
 #define MAX_PAGE_SIZE     GIGABYTES((uint64_t) 8)
+#define MAX_ASSETS        1024
 
 typedef enum {
     SET_FRAME = 0,
