@@ -4,6 +4,7 @@
 
 #include "chroma-engine.h"
 #include "chroma-typedefs.h"
+#include "gio/gio.h"
 
 #include <bits/getopt_core.h>
 #include <stdio.h>
