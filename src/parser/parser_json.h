@@ -6,8 +6,8 @@
 #ifndef PARSER_JSON
 #define PARSER_JSON
 
-#include "chroma-engine.h"
 #include <stdio.h>
+
 #define MAX_NAME_LENGTH     128
 
 typedef enum {

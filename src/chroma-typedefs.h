@@ -5,8 +5,9 @@
 #ifndef CHROMA_TYPEDEFS
 #define CHROMA_TYPEDEFS
 
-#include "chroma-engine.h"
+#include "chroma-macros.h"
 #include "graphics.h"
+#include <pthread.h>
 
 typedef enum {
     BLANK = 0,
@@ -27,14 +28,13 @@ typedef struct {
 
 /* graphics structs */
 typedef struct {
-    unsigned char active;
-    int           server_socket;
-    int           server_port;
+    pthread_mutex_t  lock;
+    int              server_port;
 
-    int           hub_socket;
-    char          hub_addr[MAX_BUF_SIZE];
+    int              hub_socket;
+    char             hub_addr[MAX_BUF_SIZE];
 
-    IGraphics     hub;
+    IGraphics        hub;
 } Engine;
 
 extern Engine engine;

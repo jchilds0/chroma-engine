@@ -9,51 +9,20 @@
 #include "parser_internal.h"
 
 #include <netinet/in.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
-static int clients[MAX_CONNECTIONS];
-static int socket_client = -1;
-
-int     parser_parse_page(IPage *page);
-int     parser_parse_header(PageStatus *status);
-int     parser_get_token(char *value, Token *t);
-
-static char buf[PARSE_BUF_SIZE];
-static int buf_ptr = 0;
-
-void parser_init_sockets(void) {
-    for (int i = 0; i < MAX_CONNECTIONS; i++) {
-        clients[i] = -1;
-    }
-}
-
-void parser_check_socket(int server_socket) {
+typedef struct {
     int client_sock;
-    socklen_t client_size;
-    struct sockaddr_in client_addr;
+    char buf[PARSE_BUF_SIZE];
+    int buf_ptr;
+} Client;
 
-    client_size = sizeof client_addr;
-    client_sock = accept(server_socket, (struct sockaddr *) &client_addr, &client_size);
-
-    if (client_sock < 0) {
-        // no new clients
-        return;
-    }
-
-    int i;
-    for (i = 0; i < MAX_CONNECTIONS; i++) {
-        if (clients[i] >= 0) {
-            continue;
-        }
-
-        log_file(LogMessage, "Parser", "New client %d:%d", client_addr.sin_addr, client_addr.sin_port);
-        clients[i] = client_sock;
-        break;
-    }
-
-    if (i == MAX_CONNECTIONS) {
-        log_file(LogWarn, "Parser", "Max clients connected");
-    }
-}
+int     parser_parse_page(Client *client, IPage *page);
+int     parser_parse_header(Client *client, PageStatus *status);
+int     parser_get_token(Client *client, char *value, Token *t);
 
 /*
  * Check clients array for messages, first checking the current client;
@@ -64,61 +33,22 @@ void parser_check_socket(int server_socket) {
  *    - If the client closes the connection, close on our end.
  *
  */
-int parser_parse_graphic(Engine *eng, PageStatus *status) {
-    ServerResponse rec;
+int parser_parse_graphic(Engine *eng, int client_sock, PageStatus *status) {
+    ServerResponse res;
+    Client client = {.client_sock = client_sock};
+
+    memset(client.buf, '\0', sizeof client.buf);
+
     status->action = BLANK;
 
-    // check if current connection has a message
-    if (socket_client >= 0) {
-        rec = parser_get_message(socket_client, &buf_ptr, buf);
-
-        switch (rec) {
-            case SERVER_MESSAGE:
-                goto PAGE;
-                break;
-
-            case SERVER_CLOSE:
-                shutdown(socket_client, SHUT_RDWR);
-                parser_clean_buffer(&buf_ptr, buf);
-
-            case SERVER_TIMEOUT:
-                socket_client = -1;
-                break;
-        }
+    // wait for message
+    res = parser_get_message(client_sock, &client.buf_ptr, client.buf);
+    if (res == SERVER_CLOSE) {
+        return -1;
     }
-
-    // look for messages in other clients
-    for (int i = 0; i < MAX_CONNECTIONS; i++) {
-        rec = parser_get_message(clients[i], &buf_ptr, buf);
-
-        switch (rec) {
-            case SERVER_MESSAGE:
-                socket_client = clients[i];
-                goto PAGE;
-                break;
-
-            case SERVER_CLOSE:
-                if (socket_client == clients[i]) {
-                    socket_client = -1;
-                }
-
-                parser_clean_buffer(&buf_ptr, buf);
-                shutdown(clients[i], SHUT_RDWR);
-                clients[i] = -1;
-                break;
-
-            case SERVER_TIMEOUT:
-                break;
-        }
-    }
-
-    return 0;
-
-PAGE:
-    log_file(LogMessage, "Parser", "Recieved message from %d", socket_client);
 
     int start = clock();
-    if (parser_parse_header(status) < 0) {
+    if (parser_parse_header(&client, status) < 0) {
         return -1;
     }
 
@@ -132,7 +62,7 @@ PAGE:
         char attr[PARSE_BUF_SIZE];
         Token t = NONE;
         while (t != EOM) {
-            if (parser_get_token(attr, &t) < 0) {
+            if (parser_get_token(&client, attr, &t) < 0) {
                 log_file(LogWarn, "Parser", "Missing EOM tag");
                 break;
             }
@@ -144,9 +74,8 @@ PAGE:
         return 0;
     }
 
-    int page_index = graphics_hub_get_page(&eng->hub, status->temp_id);
-
-    if (page_index < 0) {
+    IPage *page = graphics_hub_get_page(&eng->hub, status->temp_id);
+    if (page == NULL) {
         // invalid page, reset globals and clear remaining message
         status->temp_id = -1;
         status->action = BLANK;
@@ -155,7 +84,7 @@ PAGE:
         char attr[PARSE_BUF_SIZE];
         Token t = NONE;
         while (t != EOM) {
-            if (parser_get_token(attr, &t) < 0) {
+            if (parser_get_token(&client, attr, &t) < 0) {
                 log_file(LogWarn, "Parser", "Missing EOM tag");
                 break;
             }
@@ -164,9 +93,11 @@ PAGE:
         return -1;
     }
 
-    IPage *page = &eng->hub.items[page_index];
+    pthread_mutex_lock(&page->lock);
     // Read new page values
-    if (parser_parse_page(page) < 0) {
+
+    if (parser_parse_page(&client, page) < 0) {
+        pthread_mutex_unlock(&page->lock);
         return -1;
     }
 
@@ -210,13 +141,15 @@ PAGE:
     end = clock();
 
     log_file(LogMessage, "Graphics", "Calculated keyframes in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
+    pthread_mutex_unlock(&page->lock);
+
     return 0;
 }
 
 /*
  * Parse the header of a gui request 
  */
-int parser_parse_header(PageStatus *status) {
+int parser_parse_header(Client *client, PageStatus *status) {
     int parsed_version = 0; 
     int parsed_length = 0;
     int parsed_action = 0;
@@ -228,12 +161,12 @@ int parser_parse_header(PageStatus *status) {
     char value[PARSE_BUF_SIZE];
 
     while (1) {
-        if (parser_get_token(attr, &tok_attr) < 0) {
+        if (parser_get_token(client, attr, &tok_attr) < 0) {
             log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
             return -1;
         }
 
-        if (parser_get_token(value, &tok_value) < 0) {
+        if (parser_get_token(client, value, &tok_value) < 0) {
             log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
             return -1;
         }
@@ -293,14 +226,14 @@ int parser_parse_header(PageStatus *status) {
     return -1;
 }
 
-int parser_parse_page(IPage *page) {
+int parser_parse_page(Client *client, IPage *page) {
     char attr[PARSE_BUF_SIZE], value[PARSE_BUF_SIZE];
     Token tok;
     IGeometry *geo;
     int geo_num = -1;
 
     while (1) {
-        if (parser_get_token(attr, &tok) < 0) {
+        if (parser_get_token(client, attr, &tok) < 0) {
             log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
             return -1;
         }
@@ -311,7 +244,7 @@ int parser_parse_page(IPage *page) {
             log_file(LogWarn, "Parser", "Unexpected token %d, expected %d", tok, ATTR);
         }
         
-        if (parser_get_token(value, &tok) < 0) {
+        if (parser_get_token(client, value, &tok) < 0) {
             log_file(LogError, "Parser", "Get token %s %d", __FILE__, __LINE__);
             return -1;
         }
@@ -347,14 +280,14 @@ int parser_parse_page(IPage *page) {
     }
 }
 
-int parser_get_token(char *value, Token *t) {
+int parser_get_token(Client *client, char *value, Token *t) {
     char c;
     int i = 0;
     memset(value, '\0', PARSE_BUF_SIZE);
 
     // read chars until we get a '#', '=' or end of message
     while (1) {
-        if (parser_get_char(socket_client, &buf_ptr, buf, &c) < 0) {
+        if (parser_get_char(client->client_sock, &client->buf_ptr, client->buf, &c) < 0) {
             return -1;
         }
 

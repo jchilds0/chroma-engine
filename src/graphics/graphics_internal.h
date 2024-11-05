@@ -10,7 +10,7 @@
 #ifndef GRAPHICS_INTERNAL
 #define GRAPHICS_INTERNAL
 
-#include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include "geometry.h"
 #include "graphics.h"
 #include <stddef.h>
@@ -18,7 +18,8 @@
 #define LOG_KEYFRAMES         0
 
 /* gr_page.c */
-void         graphics_init_page(IPage *, int num_geo, int max_keyframe);
+void         graphics_page_init_arena(IPage *page);
+void         graphics_init_page(IPage *, int temp_id, int num_geo, int max_keyframe);
 void         graphics_page_clear(IPage *);
 void         graphics_page_generate(IPage *);
 int          graphics_page_free_page(IPage *);

@@ -3,10 +3,10 @@
  */
 
 #include "chroma-engine.h"
-#include "chroma-typedefs.h"
+#include "log.h"
 #include "gio/gio.h"
 
-#include <bits/getopt_core.h>
+#include <getopt.h>
 #include <stdio.h>
 
 static void activate(GtkApplication *app, gpointer user_data) {

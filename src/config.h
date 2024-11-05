@@ -5,7 +5,6 @@
 #ifndef CONFIG
 #define CONFIG
 
-#include "chroma-engine.h"
 #include <stdint.h>
 
 typedef struct {

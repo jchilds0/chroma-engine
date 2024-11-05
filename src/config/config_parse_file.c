@@ -2,7 +2,7 @@
  * config_parse_file.c
  */
 
-#include "chroma-engine.h"
+#include "chroma-macros.h"
 #include "config.h"
 #include "log.h"
 #include <stdio.h>

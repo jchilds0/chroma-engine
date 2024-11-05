@@ -10,12 +10,15 @@
  *
  */
 
+#include "arena.h"
+#include "graphics.h"
 #include "graphics_internal.h"
+#include <pthread.h>
 
 void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
     hub->capacity = DA_INIT_CAPACITY;
     hub->count = 0;
-    hub->items = NEW_ARRAY(hub->capacity, IPage);
+    hub->items = NEW_ARRAY(hub->capacity, IPage *);
 
     for (int i = 0; i < MAX_ASSETS; i++) {
         hub->img[i].data = NULL;
@@ -26,39 +29,40 @@ void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
 
 IPage *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int temp_id) {
     IPage *page;
-    int i;
 
-    if ((i = graphics_hub_get_page(hub, temp_id)) >= 0) {
+    page = graphics_hub_get_page(hub, temp_id);
+
+    if (page != NULL) {
         log_file(LogMessage, "Graphics", "Replacing page %d", temp_id);
-        graphics_page_clear(&hub->items[i]);
-        page = &hub->items[i];
-
-        graphics_init_page(page, num_geo, max_keyframe);
+        graphics_page_clear(page);
     } else {
-        IPage temp_page;
-        DA_APPEND(hub, temp_page);
-        page = &hub->items[hub->count - 1];
 
-        ARENA_INIT(&page->arena, MAX_PAGE_SIZE);
-        page->temp_id = temp_id;
+        pthread_mutex_lock(&hub->lock);
+        page = ARENA_ALLOC(&hub->arena, IPage);
+        DA_APPEND(hub, page);
+        pthread_mutex_unlock(&hub->lock);
 
-        graphics_init_page(page, num_geo, max_keyframe);
+        graphics_page_init_arena(page);
     } 
 
+    graphics_init_page(page, temp_id, num_geo, max_keyframe);
     return page;
 }
 
-int graphics_hub_get_page(IGraphics *hub, int temp_id) {
-    int index = -1;
+IPage *graphics_hub_get_page(IGraphics *hub, int temp_id) {
+    IPage *page = NULL;
+    pthread_mutex_lock(&hub->lock);
+
     for (size_t i = 0; i < hub->count; i++) {
-        if (hub->items[i].temp_id != temp_id) {
+        if (hub->items[i]->temp_id != temp_id) {
             continue;
         }
 
-        index = i;
+        page = hub->items[i];
     }
 
-    return index;
+    pthread_mutex_unlock(&hub->lock);
+    return page;
 }
 
 void graphics_free_graphics_hub(IGraphics *hub) {
@@ -66,10 +70,12 @@ void graphics_free_graphics_hub(IGraphics *hub) {
         return;
     }
 
+    pthread_mutex_lock(&hub->lock);
     for (size_t i = 0; i < hub->count; i++) {
-        IPage *page = &hub->items[i];
+        IPage *page = hub->items[i];
         graphics_page_free_page(page);
     }
 
     free(hub->items);
+    pthread_mutex_unlock(&hub->lock);
 }

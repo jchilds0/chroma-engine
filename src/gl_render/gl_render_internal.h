@@ -12,7 +12,7 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include "geometry.h"
 
 /* gl_renderer.c */

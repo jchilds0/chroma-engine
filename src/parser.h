@@ -19,12 +19,11 @@
 
 #include "chroma-typedefs.h"
 
-extern void parser_init_sockets(void);
-extern void parser_check_socket(int server_socket);
+extern int parser_accept_conn(int server_socket);
 extern int parser_tcp_start_server(int port);
 extern int parser_tcp_start_client(char *addr, int port);
 
-extern int parser_parse_graphic(Engine *eng, PageStatus *status);
+extern int parser_parse_graphic(Engine *eng, int client_sock, PageStatus *status);
 extern int parser_parse_hub(Engine *eng);
 extern int parser_update_template(Engine *eng, int page_num);
 

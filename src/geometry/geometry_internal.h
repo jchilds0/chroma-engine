@@ -10,7 +10,7 @@
 #ifndef GEOMETRY_INTERNAL
 #define GEOMETRY_INTERNAL
 
-#include "chroma-engine.h"
+#include "chroma-typedefs.h"
 #include "geometry.h"
 #include <GL/glew.h>
 #include <GL/gl.h>

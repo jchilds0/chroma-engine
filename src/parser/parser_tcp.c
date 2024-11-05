@@ -10,6 +10,7 @@
 #include "parser_internal.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 #define MAX_ATTEMPTS        10
 
@@ -63,12 +64,6 @@ int parser_tcp_start_server(int port) {
 
     log_file(LogMessage, "Parser", "Done with binding");
 
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 1000 / CHROMA_FRAMERATE;
-
-    setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-
     // listen for clients 
     if (listen(socket_desc, MAX_CONNECTIONS) < 0) {
         //log_file(LogWarn, "Parser", "Error while listening");
@@ -107,6 +102,24 @@ int parser_tcp_start_client(char *addr, int port) {
     return socket_desc;
 }
 
+int parser_accept_conn(int server_socket) {
+    int client_sock;
+    socklen_t client_size;
+    struct sockaddr_in client_addr;
+
+    client_size = sizeof client_addr;
+    client_sock = accept(server_socket, (struct sockaddr *) &client_addr, &client_size);
+    if (client_sock < 0) {
+        return client_sock;
+    }
+
+    char addr[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &client_addr.sin_addr, addr, INET_ADDRSTRLEN);
+
+    log_file(LogMessage, "Parser", "New client %s:%d", addr, client_addr.sin_port);
+    return client_sock;
+}
+
 ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message) {
     char server_message[PARSE_BUF_SIZE];
 
@@ -115,7 +128,7 @@ ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message)
 
     // recieve clients message 
     if (recv(client_sock, client_message, PARSE_BUF_SIZE, 0) < 0) {
-        return SERVER_TIMEOUT;
+        return SERVER_CLOSE;
     }
 
     if (LOG_PARSER) {

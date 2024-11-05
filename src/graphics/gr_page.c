@@ -8,15 +8,22 @@
  *
  */
 
+#include "arena.h"
 #include "graphics_internal.h"
 
-/*
- * Initialise a page, assumes the arena has been allocated.
- */
-void graphics_init_page(IPage *page, int num_geo, int max_keyframe) {
+void graphics_page_init_arena(IPage *page) {
+    pthread_mutex_lock(&page->lock);
+    ARENA_INIT(&page->arena, MAX_PAGE_SIZE);
+    pthread_mutex_unlock(&page->lock);
+}
+
+void graphics_init_page(IPage *page, int temp_id, int num_geo, int max_keyframe) {
     log_assert(page != NULL, "Graphics", "Page init requires a page");
+
+    pthread_mutex_lock(&page->lock);
     log_assert(page->arena.memory != NULL, "Graphics", "Page init requires arena to be allocated");
 
+    page->temp_id = temp_id;
     page->len_geometry = num_geo;
     page->max_keyframe = max_keyframe;
     page->geometry = ARENA_ARRAY(&page->arena, num_geo, IGeometry *);
@@ -36,12 +43,13 @@ void graphics_init_page(IPage *page, int num_geo, int max_keyframe) {
     geometry_set_int_attr(geo, GEO_X_UPPER, 1920);
     geometry_set_int_attr(geo, GEO_Y_LOWER, 0);
     geometry_set_int_attr(geo, GEO_Y_UPPER, 1080);
-
+    pthread_mutex_unlock(&page->lock);
 }
 
 IGeometry *graphics_page_add_geometry(IPage *page, int type, int geo_id) {
     if (geo_id < 0 || geo_id >= page->len_geometry) {
         log_file(LogWarn, "Graphics", "Geometry ID %d out of range", geo_id);
+        pthread_mutex_unlock(&page->lock);
         return NULL;
     }
 

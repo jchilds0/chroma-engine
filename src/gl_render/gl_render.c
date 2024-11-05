@@ -6,9 +6,13 @@
 
 #include "gl_render_internal.h"
 #include "chroma-typedefs.h"
+#include <pthread.h>
+#include <gtk/gtk.h>
+#include <pthread.h>
 
 #define ANIM_LENGTH     120
 
+pthread_mutex_t gl_lock;
 int action[] = {BLANK, BLANK, BLANK, BLANK, BLANK};
 int page_num[] = {-1, -1, -1, -1, -1};
 int current_page[] = {-1, -1, -1, -1, -1};
@@ -269,25 +273,25 @@ static void gl_render_draw_heirachy(IPage *page, IGeometry *parent, uint depth) 
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
-    int page_index;
     float time, bezier_time;
     IPage *page;
     glClearColor(0, 0, 0, 0);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+    pthread_mutex_lock(&gl_lock);
     for (int layer = 0; layer < CHROMA_LAYERS; layer++) {
         if (page_num[layer] < 0) {
             continue;
         }
 
-        page_index = graphics_hub_get_page(&engine.hub, page_num[layer]);
-        if (page_index < 0) {
+        page = graphics_hub_get_page(&engine.hub, page_num[layer]);
+        if (page == NULL) {
             log_file(LogWarn, "GL Render", "Missing page %s", page_num[layer]);
             continue;
         }
 
-        page = &engine.hub.items[page_index];
+        pthread_mutex_lock(&page->lock);
 
         switch (action[layer]) {
             case ANIMATE_OFF:
@@ -320,17 +324,21 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
         }
 
         if (action[layer] == BLANK) {
+            pthread_mutex_unlock(&page->lock);
             continue;
         }
 
         if (action[layer] == UPDATE) {
             log_file(LogWarn, "GL Renderer", "Action update not handled before renderer");
+            pthread_mutex_unlock(&page->lock);
             continue;
         }
 
         gl_render_draw_heirachy(page, page->geometry[0], 0);
         glClear(GL_STENCIL_BUFFER_BIT);
+        pthread_mutex_unlock(&page->lock);
     }
+    pthread_mutex_unlock(&gl_lock);
 
     glFlush();
     
