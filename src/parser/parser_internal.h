@@ -13,7 +13,6 @@
 #include "chroma-typedefs.h"
 #include "geometry.h"
 
-#define PARSE_BUF_SIZE      1024
 #define MAX_CONNECTIONS     10
 #define LOG_PARSER          0
 #define LOG_TEMPLATE        0

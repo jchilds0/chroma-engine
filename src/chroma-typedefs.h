@@ -28,6 +28,12 @@ typedef struct {
 
 /* graphics structs */
 typedef struct {
+    int client_sock;
+    char buf[PARSE_BUF_SIZE];
+    int buf_ptr;
+} Client;
+
+typedef struct {
     pthread_mutex_t  lock;
     int              server_port;
 

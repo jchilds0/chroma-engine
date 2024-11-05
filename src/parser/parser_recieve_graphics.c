@@ -6,6 +6,7 @@
  */
 
 #include "graphics.h"
+#include "log.h"
 #include "parser_internal.h"
 
 #include <netinet/in.h>
@@ -14,11 +15,6 @@
 #include <string.h>
 #include <time.h>
 
-typedef struct {
-    int client_sock;
-    char buf[PARSE_BUF_SIZE];
-    int buf_ptr;
-} Client;
 
 int     parser_parse_page(Client *client, IPage *page);
 int     parser_parse_header(Client *client, PageStatus *status);
@@ -33,28 +29,26 @@ int     parser_get_token(Client *client, char *value, Token *t);
  *    - If the client closes the connection, close on our end.
  *
  */
-int parser_parse_graphic(Engine *eng, int client_sock, PageStatus *status) {
+int parser_parse_graphic(Engine *eng, Client *client, PageStatus *status) {
     ServerResponse res;
-    Client client = {.client_sock = client_sock};
-
-    memset(client.buf, '\0', sizeof client.buf);
-
     status->action = BLANK;
 
     // wait for message
-    res = parser_get_message(client_sock, &client.buf_ptr, client.buf);
+    res = parser_get_message(client->client_sock, &client->buf_ptr, client->buf);
     if (res == SERVER_CLOSE) {
         return -1;
     }
 
     int start = clock();
-    if (parser_parse_header(&client, status) < 0) {
+    if (parser_parse_header(client, status) < 0) {
+        log_file(LogMessage, "Parser", "Buffer: ", client->buf);
         return -1;
     }
 
     if (status->action == UPDATE) {
         log_file(LogMessage, "Parser", "Updating template %d", status->temp_id);
         if (parser_update_template(eng, status->temp_id) < 0) {
+            log_file(LogMessage, "Parser", "Buffer: ", client->buf);
             return -1;
         }
 
@@ -62,7 +56,7 @@ int parser_parse_graphic(Engine *eng, int client_sock, PageStatus *status) {
         char attr[PARSE_BUF_SIZE];
         Token t = NONE;
         while (t != EOM) {
-            if (parser_get_token(&client, attr, &t) < 0) {
+            if (parser_get_token(client, attr, &t) < 0) {
                 log_file(LogWarn, "Parser", "Missing EOM tag");
                 break;
             }
@@ -84,7 +78,7 @@ int parser_parse_graphic(Engine *eng, int client_sock, PageStatus *status) {
         char attr[PARSE_BUF_SIZE];
         Token t = NONE;
         while (t != EOM) {
-            if (parser_get_token(&client, attr, &t) < 0) {
+            if (parser_get_token(client, attr, &t) < 0) {
                 log_file(LogWarn, "Parser", "Missing EOM tag");
                 break;
             }
@@ -96,7 +90,7 @@ int parser_parse_graphic(Engine *eng, int client_sock, PageStatus *status) {
     pthread_mutex_lock(&page->lock);
     // Read new page values
 
-    if (parser_parse_page(&client, page) < 0) {
+    if (parser_parse_page(client, page) < 0) {
         pthread_mutex_unlock(&page->lock);
         return -1;
     }
@@ -215,6 +209,7 @@ int parser_parse_header(Client *client, PageStatus *status) {
 
             default:
                 log_file(LogWarn, "Parser", "Missing header tokens");
+                return -1;
         }
 
         if (parsed_version && parsed_length && parsed_action && parsed_temp_id) {

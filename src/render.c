@@ -36,14 +36,19 @@ static void chroma_close_renderer(GtkWidget *widget, gpointer data) {
 }
 
 static void *chroma_handle_conn(void *data) {
-    int client_sock = *(int *)(data);
-    int exit = 0;
     PageStatus status;
+    Client client = {
+        .client_sock = *(int *)(data),
+        .buf_ptr = 0,
+    };
+    int exit = 0;
+
+    memset(&client.buf, '\0', sizeof client.buf);
 
     while (!exit) {
         pthread_mutex_lock(&lock);
         if (!active) {
-            log_file(LogMessage, "Engine", "Engine is not active, closing client %d handler", client_sock);
+            log_file(LogMessage, "Engine", "Engine is not active, closing client %d handler", client.client_sock);
             pthread_mutex_unlock(&lock);
             exit = 1;
             continue;
@@ -51,7 +56,7 @@ static void *chroma_handle_conn(void *data) {
         pthread_mutex_unlock(&lock);
 
         status = (PageStatus){.temp_id = 0, .frame_num = 0, .layer = 0, .action = BLANK};
-        if (parser_parse_graphic(&engine, client_sock, &status) < 0) {
+        if (parser_parse_graphic(&engine, &client, &status) < 0) {
             exit = 1;
         }
 
@@ -70,7 +75,7 @@ static void *chroma_handle_conn(void *data) {
         pthread_mutex_unlock(&gl_lock);
     }
 
-    shutdown(client_sock, SHUT_RDWR);
+    shutdown(client.client_sock, SHUT_RDWR);
     return NULL;
 }
 

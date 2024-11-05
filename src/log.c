@@ -5,20 +5,37 @@
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 void current_time(char *, int);
 char *pad_int(int);
+
+#define MAX_LOG_FILES     (10000)
 
 static char filename[1024];
 
 void log_start(char *path) {
     FILE *pfile;
+    int i;
 
-    snprintf(filename, sizeof filename, "%s/chroma_engine.log", path);
+    for (i = 0; i < MAX_LOG_FILES; i++) {
+        snprintf(filename, sizeof filename, "%s/chroma_engine_%d.log", path, i);
+
+        if (access(filename, F_OK)) {
+            break;
+        }
+    }
+
+    if (i == MAX_LOG_FILES) {
+        printf("Too many log files");
+        exit(1);
+    }
+
     pfile = fopen(filename, "w");
     fclose(pfile);
     log_file(LogMessage, "Log", "Engine Started");

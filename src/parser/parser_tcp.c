@@ -7,6 +7,7 @@
  *
  */
 
+#include "log.h"
 #include "parser_internal.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -128,6 +129,7 @@ ServerResponse parser_tcp_recieve_message(int client_sock, char *client_message)
 
     // recieve clients message 
     if (recv(client_sock, client_message, PARSE_BUF_SIZE, 0) < 0) {
+        log_file(LogError, "Parser", "Error receiving message");
         return SERVER_CLOSE;
     }
 
