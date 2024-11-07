@@ -36,7 +36,7 @@ static void chroma_close_renderer(GtkWidget *widget, gpointer data) {
 }
 
 static void *chroma_handle_conn(void *data) {
-    PageStatus status;
+    PageStatus status = (PageStatus){.temp_id = 0, .layer = 0, .action = BLANK};
     Client client = {
         .client_sock = *(int *)(data),
         .buf_ptr = 0,
@@ -55,7 +55,6 @@ static void *chroma_handle_conn(void *data) {
         }
         pthread_mutex_unlock(&lock);
 
-        status = (PageStatus){.temp_id = 0, .frame_num = 0, .layer = 0, .action = BLANK};
         if (parser_parse_graphic(&engine, &client, &status) < 0) {
             exit = 1;
         }
@@ -64,14 +63,23 @@ static void *chroma_handle_conn(void *data) {
             continue;
         }
 
-        log_file(LogMessage, "Engine", "Recieved Graph: Temp ID %d, Layer %d, Frame Num %d", 
-                 status.temp_id, status.layer, status.frame_num);
+        log_file(LogMessage, "Engine", "Recieved Action: Temp ID %d, Layer %d, Action %d", 
+                 status.temp_id, status.layer, status.action);
 
         pthread_mutex_lock(&gl_lock);
-        page_num[status.layer]  = status.temp_id;
-        action[status.layer]    = status.action;
-        frame_num[status.layer] = status.frame_num;
+        IPage *page = graphics_hub_get_page(&engine.hub, status.temp_id);
+        if (status.action == ANIMATE_ON || status.temp_id != page_num[status.layer]) {
+            frame_num[status.layer] = 1;
+        } else if (status.action == CONTINUE && page != NULL) {
+            frame_num[status.layer] = MIN(frame_num[status.layer] + 1, page->max_keyframe - 1);
+        } else if (status.action == ANIMATE_OFF && page != NULL) {
+            frame_num[status.layer] = page->max_keyframe - 1;
+        }
+
+        page_num[status.layer]   = status.temp_id;
+        action[status.layer]     = status.action;
         frame_time[status.layer] = 0.0;
+
         pthread_mutex_unlock(&gl_lock);
     }
 

@@ -5,6 +5,7 @@
  *
  */
 
+#include "chroma-typedefs.h"
 #include "graphics.h"
 #include "log.h"
 #include "parser_internal.h"
@@ -31,7 +32,6 @@ int     parser_get_token(Client *client, char *value, Token *t);
  */
 int parser_parse_graphic(Engine *eng, Client *client, PageStatus *status) {
     ServerResponse res;
-    status->action = BLANK;
 
     // wait for message
     res = parser_get_message(client->client_sock, &client->buf_ptr, client->buf);
@@ -93,23 +93,6 @@ int parser_parse_graphic(Engine *eng, Client *client, PageStatus *status) {
     if (parser_parse_page(client, page) < 0) {
         pthread_mutex_unlock(&page->lock);
         return -1;
-    }
-
-    switch (status->action) {
-        case ANIMATE_ON:
-            status->frame_num = 1;
-            break;
-
-        case CONTINUE:
-            status->frame_num = MIN(status->frame_num + 1, page->max_keyframe - 1);
-            break;
-
-        case ANIMATE_OFF:
-            status->frame_num = page->max_keyframe - 1;
-            break;
-
-        default:
-            break;
     }
 
     for (int i = 0; i < page->len_geometry; i++) {

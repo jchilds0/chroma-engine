@@ -21,7 +21,6 @@ typedef enum {
 
 typedef struct {
     int     temp_id;
-    int     frame_num;
     int     layer;
     Action  action;
 } PageStatus;
