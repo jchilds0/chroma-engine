@@ -7,7 +7,7 @@
 
 #include "arena.h"
 #include "geometry.h"
-#include <pthread.h>
+#include "glib.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -82,7 +82,7 @@ typedef struct {
 } Image;
 
 typedef struct {
-    pthread_mutex_t lock;
+    GMutex          lock;
     unsigned int    temp_id;
     Arena           arena;
     unsigned int    len_geometry;
@@ -95,7 +95,7 @@ typedef struct {
 extern IGeometry    *graphics_page_add_geometry(IPage *page, int type, int geo_id);
 
 typedef struct {
-    pthread_mutex_t lock;
+    GMutex          lock;
     size_t          count;
     size_t          capacity;
     IPage           **items;

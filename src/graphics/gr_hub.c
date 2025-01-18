@@ -11,11 +11,13 @@
  */
 
 #include "arena.h"
+#include "glib.h"
 #include "graphics.h"
 #include "graphics_internal.h"
-#include <pthread.h>
 
 void graphics_new_graphics_hub(IGraphics *hub, int num_pages) {
+    g_mutex_init(&hub->lock);
+
     hub->capacity = DA_INIT_CAPACITY;
     hub->count = 0;
     hub->items = NEW_ARRAY(hub->capacity, IPage *);
@@ -37,10 +39,13 @@ IPage *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int 
         graphics_page_clear(page);
     } else {
 
-        pthread_mutex_lock(&hub->lock);
+        g_mutex_lock(&hub->lock);
+
         page = ARENA_ALLOC(&hub->arena, IPage);
+        g_mutex_init(&page->lock);
+
         DA_APPEND(hub, page);
-        pthread_mutex_unlock(&hub->lock);
+        g_mutex_unlock(&hub->lock);
 
         graphics_page_init_arena(page);
     } 
@@ -51,7 +56,7 @@ IPage *graphics_hub_new_page(IGraphics *hub, int num_geo, int max_keyframe, int 
 
 IPage *graphics_hub_get_page(IGraphics *hub, int temp_id) {
     IPage *page = NULL;
-    pthread_mutex_lock(&hub->lock);
+    g_mutex_lock(&hub->lock);
 
     for (size_t i = 0; i < hub->count; i++) {
         if (hub->items[i]->temp_id != temp_id) {
@@ -61,7 +66,7 @@ IPage *graphics_hub_get_page(IGraphics *hub, int temp_id) {
         page = hub->items[i];
     }
 
-    pthread_mutex_unlock(&hub->lock);
+    g_mutex_unlock(&hub->lock);
     return page;
 }
 
@@ -70,12 +75,12 @@ void graphics_free_graphics_hub(IGraphics *hub) {
         return;
     }
 
-    pthread_mutex_lock(&hub->lock);
+    g_mutex_lock(&hub->lock);
     for (size_t i = 0; i < hub->count; i++) {
         IPage *page = hub->items[i];
         graphics_page_free_page(page);
     }
 
     free(hub->items);
-    pthread_mutex_unlock(&hub->lock);
+    g_mutex_unlock(&hub->lock);
 }

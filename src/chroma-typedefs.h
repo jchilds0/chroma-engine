@@ -6,8 +6,8 @@
 #define CHROMA_TYPEDEFS
 
 #include "chroma-macros.h"
+#include "glib.h"
 #include "graphics.h"
-#include <pthread.h>
 
 typedef enum {
     BLANK = 0,
@@ -33,7 +33,7 @@ typedef struct {
 } Client;
 
 typedef struct {
-    pthread_mutex_t  lock;
+    GMutex           lock;
     int              server_port;
 
     int              hub_socket;

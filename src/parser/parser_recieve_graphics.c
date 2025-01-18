@@ -11,7 +11,6 @@
 #include "parser_internal.h"
 
 #include <netinet/in.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -87,11 +86,11 @@ int parser_parse_graphic(Engine *eng, Client *client, PageStatus *status) {
         return -1;
     }
 
-    pthread_mutex_lock(&page->lock);
+    g_mutex_lock(&page->lock);
     // Read new page values
 
     if (parser_parse_page(client, page) < 0) {
-        pthread_mutex_unlock(&page->lock);
+        g_mutex_unlock(&page->lock);
         return -1;
     }
 
@@ -118,7 +117,7 @@ int parser_parse_graphic(Engine *eng, Client *client, PageStatus *status) {
     end = clock();
 
     log_file(LogMessage, "Graphics", "Calculated keyframes in %f ms", ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
-    pthread_mutex_unlock(&page->lock);
+    g_mutex_unlock(&page->lock);
 
     return 0;
 }

@@ -21,6 +21,7 @@
 #ifndef CHROMA_GL_RENDERER
 #define CHROMA_GL_RENDERER
 
+#include "glib.h"
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <gtk/gtk.h>
@@ -34,7 +35,7 @@ extern gboolean gl_render(GtkGLArea *, GdkGLContext *);
 extern unsigned int gl_text_text_width(char *text, float scale);
 extern unsigned int gl_text_text_height(char *text, float scale);
 
-extern pthread_mutex_t gl_lock;
+extern GMutex gl_lock;
 extern int action[];
 extern int page_num[];
 extern int frame_num[];

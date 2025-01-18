@@ -5,11 +5,11 @@
 #include "chroma-macros.h"
 #include "chroma-typedefs.h"
 #include "config.h"
+#include "glib.h"
 #include "parser.h"
 #include "gl_render.h"
 #include "log.h"
 
-#include <pthread.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,16 +23,16 @@ Config config = {
     .engine_port = 6100,
 };
 
-pthread_mutex_t lock;
+static GMutex lock;
 unsigned char active = 0;
 
 static void chroma_close_renderer(GtkWidget *widget, gpointer data) {
     log_file(LogMessage, "Engine", "Shutdown");
 
     graphics_free_graphics_hub(&engine.hub);
-    pthread_mutex_lock(&lock);
+    g_mutex_lock(&lock);
     active = 0;
-    pthread_mutex_unlock(&lock);
+    g_mutex_unlock(&lock);
 }
 
 static void *chroma_handle_conn(void *data) {
@@ -46,14 +46,14 @@ static void *chroma_handle_conn(void *data) {
     memset(&client.buf, '\0', sizeof client.buf);
 
     while (!exit) {
-        pthread_mutex_lock(&lock);
+        g_mutex_lock(&lock);
         if (!active) {
             log_file(LogMessage, "Engine", "Engine is not active, closing client %d handler", client.client_sock);
-            pthread_mutex_unlock(&lock);
+            g_mutex_unlock(&lock);
             exit = 1;
             continue;
         }
-        pthread_mutex_unlock(&lock);
+        g_mutex_unlock(&lock);
 
         if (parser_parse_graphic(&engine, &client, &status) < 0) {
             exit = 1;
@@ -66,7 +66,7 @@ static void *chroma_handle_conn(void *data) {
         log_file(LogMessage, "Engine", "Recieved Action: Temp ID %d, Layer %d, Action %d", 
                  status.temp_id, status.layer, status.action);
 
-        pthread_mutex_lock(&gl_lock);
+        g_mutex_lock(&gl_lock);
         IPage *page = graphics_hub_get_page(&engine.hub, status.temp_id);
         if (status.action == ANIMATE_ON || status.temp_id != page_num[status.layer]) {
             frame_num[status.layer] = 1;
@@ -80,7 +80,7 @@ static void *chroma_handle_conn(void *data) {
         action[status.layer]     = status.action;
         frame_time[status.layer] = 0.0;
 
-        pthread_mutex_unlock(&gl_lock);
+        g_mutex_unlock(&gl_lock);
     }
 
     shutdown(client.client_sock, SHUT_RDWR);
@@ -95,22 +95,22 @@ static void *chroma_listen(void *data) {
     if (server_sock < 0) {
         log_file(LogMessage, "Engine", "Error creating socket, closing server");
 
-        pthread_mutex_lock(&lock);
+        g_mutex_lock(&lock);
         active = 0;
-        pthread_mutex_unlock(&lock);
+        g_mutex_unlock(&lock);
         return NULL;
     }
 
     while (!exit) {
-        pthread_mutex_lock(&lock);
+        g_mutex_lock(&lock);
         if (!active) {
             log_file(LogMessage, "Engine", "Engine is not active, closing server");
-            pthread_mutex_unlock(&lock);
+            g_mutex_unlock(&lock);
             exit = 1;
             continue;
         }
 
-        pthread_mutex_unlock(&lock);
+        g_mutex_unlock(&lock);
 
         int client_sock = parser_accept_conn(server_sock);
         if (client_sock < 0) {
@@ -118,8 +118,7 @@ static void *chroma_listen(void *data) {
             continue;
         }
 
-        pthread_t th_client;
-        pthread_create(&th_client, NULL, chroma_handle_conn, &client_sock);
+        g_thread_new("client", chroma_handle_conn, &client_sock);
     }
 
     shutdown(server_sock, SHUT_RDWR);
@@ -132,6 +131,9 @@ int chroma_init_renderer(char *config_path, char *log_path) {
     if (strlen(config_path) > 0) {
         config_parse_file(&config, config_path);
     }
+
+    g_mutex_init(&engine.lock);
+    g_mutex_init(&gl_lock);
 
     sprintf(engine.hub_addr, "%s:%d", config.hub_addr, config.hub_port); 
     engine.hub_socket = parser_tcp_start_client(config.hub_addr, config.hub_port);
@@ -151,13 +153,11 @@ int chroma_init_renderer(char *config_path, char *log_path) {
     end = clock();
 
     engine.server_port = config.engine_port;
-    pthread_mutex_lock(&lock);
+    g_mutex_lock(&lock);
     active = 1;
-    pthread_mutex_unlock(&lock);
+    g_mutex_unlock(&lock);
 
-    pthread_t th_listen;
-    pthread_create(&th_listen, NULL, chroma_listen, NULL);
-
+    g_thread_new("server", chroma_listen, NULL);
     log_file(LogMessage, "Parser", "Imported Chroma Hub in %f ms", 
              ((double) (end - start) * 1000) / CLOCKS_PER_SEC);
     return 0;
