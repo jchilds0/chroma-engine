@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Environment
       run: |
@@ -39,7 +39,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}}
 
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: chroma-engine
         path: build
