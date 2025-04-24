@@ -78,7 +78,7 @@
 #define INDEX(x, y, z, y_len, z_len)  x * (y_len * z_len) + y * z_len + z
 
 #define MAX_BUF_SIZE                  512
-#define PARSE_BUF_SIZE                1024
+#define PARSE_BUF_SIZE                2048
 
 
 #endif // !CHROMA_MACROS_H

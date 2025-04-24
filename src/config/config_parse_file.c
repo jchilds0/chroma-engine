@@ -200,5 +200,7 @@ void config_parse_file(Config *c, char *file_name) {
 
         memset(buf, '\0', sizeof buf);
     }
+
+    fclose(file);
 }
 

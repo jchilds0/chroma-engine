@@ -34,6 +34,7 @@ typedef struct {
     HeaderNode tail;
 } HTTPHeader;
 
+int         parser_http_get_bytes(HTTPHeader *header, int *buf_ptr, char *buf);
 int         parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf, char *c);
 
 int         parser_http_get(int socket_client, const char *addr);

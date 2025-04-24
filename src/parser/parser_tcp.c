@@ -11,6 +11,7 @@
 #include "parser_internal.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <stddef.h>
 #include <unistd.h>
 
 #define MAX_ATTEMPTS        10

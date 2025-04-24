@@ -2,9 +2,12 @@
  * parser_recieve_image.c
  */
 
+#include "log.h"
 #include "parser_internal.h"
 #include "parser_http.h"
 #include <png.h>
+#include <stddef.h>
+#include <string.h>
 
 static int socket_client = 0;
 static HTTPHeader *header;
@@ -150,19 +153,20 @@ void parser_read_png_data(png_structp png_ptr, png_bytep data, size_t length) {
         png_error(png_ptr, "Hub not connected");
     }
 
-    int len, idx = 0;
+    int parser_length, len, idx = 0;
     while (length != 0) {
-        if (parser_get_bytes() != SERVER_MESSAGE) {
+        parser_length = parser_http_get_bytes(header, &buf_ptr, buf);
+        if (parser_length < 0) {
             log_file(LogWarn, "Parser", "Error receiving image from chroma hub");
             continue;
         }
 
-        len = MIN(PARSE_BUF_SIZE - buf_ptr, length);
+        len = MIN(parser_length, length);
         memcpy(&data[idx], &buf[buf_ptr], len);
 
         idx += len;
         buf_ptr += len;
-
+        header->read += len;
         length -= len;
     }
 }
