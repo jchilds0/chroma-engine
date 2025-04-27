@@ -4,6 +4,7 @@
  */
 
 #include "chroma-macros.h"
+#include "log.h"
 #include "parser_internal.h"
 #include "parser_json.h"
 #include "parser_http.h"
@@ -206,7 +207,7 @@ int parser_http_get_bytes(HTTPHeader *header, int *buf_ptr, char *buf) {
     if (header->transfer_encoding == CHUNKED) {
         return MIN(header->chunk_size - header->read, PARSE_BUF_SIZE - *buf_ptr);
     } else {
-        return PARSE_BUF_SIZE - *buf_ptr;
+        return MIN(header->content_length - header->read, PARSE_BUF_SIZE - *buf_ptr);
     }
 
 }
@@ -220,6 +221,7 @@ int parser_http_get_char(HTTPHeader *header, int *buf_ptr, char *buf, char *c) {
         *c = T_NONE;
         return 0;
     }
+
 
     header->read++;
     if (parser_get_char(header->socket_client, buf_ptr, buf, c) < 0) {
