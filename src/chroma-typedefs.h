@@ -35,10 +35,9 @@ typedef struct {
 typedef struct {
     GMutex           lock;
     int              server_port;
-
+    unsigned char    render_perf;
     int              hub_socket;
     char             hub_addr[MAX_BUF_SIZE];
-
     IGraphics        hub;
 } Engine;
 

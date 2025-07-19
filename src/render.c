@@ -2,20 +2,17 @@
  * render.c 
  */
 
-#include "chroma-macros.h"
 #include "chroma-typedefs.h"
 #include "config.h"
-#include "glib.h"
 #include "parser.h"
 #include "gl_render.h"
 #include "log.h"
 
-#include <gtk/gtk.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <unistd.h>
 
-Engine engine;
+Engine engine = {
+    .render_perf = 0,
+};
 Config config = {
     .hub_addr = "127.0.0.1",
     .hub_port = 9000,

@@ -3,11 +3,21 @@
  */
 
 #include "chroma-engine.h"
+#include "chroma-typedefs.h"
+#include "glib.h"
 #include "log.h"
-#include "gio/gio.h"
 
-#include <getopt.h>
-#include <stdio.h>
+static gboolean chroma_key_press(GtkWidget *widget, GdkEventKey* event, gpointer data) {
+    if (event->keyval != GDK_KEY_F10) {
+        return FALSE;
+    }
+
+    g_mutex_lock(&engine.lock);
+    engine.render_perf = !engine.render_perf;
+    g_mutex_unlock(&engine.lock);
+
+    return TRUE;
+}
 
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *window, *gl_area;
@@ -16,6 +26,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_window_set_title(GTK_WINDOW(window), "Chroma Engine");
     gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1080);
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+    
+    g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(chroma_key_press), NULL);
 
     gl_area = chroma_new_renderer();
     gtk_container_add(GTK_CONTAINER(window), gl_area);

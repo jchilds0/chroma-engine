@@ -272,11 +272,26 @@ static void gl_render_draw_heirachy(IPage *page, IGeometry *parent, uint depth) 
 }
 
 gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
+    static double render_time = 0;
+    static GeometryText render_text = {
+        .geo = {
+            .geo_type = TEXT,
+            .geo_id = 0,
+            .parent_id = -1,
+            .pos = {.x = 30, .y = 1080 - 50},
+        },
+        .scale = 1.0,
+        .color = {1.0, 1.0, 1.0, 1.0}
+    };
+
     float time, bezier_time;
     IPage *page;
     glClearColor(0, 0, 0, 0);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    clock_t start, end;
+    start = clock();
 
     g_mutex_lock(&gl_lock);
     for (int layer = 0; layer < CHROMA_LAYERS; layer++) {
@@ -339,7 +354,21 @@ gboolean gl_render(GtkGLArea *area, GdkGLContext *context) {
     }
     g_mutex_unlock(&gl_lock);
 
-    glFlush();
-    
+    g_mutex_lock(&engine.lock);
+    if (engine.render_perf) {
+        sprintf(render_text.buf, "%0.2f ms", render_time);
+
+        gl_renderer_use(&r);
+        gl_renderer_mask(&r, RENDER_DRAW_NO_MASK, 0);
+        gl_render_draw_geometry(&r, (IGeometry *)&render_text);
+
+        gl_renderer_draw(&r);
+    }
+    g_mutex_unlock(&engine.lock);
+
+    glFinish();
+    end = clock();
+    render_time = ((double) (end - start) * 1000) / CLOCKS_PER_SEC;
+
     return TRUE;
 }
